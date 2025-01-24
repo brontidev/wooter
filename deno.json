@@ -1,0 +1,10 @@
+{
+  "name": "@ts-rex/wooter",
+  "tasks": {
+    "dev": "deno run --watch main.ts"
+  },
+  "imports": {
+    "@dldc/chemin": "jsr:@dldc/chemin@^12.0.1",
+    "cookie": "npm:cookie@^1.0.2"
+  }
+}
