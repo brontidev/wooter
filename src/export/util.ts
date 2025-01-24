@@ -1,19 +1,8 @@
 /**
- * Copyright (c) 2020 [sveltekit contributors](https://github.com/sveltejs/kit/graphs/contributors)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
-//jsonResponse, redirectResponse, fixLocation, errorResponse
-
-/**
  * Returns a JSON `Response` given a stringifiable object
  * @param json - json data
  * @param init - Response init
+ * @returns response
  */
 export function jsonResponse(json: unknown, init?: ResponseInit): Response {
 	const body = JSON.stringify(json)
@@ -35,22 +24,58 @@ export function jsonResponse(json: unknown, init?: ResponseInit): Response {
 	})
 }
 /**
- * Returns a redirect response
+ * Returns a redirect response given a location
  * @param location - redirect location
  * @param init - Response init
+ * @returns response
  */
 export function redirectResponse(
-	location: string,
+	location: string | URL,
 	init?: ResponseInit,
 ): Response {
 	const headers = new Headers(init?.headers)
 
-	headers.set("Location", location)
+	headers.set("Location", location.toString())
 	return new Response(null, {
 		...init,
 		status: init?.status ?? 307,
 		headers,
 	})
+}
+/**
+ * Returns an error response given a status code and message
+ * @param status - Status code
+ * @param message - message
+ * @param headers - headers
+ * @returns response
+ */
+export function errorResponse(
+	status: number,
+	message?: string,
+	headers?: Headers,
+): Response {
+	return new Response(message, {
+		status,
+		statusText: message,
+		headers,
+	})
+}
+
+/**
+ * Returns a url string provided the request and a path
+ * @param request - Request
+ * @returns Template tag
+ */
+export function fixLocation(
+	request: Request,
+): (strings: TemplateStringsArray, ...values: unknown[]) => string {
+	const url = new URL(request.url)
+	return (strings: TemplateStringsArray, ...values: unknown[]) => {
+		const path = strings.reduce((result, str, i) => {
+			return result + str + (values[i] ?? "")
+		}, "")
+		return `${url.origin}${path}`
+	}
 }
 
 const encoder = new TextEncoder()

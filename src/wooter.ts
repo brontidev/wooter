@@ -1,5 +1,5 @@
 import type { IChemin } from "./export/chemin.ts"
-import type { Handler } from "./export/types.ts"
+import type { Handler, MiddlewareHandler } from "./export/types.ts"
 import { Graph } from "./graph.ts"
 
 export type WooterOptions = {
@@ -13,7 +13,7 @@ const optsDefaults: WooterOptions = {
 
 export type WooterWithMethods<
 	TData extends Record<string, unknown> = Record<string, unknown>,
-> = Wooter<TData> & Methods
+> = Wooter<TData> & Methods<TData>
 
 type Methods<TData extends Record<string, unknown> = Record<string, unknown>> =
 	{
@@ -43,7 +43,12 @@ export class Wooter<
 	}
 
 	static withMethods(opts?: Partial<WooterOptions>): WooterWithMethods {
-		const wooter = new Wooter(opts)
+		return new Wooter(opts).useMethods()
+	}
+
+	useMethods(): WooterWithMethods<TData> {
+		// deno-lint-ignore no-this-alias
+		const wooter = this
 		const proxy = new Proxy(wooter, {
 			get(target, prop, receiver) {
 				if (/^[A-Z]+$/g.test(prop.toString())) {
@@ -63,7 +68,20 @@ export class Wooter<
 				return typeof value === "function" ? value.bind(target) : value
 			},
 		})
-		return proxy as WooterWithMethods
+		return proxy as unknown as WooterWithMethods<TData>
+	}
+
+	/**
+	 * reapplies WooterWithMethods type (after adding middleware)
+	 * @returns Wooter with Methods
+	 */
+	retypeWithMethods(): WooterWithMethods<TData> {
+		return this as unknown as WooterWithMethods<TData>
+	}
+
+	use<_TData>(handler: MiddlewareHandler): Wooter<TData & _TData> {
+		this.graph.pushMiddleware(handler)
+		return this as Wooter<TData & _TData>
 	}
 
 	addRoute<TParams extends Record<string, unknown> = Record<string, unknown>>(

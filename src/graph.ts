@@ -1,16 +1,15 @@
-import { Event } from "./event.ts"
+import { Event, MiddlewareEvent } from "./event.ts"
 import { type IChemin, matchFirstExact } from "./export/chemin.ts"
-import { ExitWithoutResponse } from "./export/error.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
 
-function promiseState(p: Promise<unknown>) {
-	const t = {}
-	return Promise.race([p, t])
-		.then(
-			(v) => (v === t) ? "pending" : "fulfilled" as const,
-			() => "rejected" as const,
-		)
-}
+// function promiseState(p: Promise<unknown>) {
+// 	const t = {}
+// 	return Promise.race([p, t])
+// 		.then(
+// 			(v) => (v === t) ? "pending" : "fulfilled" as const,
+// 			() => "rejected" as const,
+// 		)
+// }
 
 /**
  * Datagraph for wooter's routes
@@ -63,6 +62,40 @@ export class Graph {
 		this.middleware.add(middleware)
 	}
 
+	private composeMiddleware(
+		handler: Handler,
+		params: Record<string, unknown>,
+	): (request: Request) => Promise<Response> {
+		const middleware = this.middleware.values().toArray()
+
+		return (request: Request) => {
+			const data: Record<string, unknown> = {}
+			const createNext = (idx: number) => {
+				return async (nextData: Record<string, unknown>) => {
+					Object.assign(data, nextData)
+
+					if (idx >= middleware.length) {
+						const event = new Event(request, params, data)
+						await handler(event)
+						return event.promise
+					}
+
+					const middlewareHandler = middleware[idx]
+					const event = new MiddlewareEvent(
+						request,
+						params,
+						data,
+						createNext(idx + 1),
+					)
+
+					await middlewareHandler(event)
+					return event.promise
+				}
+			}
+			return createNext(0)(data)
+		}
+	}
+
 	/**
 	 * Gets a handler from a path and method
 	 *
@@ -80,23 +113,13 @@ export class Graph {
 		const { chemin, params } = route
 		const path = chemin.stringify()
 		const handler = this.routes.get(path)!.get(method)
+		if (!handler) return null
+
+		const composedHandler = this.composeMiddleware(handler, params)
 		return {
 			params,
 			path,
-			handle(request: Request) {
-				const event = new Event(request, params, {})
-
-				handler!(event).then(async () => {
-					if (await promiseState(event.promise) === "pending") {
-						throw new ExitWithoutResponse()
-					}
-				}, (e) => {
-					console.error(e)
-					event.err(e)
-				})
-
-				return event.promise
-			},
+			handle: composedHandler,
 		}
 	}
 }

@@ -1,8 +1,10 @@
+// This is another example of wooter, which shows off the middleware functionality and namespaces.
+
 import { Wooter } from "@ts-rex/wooter"
 import {
 	errorResponse,
-	type fixLocation,
-	type jsonResponse,
+	fixLocation,
+	jsonResponse,
 	redirectResponse,
 } from "@ts-rex/wooter/util"
 import { chemin, type pNumber } from "./src/export/chemin.ts"
