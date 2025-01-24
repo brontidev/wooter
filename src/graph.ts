@@ -73,7 +73,7 @@ export class Graph {
 		return {
 			params,
 			path,
-			handle: async (request: Request) => {
+			handle: (request: Request) => {
 				const event = new Event(request, params, {})
 				try {
 					handler!(event)
