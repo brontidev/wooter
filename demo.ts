@@ -1,10 +1,12 @@
-import { Wooter } from "./src"
+// Derived from the [oak example](https://github.com/oakserver/acorn/blob/main/_examples/server.ts)
+
+import { Wooter } from "./src/export/index.ts"
 import {
 	errorResponse,
 	fixLocation,
 	jsonResponse,
 	redirectResponse,
-} from "@ts-rex/wooter/util"
+} from "./src/export/util.ts"
 import { chemin, pNumber } from "./src/export/chemin.ts" // "@ts-rex/wooter/chemin"
 
 const db = await Deno.openKv()

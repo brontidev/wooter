@@ -12,10 +12,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 /**
  * Returns a JSON `Response` given a stringifiable object
- * @param json {any}
- * @param init {ResponseInit}
+ * @param json - json data
+ * @param init - Response init
  */
-export function jsonResponse(json: unknown, init?: ResponseInit) {
+export function jsonResponse(json: unknown, init?: ResponseInit): Response {
 	const body = JSON.stringify(json)
 	const headers = new Headers(init?.headers)
 
@@ -34,8 +34,20 @@ export function jsonResponse(json: unknown, init?: ResponseInit) {
 		headers,
 	})
 }
+/**
+ * Returns a redirect response
+ * @param location - redirect location 
+ * @param init - Response init
+ */
+export function redirectResponse(location: string, init?: ResponseInit): Response {
+	const headers = new Headers(init?.headers)
 
-export function redirectResponse() {
+	headers.set('Location', location)
+	return new Response(null, {
+		...init,
+		status: init?.status ?? 307,
+		headers,
+	})
 }
 
 const encoder = new TextEncoder()
