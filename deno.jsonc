@@ -1,16 +1,16 @@
 {
 	"name": "@ts-rex/wooter",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"license": "MIT",
 	"exports": {
 		".": "./src/export/index.ts",
 		"./util": "./src/export/util.ts",
 		"./chemin": "./src/export/chemin.ts",
-		"./types": "./src/export/types.ts",
-		"./error": "./src/export/error.ts"
+		"./types": "./src/export/types.ts"
 	},
 	"tasks": {
-		"check": "deno fmt && deno lint && deno publish --dry-run --allow-dirty"
+		"check": "deno fmt && deno lint && deno publish --dry-run --allow-dirty",
+		"doc": "deno doc --name='@ts-rex/wooter' --lint --html ./src/export/chemin.ts ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts"
 	},
 	"imports": {
 		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1"

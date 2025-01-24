@@ -2,6 +2,9 @@ import type { IChemin } from "./export/chemin.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
 import { Graph } from "./graph.ts"
 
+/**
+ * Options for creating a new Wooter
+ */
 export type WooterOptions = {
 	base?: IChemin
 	throwOnDuplicate?: boolean
@@ -11,41 +14,60 @@ const optsDefaults: WooterOptions = {
 	throwOnDuplicate: true,
 }
 
+/**
+ * A Wooter with HTTP verb method functions
+ */
 export type WooterWithMethods<
 	TData extends Record<string, unknown> = Record<string, unknown>,
 > = Wooter<TData> & Methods<TData>
 
-type Methods<TData extends Record<string, unknown> = Record<string, unknown>> =
-	{
-		[
-			x:
-				| Uppercase<string>
-				| "GET"
-				| "HEAD"
-				| "PUT"
-				| "PATCH"
-				| "POST"
-				| "DELETE"
-		]: <TParams extends Record<string, unknown> = Record<string, unknown>>(
-			path: IChemin,
-			handler: Handler<TParams, TData>,
-		) => WooterWithMethods<TData>
-	}
+/**
+ * Object map of HTTP verb method functions
+ */
+export type Methods<TData extends Record<string, unknown> = Record<string, unknown>> = {
+	[x in "GET" |
+	"HEAD" |
+	"PUT" |
+	"PATCH" |
+	"POST" |
+	"DELETE" | Uppercase<string>]: <TParams extends Record<string, unknown> = Record<string, unknown>>(
+		path: IChemin,
+		handler: Handler<TParams, TData>
+	) => WooterWithMethods<TData>
+}
 
+/**
+ * The main class for Wooter
+ */
 export class Wooter<
 	TData extends Record<string, unknown> = Record<string, unknown>,
 > {
 	private graph: Graph
-
+	/**
+	 * Create a new Wooter
+	 * @param opts - Options
+	 */
 	constructor(private opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
 		this.graph = new Graph(this.opts?.throwOnDuplicate)
 	}
 
+	/**
+	 * Create a new Wooter with HTTP verb methods
+	 * @param opts - Options
+	 * @returns Wooter With Methods
+	 */
 	static withMethods(opts?: Partial<WooterOptions>): WooterWithMethods {
 		return new Wooter(opts).useMethods()
 	}
 
+	/**
+	 * Converts a normal Wooter into a Wooter with HTTP verb methods
+	 * 
+	 * Use this after applying middleware to a Wooter
+	 * 
+	 * @returns Wooter With Methods
+	 */
 	useMethods(): WooterWithMethods<TData> {
 		// deno-lint-ignore no-this-alias
 		const wooter = this
@@ -79,11 +101,22 @@ export class Wooter<
 		return this as unknown as WooterWithMethods<TData>
 	}
 
+	/**
+	 * Apply some middleware to a wooter
+	 * @param handler Middleware Handler
+	 * @returns Wooter
+	 */
 	use<_TData>(handler: MiddlewareHandler): Wooter<TData & _TData> {
 		this.graph.pushMiddleware(handler)
 		return this as Wooter<TData & _TData>
 	}
 
+	/**
+	 * Adds a route to a wooter
+	 * @param method HTTP verb
+	 * @param path chemin
+	 * @param handler route handler
+	 */
 	addRoute<TParams extends Record<string, unknown> = Record<string, unknown>>(
 		method: string,
 		path: IChemin<TParams>,
@@ -92,6 +125,11 @@ export class Wooter<
 		this.graph.addRoute(method, path, handler)
 	}
 
+	/**
+	 * Passes a request through the wooter
+	 * @param request Request
+	 * @returns Response
+	 */
 	async fetch(request: Request): Promise<Response> {
 		console.log(this)
 		const handler = this.graph.getHandler(
@@ -107,7 +145,7 @@ export class Wooter<
 				})
 			}
 		} else {
-			return new Response(`Not found ${request.url}.pathname`, {
+			return new Response(`Not found ${new URL(request.url).pathname}`, {
 				status: 404,
 			})
 		}

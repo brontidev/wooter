@@ -1,21 +1,44 @@
+/**
+ * Event class passed into route handlers
+ */
 export class Event<
 	TParams extends Record<string, unknown> = Record<string, unknown>,
 	TData extends Record<string, unknown> = Record<string, unknown>,
 > {
 	private resolvers: PromiseWithResolvers<Response>
-
+	
+	/**
+	 * Respond function
+	 * 
+	 * @example
+	 * ```ts
+	 * resp(new Response("Hello World!"))
+	 * ```
+	 */
 	get resp(): (response: Response | PromiseLike<Response>) => void {
 		return this.resolvers.resolve
 	}
-
+	
+	/**
+	 * Rejects
+	 */
 	get err(): (err?: unknown) => void {
 		return this.resolvers.reject
 	}
 
+	/**
+	 * Promise used to evaluate response, used internally to send response to the client
+	 */
 	get promise(): Promise<Response> {
 		return this.resolvers.promise
 	}
 
+	/**
+	 * Creates a new Event
+	 * @param request Request
+	 * @param params Parameters
+	 * @param data Wooter data
+	 */
 	constructor(
 		readonly request: Request,
 		readonly params: TParams,
@@ -25,7 +48,9 @@ export class Event<
 	}
 }
 
-// TODO: implement up function
+/**
+ * Event class passed into middleware handlers
+ */
 export class MiddlewareEvent<
 	TParams extends Record<string, unknown> = Record<string, unknown>,
 	TData extends Record<string, unknown> = Record<string, unknown>,
@@ -33,6 +58,13 @@ export class MiddlewareEvent<
 > extends Event<TParams, TData> {
 	private hasCalledUp = false
 
+	/**
+	 * Creates a new Middleware Event
+	 * @param request Request
+	 * @param params Parameters
+	 * @param data Wooter Data
+	 * @param next Next Function
+	 */
 	constructor(
 		override readonly request: Request,
 		override readonly params: TParams,
@@ -42,6 +74,11 @@ export class MiddlewareEvent<
 		super(request, params, data)
 	}
 
+	/**
+	 * Evaluates the next handler
+	 * @param data New data
+	 * @returns Repsonse from the handler
+	 */
 	async up(data?: TNextData): Promise<Response> {
 		if (this.hasCalledUp) {
 			throw new Error("up() was called more than once")

@@ -104,11 +104,15 @@ export class Graph {
 	 * @returns - Handler and match data
 	 */
 	getHandler(pathname: string, method: string) {
-		const route = matchFirstExact(
+		let route = matchFirstExact(
 			this.routeMatchers.values().toArray(),
 			pathname,
 		)
-
+        // if chemin is constructed as "" or "/" it will not match.
+        if(pathname === "/" && this.routeMatchers.has('/')) {
+            route = { chemin: this.routeMatchers.get('/')!, params: {} }
+        }
+        console.log(route, pathname)
 		if (!route) return null
 		const { chemin, params } = route
 		const path = chemin.stringify()

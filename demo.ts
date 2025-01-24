@@ -31,7 +31,7 @@ type Book = {
 	title: string
 }
 
-const wooter = Wooter.withMethods()
+const wooter = new Wooter()
 	.use<{ cookies: Cookies }>(async ({ request, resp, up }) => {
 		const cookieHeader = request.headers.get("cookie") || ""
 		const parsedCookies = parse(cookieHeader)
@@ -107,9 +107,9 @@ const wooter = Wooter.withMethods()
 			if (!session.versionstamp) {
 				return resp(errorResponse(402, "Not Authorized"))
 			}
-			await up({ session })
+			resp(await up({ session }))
 		},
-	)
+	).useMethods()
 
 wooter.GET(chemin(""), async ({ resp, data: { cookies } }) => {
 	const count = parseInt(cookies.get("count") ?? "0") + 1
