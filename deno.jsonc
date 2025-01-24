@@ -1,0 +1,25 @@
+{
+	"name": "@ts-rex/wooter",
+	"version": "0.0.1",
+	"license": "MIT",
+	"exports": {
+		".": "./src/export/index.ts"
+	},
+	"tasks": {
+		"dev": "deno run --watch main.ts"
+	},
+	"imports": {
+		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1"
+	},
+	"publish": {
+		"include": ["./src"]
+	},
+	"lint": {
+		"exclude": ["./basic.ts", "./demo.ts", "./demo2.ts"]
+	},
+	"fmt": {
+		"semiColons": false,
+		"useTabs": true,
+		"indentWidth": 4
+	}
+}

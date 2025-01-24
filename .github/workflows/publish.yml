@@ -1,21 +1,23 @@
 name: Publish
 on:
-  push:
-    branches:
-      - main
+    push:
+        branches:
+            - main
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+    publish:
+        runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      id-token: write
+        permissions:
+            contents: read
+            id-token: write
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
-        with:
-          deno-version: v2
-      - name: Publish package
-        run: deno publish
+        steps:
+            - uses: actions/checkout@v4
+            - uses: denoland/setup-deno@v1
+              with:
+                  deno-version: v2
+            - name: Check
+              run: deno fmt && deno lint
+            - name: Publish package
+              run: deno publish

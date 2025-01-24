@@ -1,6 +1,6 @@
 import { Event } from "./event.ts"
-import { IChemin, match, matchFirstExact } from "./export/chemin.ts"
-import { Handler, MiddlewareHandler } from "./export/types.ts"
+import { type IChemin, type match, matchFirstExact } from "./export/chemin.ts"
+import type { Handler, MiddlewareHandler } from "./export/types.ts"
 
 /**
  * Datagraph for wooter's routes
@@ -23,7 +23,14 @@ export class Graph {
 	 * @param chemin - Chemin path of the route
 	 * @param handler - Handler of the route
 	 */
-	addRoute<TParams extends Record<string, unknown> = Record<string, unknown>, TData extends Record<string, unknown> = Record<string, unknown>>(method: string, chemin: IChemin<TParams>, handler: Handler<TParams, TData>) {
+	addRoute<
+		TParams extends Record<string, unknown> = Record<string, unknown>,
+		TData extends Record<string, unknown> = Record<string, unknown>,
+	>(
+		method: string,
+		chemin: IChemin<TParams>,
+		handler: Handler<TParams, TData>,
+	) {
 		const path = chemin.stringify()
 		if (this.routeMatchers.has(path)) {
 			if (this.throwOnDuplicate) {
@@ -34,7 +41,7 @@ export class Graph {
 		this.routeMatchers.set(path, chemin)
 		const routeMap = this.routes.get(path) ?? new Map()
 		routeMap.set(method, handler)
-        this.routes.set(path, routeMap)
+		this.routes.set(path, routeMap)
 	}
 
 	/**
@@ -59,7 +66,7 @@ export class Graph {
 			pathname,
 		)
 
-        if (!route) return null
+		if (!route) return null
 		const { chemin, params } = route
 		const path = chemin.stringify()
 		const handler = this.routes.get(path)!.get(method)
@@ -67,13 +74,13 @@ export class Graph {
 			params,
 			path,
 			handle: async (request: Request) => {
-                const event = new Event(request, params, {})
-                try {
-                    handler!(event)
-                } catch (e) {
-                    event.err(e)
-                }
-                return event.promise
+				const event = new Event(request, params, {})
+				try {
+					handler!(event)
+				} catch (e) {
+					event.err(e)
+				}
+				return event.promise
 			},
 		}
 	}

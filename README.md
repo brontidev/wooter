@@ -3,8 +3,6 @@
 [![JSR](https://jsr.io/badges/@ts-rex/wooter)](https://jsr.io/@ts-rex/wooter)
 [![JSR Score](https://jsr.io/badges/@ts-rex/wooter/score)](https://jsr.io/@ts-rex/wooter)
 
-
-
 > [!WARNING]
 > wooter is WIP & beta, please do not use it for production until it reaches
 > v1.0.0 **woot at your own risk!**

@@ -1,17 +1,17 @@
 import { Wooter } from "@ts-rex/wooter"
 import {
 	errorResponse,
-	fixLocation,
-	jsonResponse,
+	type fixLocation,
+	type jsonResponse,
 	redirectResponse,
 } from "@ts-rex/wooter/util"
-import { chemin, pNumber } from "./src/export/chemin.ts"
+import { chemin, type pNumber } from "./src/export/chemin.ts"
 import {
 	parse,
 	type ParseOptions,
 	serialize,
 	type SerializeOptions,
-} from "cookie"
+} from "npm:cookie"
 
 export class Redirect {
 	status: number
