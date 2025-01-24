@@ -1,5 +1,5 @@
 import { Event } from "./event.ts"
-import { type IChemin, type match, matchFirstExact } from "./export/chemin.ts"
+import { type IChemin, matchFirstExact } from "./export/chemin.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
 
 /**

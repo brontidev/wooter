@@ -36,13 +36,16 @@ export function jsonResponse(json: unknown, init?: ResponseInit): Response {
 }
 /**
  * Returns a redirect response
- * @param location - redirect location 
+ * @param location - redirect location
  * @param init - Response init
  */
-export function redirectResponse(location: string, init?: ResponseInit): Response {
+export function redirectResponse(
+	location: string,
+	init?: ResponseInit,
+): Response {
 	const headers = new Headers(init?.headers)
 
-	headers.set('Location', location)
+	headers.set("Location", location)
 	return new Response(null, {
 		...init,
 		status: init?.status ?? 307,
