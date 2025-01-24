@@ -6,7 +6,8 @@
 		".": "./src/export/index.ts",
 		"./util": "./src/export/util.ts",
 		"./chemin": "./src/export/chemin.ts",
-		"./types": "./src/export/types.ts"
+		"./types": "./src/export/types.ts",
+		"./error": "./src/export/error.ts"
 	},
 	"tasks": {
 		"check": "deno fmt && deno lint && deno publish --dry-run --allow-dirty"

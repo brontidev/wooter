@@ -81,7 +81,13 @@ export class Wooter<
 			request.method,
 		)
 		if (handler) {
-			return await handler.handle(request)
+			try {
+				return await handler.handle(request)
+			} catch {
+				return new Response("Internal Server Error", {
+					status: 500,
+				})
+			}
 		} else {
 			return new Response(`Not found ${request.url}.pathname`, {
 				status: 404,

@@ -1,6 +1,16 @@
 import { Event } from "./event.ts"
 import { type IChemin, matchFirstExact } from "./export/chemin.ts"
+import { ExitWithoutResponse } from "./export/error.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
+
+function promiseState(p: Promise<unknown>) {
+	const t = {}
+	return Promise.race([p, t])
+		.then(
+			(v) => (v === t) ? "pending" : "fulfilled" as const,
+			() => "rejected" as const,
+		)
+}
 
 /**
  * Datagraph for wooter's routes
@@ -73,14 +83,18 @@ export class Graph {
 		return {
 			params,
 			path,
-			handle: (request: Request) => {
+			handle(request: Request) {
 				const event = new Event(request, params, {})
-				try {
-					handler!(event)
-                    event.
-				} catch (e) {
+
+				handler!(event).then(async () => {
+					if (await promiseState(event.promise) === "pending") {
+						throw new ExitWithoutResponse()
+					}
+				}, (e) => {
+					console.error(e)
 					event.err(e)
-				}
+				})
+
 				return event.promise
 			},
 		}

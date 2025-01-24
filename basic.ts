@@ -42,5 +42,13 @@ wooter.GET(c.chemin("websocket"), async ({ request, err, resp }) => {
 	})
 })
 
+wooter.GET(c.chemin("exits-without-response"), async ({}) => {
+})
+
+wooter.GET(c.chemin("takes-a-while"), async ({ resp }) => {
+	await delay(400)
+	resp(new Response("I'm here! sorry I took so long"))
+})
+
 const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch.bind(wooter))
