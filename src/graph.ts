@@ -108,11 +108,11 @@ export class Graph {
 			this.routeMatchers.values().toArray(),
 			pathname,
 		)
-        // if chemin is constructed as "" or "/" it will not match.
-        if(pathname === "/" && this.routeMatchers.has('/')) {
-            route = { chemin: this.routeMatchers.get('/')!, params: {} }
-        }
-        console.log(route, pathname)
+		// if chemin is constructed as "" or "/" it will not match.
+		if (pathname === "/" && this.routeMatchers.has("/")) {
+			route = { chemin: this.routeMatchers.get("/")!, params: {} }
+		}
+		console.log(route, pathname)
 		if (!route) return null
 		const { chemin, params } = route
 		const path = chemin.stringify()

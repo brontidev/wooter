@@ -2,7 +2,7 @@ import type { Event, MiddlewareEvent } from "../event.ts"
 
 /**
  * Handler for routes
- * 
+ *
  * @param event Event
  * @returns Empty promise
  */
@@ -13,7 +13,7 @@ export type Handler<
 
 /**
  * Handler for middleware
- * 
+ *
  * @param event Event
  * @returns Empty promise
  */

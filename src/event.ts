@@ -6,10 +6,10 @@ export class Event<
 	TData extends Record<string, unknown> = Record<string, unknown>,
 > {
 	private resolvers: PromiseWithResolvers<Response>
-	
+
 	/**
 	 * Respond function
-	 * 
+	 *
 	 * @example
 	 * ```ts
 	 * resp(new Response("Hello World!"))
@@ -18,7 +18,7 @@ export class Event<
 	get resp(): (response: Response | PromiseLike<Response>) => void {
 		return this.resolvers.resolve
 	}
-	
+
 	/**
 	 * Rejects
 	 */

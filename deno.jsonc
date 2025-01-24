@@ -19,11 +19,12 @@
 		"include": ["./src", "./README.md"]
 	},
 	"lint": {
-		"exclude": ["./basic.ts", "./demo.ts", "./demo2.ts"]
+		"exclude": ["./basic.ts", "./demo.ts", "./demo2.ts", "./docs"]
 	},
 	"fmt": {
 		"semiColons": false,
 		"useTabs": true,
-		"indentWidth": 4
+		"indentWidth": 4,
+		"exclude": ["./docs"]
 	}
 }

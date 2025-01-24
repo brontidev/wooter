@@ -24,15 +24,21 @@ export type WooterWithMethods<
 /**
  * Object map of HTTP verb method functions
  */
-export type Methods<TData extends Record<string, unknown> = Record<string, unknown>> = {
-	[x in "GET" |
-	"HEAD" |
-	"PUT" |
-	"PATCH" |
-	"POST" |
-	"DELETE" | Uppercase<string>]: <TParams extends Record<string, unknown> = Record<string, unknown>>(
+export type Methods<
+	TData extends Record<string, unknown> = Record<string, unknown>,
+> = {
+	[
+		x in
+			| "GET"
+			| "HEAD"
+			| "PUT"
+			| "PATCH"
+			| "POST"
+			| "DELETE"
+			| Uppercase<string>
+	]: <TParams extends Record<string, unknown> = Record<string, unknown>>(
 		path: IChemin,
-		handler: Handler<TParams, TData>
+		handler: Handler<TParams, TData>,
 	) => WooterWithMethods<TData>
 }
 
@@ -63,9 +69,9 @@ export class Wooter<
 
 	/**
 	 * Converts a normal Wooter into a Wooter with HTTP verb methods
-	 * 
+	 *
 	 * Use this after applying middleware to a Wooter
-	 * 
+	 *
 	 * @returns Wooter With Methods
 	 */
 	useMethods(): WooterWithMethods<TData> {
