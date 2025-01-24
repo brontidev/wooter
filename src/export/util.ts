@@ -16,20 +16,26 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
  * @param init {ResponseInit}
  */
 export function jsonResponse(json: unknown, init?: ResponseInit) {
-    const body = JSON.stringify(json)
-    const headers = new Headers(init?.headers)
+	const body = JSON.stringify(json)
+	const headers = new Headers(init?.headers)
 
-    if (!headers.has('content-length')) headers.set('content-length', encoder.encode(body).byteLength.toString())
-    if (!headers.has('content-type')) headers.set('content-type', 'application/json');
+	if (!headers.has("content-length")) {
+		headers.set(
+			"content-length",
+			encoder.encode(body).byteLength.toString(),
+		)
+	}
+	if (!headers.has("content-type")) {
+		headers.set("content-type", "application/json")
+	}
 
-    return new Response(body, {
-        ...init,
-        headers
-    });
+	return new Response(body, {
+		...init,
+		headers,
+	})
 }
 
 export function redirectResponse() {
-    
 }
 
-const encoder = new TextEncoder();
+const encoder = new TextEncoder()

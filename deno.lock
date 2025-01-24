@@ -6,6 +6,7 @@
     "jsr:@oak/commons@1": "1.0.0",
     "jsr:@oak/oak@*": "17.1.4",
     "jsr:@std/assert@1": "1.0.11",
+    "jsr:@std/async@*": "1.0.6",
     "jsr:@std/bytes@1": "1.0.2",
     "jsr:@std/crypto@1": "1.0.3",
     "jsr:@std/encoding@1": "1.0.6",
@@ -46,6 +47,9 @@
     },
     "@std/assert@1.0.11": {
       "integrity": "2461ef3c368fe88bc60e186e7744a93112f16fd110022e113a0849e94d1c83c1"
+    },
+    "@std/async@1.0.6": {
+      "integrity": "6d262156dd35c4a72ee1a2f8679be40264f370cfb92e2e13d4eca2ae05e16f34"
     },
     "@std/bytes@1.0.2": {
       "integrity": "fbdee322bbd8c599a6af186a1603b3355e59a5fb1baa139f8f4c3c9a1b3e3d57"
