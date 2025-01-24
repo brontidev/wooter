@@ -17,9 +17,9 @@ export class Event<
 	}
 
 	constructor(
-		protected request: Request,
-		protected params: TParams,
-		protected data: TData,
+		readonly request: Request,
+		readonly params: TParams,
+		readonly data: TData,
 	) {
 		this.resolvers = Promise.withResolvers()
 	}

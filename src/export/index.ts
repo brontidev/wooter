@@ -1,2 +1,2 @@
-export * as path from "./chemin.ts"
+export * as c from "./chemin.ts"
 export * from "../wooter.ts"

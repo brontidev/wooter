@@ -77,6 +77,7 @@ export class Graph {
 				const event = new Event(request, params, {})
 				try {
 					handler!(event)
+                    event.
 				} catch (e) {
 					event.err(e)
 				}

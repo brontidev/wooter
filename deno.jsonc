@@ -1,6 +1,6 @@
 {
 	"name": "@ts-rex/wooter",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"license": "MIT",
 	"exports": {
 		".": "./src/export/index.ts",
@@ -9,13 +9,13 @@
 		"./types": "./src/export/types.ts"
 	},
 	"tasks": {
-		"dev": "deno run --watch main.ts"
+		"check": "deno fmt && deno lint && deno publish --dry-run --allow-dirty"
 	},
 	"imports": {
 		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1"
 	},
 	"publish": {
-		"include": ["./src"]
+		"include": ["./src", "./README.md"]
 	},
 	"lint": {
 		"exclude": ["./basic.ts", "./demo.ts", "./demo2.ts"]

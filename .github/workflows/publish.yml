@@ -18,6 +18,6 @@ jobs:
               with:
                   deno-version: v2
             - name: Check
-              run: deno fmt && deno lint
+              run: deno task check
             - name: Publish package
               run: deno publish
