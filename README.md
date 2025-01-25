@@ -7,7 +7,8 @@
 > \- kai, 2025
 
 > [!WARNING]
-> wooter is WIP & beta, please do not use it for production until it reaches
+> wooter is WIP, the main features are implemented but there are some bugs that
+> may appear. I advise against using this for big influential projects until
 > v1.0.0\
 > **woot around and find out**
 
