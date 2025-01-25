@@ -56,4 +56,4 @@ Deno.serve({ port: 3000 }, fetch.bind(wooter))
 
 - [x] Basic Router
 - [x] Middleware
-- [ ] Namespaces
+- [x] Namespaces

@@ -130,10 +130,7 @@ const wooter = new Wooter()
 	})
 
 wooter
-	// TODO: version 1; namespaces
-	// namespace creates a new wooter, modifies its routes,
-	// and uses its fetch method to route the request into it, you can make namespaces in namespaces.
-	.namespace(chemin("auth"), (wooter) => {
+	.namespace(chemin("auth"), (wooter) => wooter.useMethods(), (wooter) => {
 		wooter.GET(
 			chemin("login"),
 			async ({ request, resp, err, data: { cookies } }) => {
@@ -162,13 +159,15 @@ wooter
 			},
 		)
 	})
-	.namespace(chemin("api"), (wooter) => {
+	.namespace(chemin("api"), (wooter) => wooter.useMethods(), (wooter) => {
 		wooter.GET(
-			"/gateway",
+			chemin("gateway"),
 			async ({ request, resp, err, data: { username } }) => {
-				const { socket, response } = Deno.upgradeWebSocket(request)
-				resp(response)
-				// do some socket stuff
+				resp(jsonResponse({ 'ok': true }))
 			},
 		)
 	})
+
+
+const { fetch } = wooter
+Deno.serve({ port: 3000 }, fetch.bind(wooter))

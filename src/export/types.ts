@@ -17,4 +17,13 @@ export type Handler<
  * @param event Event
  * @returns Empty promise
  */
-export type MiddlewareHandler = (event: MiddlewareEvent) => Promise<void>
+export type MiddlewareHandler<
+	Params extends Record<string, unknown> = Record<string, unknown>,
+	Data extends Record<string, unknown> = Record<string, unknown>,
+> = (event: MiddlewareEvent<Params, Data>) => Promise<void>
+
+export type RouteMatchDefinition = {
+	params: Record<string, unknown>
+	path: string
+	handle: Handler
+}

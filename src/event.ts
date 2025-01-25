@@ -57,6 +57,14 @@ export class MiddlewareEvent<
 	TNextData extends Record<string, unknown> = Record<string, unknown>,
 > extends Event<TParams, TData> {
 	private hasCalledUp = false
+	/**
+ * Evaluates the next handler
+ * @param data New data
+ * @returns Repsonse from the handler
+ */
+	get up(): (data?: TNextData) => Promise<Response> {
+		return this._up.bind(this)
+	}
 
 	/**
 	 * Creates a new Middleware Event
@@ -74,12 +82,7 @@ export class MiddlewareEvent<
 		super(request, params, data)
 	}
 
-	/**
-	 * Evaluates the next handler
-	 * @param data New data
-	 * @returns Repsonse from the handler
-	 */
-	async up(data?: TNextData): Promise<Response> {
+	private async _up(data?: TNextData): Promise<Response> {
 		if (this.hasCalledUp) {
 			throw new Error("up() was called more than once")
 		}

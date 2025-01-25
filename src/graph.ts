@@ -1,6 +1,15 @@
 import { Event, MiddlewareEvent } from "./event.ts"
-import { type IChemin, matchFirstExact } from "./export/chemin.ts"
-import type { Handler, MiddlewareHandler } from "./export/types.ts"
+import {
+	type IChemin,
+	type ICheminMatch,
+	matchFirst,
+	matchFirstExact,
+} from "./export/chemin.ts"
+import type {
+	Handler,
+	MiddlewareHandler,
+	RouteMatchDefinition,
+} from "./export/types.ts"
 
 // function promiseState(p: Promise<unknown>) {
 // 	const t = {}
@@ -10,6 +19,10 @@ import type { Handler, MiddlewareHandler } from "./export/types.ts"
 // 			() => "rejected" as const,
 // 		)
 // }
+
+export class MethodNotAllowed extends Error {
+    override message: string = "MethodNotAllowed"
+}
 
 /**
  * Datagraph for wooter's routes
@@ -22,6 +35,12 @@ export class Graph {
 	private routes = new Map<string, Map<string, Handler>>()
 
 	private middleware = new Set<MiddlewareHandler>()
+
+	private namespaceMatchers = new Map<string, IChemin>()
+	private namespaces = new Map<
+		string,
+		(match: ICheminMatch<unknown>, method: string) => Handler
+	>()
 
 	constructor(private throwOnDuplicate: boolean = true) {}
 
@@ -53,36 +72,54 @@ export class Graph {
 		this.routes.set(path, routeMap)
 	}
 
+	addNamespace(
+		chemin: IChemin<unknown>,
+		matcher: (match: ICheminMatch<unknown>, method: string) => Handler,
+	) {
+		const path = chemin.stringify()
+
+		if (this.namespaceMatchers.has(path)) {
+			if (this.throwOnDuplicate) {
+				throw new Error(`Duplicate namespace path detected: ${path}`)
+			}
+			console.warn(`Duplicate namespace path detected: ${path}`)
+		}
+		this.namespaceMatchers.set(path, chemin)
+		this.namespaces.set(path, matcher)
+	}
+
 	/**
 	 * Add a middleware function to the graph
 	 *
 	 * @param middleware - middleware function
 	 */
-	pushMiddleware(middleware: MiddlewareHandler) {
+	// @ts-expect-error: The generics are not needed here
+	pushMiddleware(middleware: MiddlewareHandler<unknown, unknown>) {
 		this.middleware.add(middleware)
 	}
 
 	private composeMiddleware(
 		handler: Handler,
 		params: Record<string, unknown>,
-	): (request: Request) => Promise<Response> {
+	): Handler {
 		const middleware = this.middleware.values().toArray()
 
-		return (request: Request) => {
-			const data: Record<string, unknown> = {}
+		return (baseEvent) => {
+			const data: Record<string, unknown> = baseEvent.data
+			Object.assign(params, baseEvent.params)
 			const createNext = (idx: number) => {
 				return async (nextData: Record<string, unknown>) => {
 					Object.assign(data, nextData)
 
 					if (idx >= middleware.length) {
-						const event = new Event(request, params, data)
+						const event = new Event(baseEvent.request, params, data)
 						await handler(event)
 						return event.promise
 					}
 
 					const middlewareHandler = middleware[idx]
 					const event = new MiddlewareEvent(
-						request,
+						baseEvent.request,
 						params,
 						data,
 						createNext(idx + 1),
@@ -92,7 +129,7 @@ export class Graph {
 					return event.promise
 				}
 			}
-			return createNext(0)(data)
+			return createNext(0)(data).then(baseEvent.resp, baseEvent.err)
 		}
 	}
 
@@ -103,27 +140,49 @@ export class Graph {
 	 * @param method - HTTP method
 	 * @returns - Handler and match data
 	 */
-	getHandler(pathname: string, method: string) {
-		let route = matchFirstExact(
-			this.routeMatchers.values().toArray(),
+	getHandler(
+		pathname: string | string[],
+		method: string,
+	): RouteMatchDefinition | null {
+		const namespace = matchFirst(
+			this.namespaceMatchers.values().toArray(),
 			pathname,
 		)
-		// if chemin is constructed as "" or "/" it will not match.
-		if (pathname === "/" && this.routeMatchers.has("/")) {
-			route = { chemin: this.routeMatchers.get("/")!, params: {} }
-		}
-		console.log(route, pathname)
-		if (!route) return null
-		const { chemin, params } = route
-		const path = chemin.stringify()
-		const handler = this.routes.get(path)!.get(method)
-		if (!handler) return null
 
-		const composedHandler = this.composeMiddleware(handler, params)
-		return {
-			params,
-			path,
-			handle: composedHandler,
+		if (!namespace) {
+			let route = matchFirstExact(
+				this.routeMatchers.values().toArray(),
+				pathname,
+			)
+			// if chemin is constructed as "" or "/" it will not match.
+			if (pathname === "/" && this.routeMatchers.has("/") && !route) {
+				route = { chemin: this.routeMatchers.get("/")!, params: {} }
+			}
+			if (!route) return null
+			const { chemin, params } = route
+			const path = chemin.stringify()
+            const pathMethods = this.routes.get(path)
+            if(!pathMethods) return null;
+            if(!pathMethods?.has(method)) throw new MethodNotAllowed()
+			const handler = pathMethods.get(method)!
+            
+			const composedHandler = this.composeMiddleware(handler, params)
+			return {
+				params,
+				path,
+				handle: composedHandler,
+			}
+		} else {
+			const { chemin, match } = namespace
+			const { params } = match
+			const path = chemin.stringify()
+			const handler = this.namespaces.get(path)!(match, method)
+			const composedHandler = this.composeMiddleware(handler, params)
+			return {
+				params,
+				path,
+				handle: composedHandler,
+			}
 		}
 	}
 }
