@@ -1,3 +1,5 @@
+import { MiddlewareCalledUpTooManyTimes } from "./export/error.ts"
+
 /**
  * Event class passed into route handlers
  */
@@ -57,6 +59,7 @@ export class MiddlewareEvent<
 	TNextData extends Record<string, unknown> = Record<string, unknown>,
 > extends Event<TParams, TData> {
 	private hasCalledUp = false
+	private _storedResponse: Response | undefined
 
 	/**
 	 * Evaluates the next handler
@@ -65,6 +68,13 @@ export class MiddlewareEvent<
 	 */
 	get up(): (data?: TNextData) => Promise<Response> {
 		return this._up.bind(this)
+	}
+
+	/**
+	 * Stored response from the next handler
+	 */
+	get storedResponse(): Response | undefined {
+		return this._storedResponse
 	}
 
 	/**
@@ -90,11 +100,11 @@ export class MiddlewareEvent<
 	 */
 	private async _up(data?: TNextData): Promise<Response> {
 		if (this.hasCalledUp) {
-			throw new Error("up() was called more than once")
+			throw new MiddlewareCalledUpTooManyTimes()
 		}
 		this.hasCalledUp = true
 		const response = await this.next(data ?? {} as TNextData)
-		this.resp(response)
+		this._storedResponse = response
 		return response
 	}
 }

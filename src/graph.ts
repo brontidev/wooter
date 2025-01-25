@@ -5,7 +5,9 @@ import {
 	matchFirst,
 	matchFirstExact,
 } from "./export/chemin.ts"
+import { ExitWithoutResponse } from "./export/error.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
+import { promiseState } from "./shared.ts"
 
 export type RouteMatchDefinition = {
 	params: Record<string, unknown>
@@ -101,12 +103,20 @@ export class Graph {
 			const data: Record<string, unknown> = baseEvent.data
 			Object.assign(params, baseEvent.params)
 			const createNext = (idx: number) => {
-				return async (nextData: Record<string, unknown>) => {
+				return (nextData: Record<string, unknown>) => {
 					Object.assign(data, nextData)
 
 					if (idx >= middleware.length) {
 						const event = new Event(baseEvent.request, params, data)
-						await handler(event)
+						handler(event).then(async () => {
+							if (
+								await promiseState(event.promise) === "pending"
+							) {
+								return event.err(new ExitWithoutResponse())
+							}
+						}, (e) => {
+							event.err(e)
+						})
 						return event.promise
 					}
 
@@ -118,7 +128,19 @@ export class Graph {
 						createNext(idx + 1),
 					)
 
-					await middlewareHandler(event)
+					middlewareHandler(event).then(async () => {
+						if (await promiseState(event.promise) === "pending") {
+							if (!event.storedResponse) {
+								return await event.up().then(
+									event.resp,
+									event.err,
+								)
+							}
+							event.resp(event.storedResponse)
+						}
+					}, (e) => {
+						event.err(e)
+					})
 					return event.promise
 				}
 			}

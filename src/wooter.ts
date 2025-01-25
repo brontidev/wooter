@@ -1,6 +1,5 @@
 import { Event } from "./event.ts"
 import type { IChemin } from "./export/chemin.ts"
-import { ExitWithoutResponse } from "./export/error.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
 import { Graph, type RouteMatchDefinition } from "./graph.ts"
 
@@ -15,15 +14,6 @@ export type WooterOptions = {
 const optsDefaults: WooterOptions = {
 	throwOnDuplicate: true,
 	catchErrors: true,
-}
-
-function promiseState(p: Promise<unknown>) {
-	const t = {}
-	return Promise.race([p, t])
-		.then(
-			(v) => (v === t) ? "pending" : "fulfilled" as const,
-			() => "rejected" as const,
-		)
 }
 
 /**
@@ -340,14 +330,7 @@ export class Wooter<
 		if (handler) {
 			const event = new Event(request, params ?? {}, data ?? {})
 			try {
-				handler.handle(event).then(async () => {
-					if (await promiseState(event.promise) === "pending") {
-						throw new ExitWithoutResponse()
-					}
-				}, (e) => {
-					console.error(e)
-					event.err(e)
-				})
+				handler.handle(event)
 				return await event.promise
 			} catch (e) {
 				if (!this.opts?.catchErrors) throw e
