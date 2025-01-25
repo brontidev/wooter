@@ -11,7 +11,7 @@
 	},
 	"tasks": {
 		"check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
-		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty",
+		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty"
 		// "doc": "deno doc --name='@ts-rex/wooter' --json"
 	},
 	"imports": {

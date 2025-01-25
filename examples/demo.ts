@@ -30,35 +30,36 @@ type Cookies = {
 const book = z.object({
 	author: z.string(),
 	title: z.string(),
-});
+})
 
-const bookList = z.array(book);
+const bookList = z.array(book)
 
-type Book = z.infer<typeof book>;
+type Book = z.infer<typeof book>
 
 const bookPatch = z.object({
 	author: z.optional(z.string()),
 	title: z.optional(z.string()),
-});
-
+})
 
 const wooter = new Wooter()
 	.use<{ json: () => Promise<any> }>(async ({ request, resp, up, err }) => {
-		let _json: any;
+		let _json: any
 		async function json() {
-			if(_json) return _json
+			if (_json) return _json
 			try {
 				return _json = await request.json()
 			} catch {
-				return resp(new Response("Invalid JSON", {
-					status: 400,
-				}))
+				return resp(
+					new Response("Invalid JSON", {
+						status: 400,
+					}),
+				)
 			}
 		}
 		try {
 			await up({ json })
-		} catch(e) {
-			if(e instanceof ZodError) {
+		} catch (e) {
+			if (e instanceof ZodError) {
 				return resp(jsonResponse(e, {
 					status: 400,
 				}))
@@ -75,13 +76,16 @@ const wooter = new Wooter()
 		> = new Map()
 
 		const cookies: Cookies = {
-			get: (name: string) => cookieMap.get(name)?.value ?? parsedCookies[name],
+			get: (name: string) =>
+				cookieMap.get(name)?.value ?? parsedCookies[name],
 			getAll: () =>
 				Object.fromEntries(
 					Object.entries(parsedCookies).concat(
-						cookieMap.entries().toArray().map(([name, { value }]) => {
-							return [name, value] as const
-						}),
+						cookieMap.entries().toArray().map(
+							([name, { value }]) => {
+								return [name, value] as const
+							},
+						),
 					),
 				),
 			delete: (name: string) => {

@@ -56,7 +56,10 @@ export class Event<
 export class MiddlewareEvent<
 	TParams extends Record<string, unknown> = Record<string, unknown>,
 	TData extends Record<string, unknown> = Record<string, unknown>,
-	TNextData extends Record<string, unknown> | undefined = Record<string, unknown>,
+	TNextData extends Record<string, unknown> | undefined = Record<
+		string,
+		unknown
+	>,
 > extends Event<TParams, TData> {
 	private hasCalledUp = false
 	private _storedResponse: Response | undefined
@@ -66,7 +69,8 @@ export class MiddlewareEvent<
 	 * @param data New data
 	 * @returns Repsonse from the handler
 	 */
-	get up(): TNextData extends undefined ? (() => Promise<Response>) : ((data: TNextData) => Promise<Response>) {
+	get up(): TNextData extends undefined ? (() => Promise<Response>)
+		: ((data: TNextData) => Promise<Response>) {
 		// @ts-ignore: this is typescripts fault
 		return this._up.bind(this)
 	}

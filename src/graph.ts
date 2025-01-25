@@ -53,7 +53,7 @@ export class Graph {
 	) {
 		const path = chemin.stringify()
 		if (this.routes.has(path) && this.routes.get(path)?.has(method)) {
-            if (this.throwOnDuplicate) {
+			if (this.throwOnDuplicate) {
 				throw new Error(`Duplicate path detected: ${path}`)
 			}
 			console.warn(`Duplicate path detected: ${path}`)
@@ -128,7 +128,7 @@ export class Graph {
 					middlewareHandler(event).then(async () => {
 						if (await promiseState(event.promise) === "pending") {
 							if (!event.storedResponse) {
-                                return event.err(new MiddlewareDidntCallUp())
+								return event.err(new MiddlewareDidntCallUp())
 							}
 							event.resp(event.storedResponse)
 						}

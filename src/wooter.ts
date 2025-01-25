@@ -213,7 +213,7 @@ export class Wooter<
 		path: IChemin<TParams & BaseParams>,
 		handler: Handler<TParams & BaseParams, TData>,
 	) {
-        // @ts-expect-error: The generics are not needed here
+		// @ts-expect-error: The generics are not needed here
 		this.graph.addRoute(method, path, handler)
 	}
 	/**
