@@ -7,7 +7,7 @@ import {
 	jsonResponse,
 	redirectResponse,
 } from "@ts-rex/wooter/util"
-import { chemin, type pNumber } from "../src/export/chemin.ts"
+import { chemin, pNumber } from "../src/export/chemin.ts"
 import {
 	parse,
 	type ParseOptions,
@@ -159,14 +159,18 @@ wooter
 			},
 		)
 	})
-	.namespace(chemin("api"), (wooter) => wooter.useMethods(), (wooter) => {
-		wooter.GET(
-			chemin("gateway"),
-			async ({ request, resp, err, data: { username } }) => {
-				resp(jsonResponse({ "ok": true }))
-			},
-		)
-	})
+	.namespace(
+		chemin("api", pNumber("asd")),
+		(wooter) => wooter.useMethods(),
+		(wooter) => {
+			wooter.GET(
+				chemin("gateway"),
+				async ({ request, resp, err, data: { username } }) => {
+					resp(jsonResponse({ "ok": true }))
+				},
+			)
+		},
+	)
 
 const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch.bind(wooter))

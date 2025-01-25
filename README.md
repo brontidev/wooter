@@ -3,12 +3,13 @@
 [![JSR](https://jsr.io/badges/@ts-rex/wooter)](https://jsr.io/@ts-rex/wooter)
 [![JSR Score](https://jsr.io/badges/@ts-rex/wooter/score)](https://jsr.io/@ts-rex/wooter)
 
-> *it's wootin time*
+> _it's wootin time_\
 > \- kai, 2025
 
 > [!WARNING]
 > wooter is WIP & beta, please do not use it for production until it reaches
-> v1.0.0 **woot at your own risk!**
+> v1.0.0\
+> **woot around and find out**
 
 wooter is a simple router library written for Deno, it's inspired by Sveltekit's
 router, as well as Oak and Hono.
@@ -17,8 +18,8 @@ router, as well as Oak and Hono.
   than a return from the route function's promise. This is useful for doing
   extra after responding.
 - Plug-and-play: wooter doesn't implement any server implementation directly.
-  Only the `fetch` method, allowing you to plug it into any existing HTTP server
-  implementations.
+  Instead a `fetch` method is implimented, allowing you to plug it into any
+  existing HTTP server implementations.
 - Smart type-safe paths: Wooter uses [chemin](https://jsr.io/@dldc/chemin) for
   route matching, a function based pattern builder for routes.
 
@@ -60,4 +61,4 @@ Deno.serve({ port: 3000 }, fetch.bind(wooter))
 - [x] Basic Router
 - [x] Middleware
 - [x] Namespaces
-- [ ] wooter.route(path)\[VERB\]
+- [x] wooter.route(path)\[VERB\]

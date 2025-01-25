@@ -57,6 +57,26 @@ export type Methods<
 }
 
 /**
+ * Object map of HTTP verb method functions with no path
+ */
+export type MethodsNoPath<
+	TData extends Record<string, unknown> = Record<string, unknown>,
+	Params extends Record<string, unknown> = Record<string, unknown>,
+> = {
+	[
+		x in
+			| "GET"
+			| "HEAD"
+			| "PUT"
+			| "PATCH"
+			| "POST"
+			| "DELETE"
+			| Uppercase<string>
+	]: (
+		handler: Handler<Params, TData>,
+	) => MethodsNoPath<TData, Params>
+}
+/**
  * The main class for Wooter
  */
 export class Wooter<
@@ -96,7 +116,6 @@ export class Wooter<
 			get(target, prop, receiver) {
 				if (/^[A-Z]+$/g.test(prop.toString())) {
 					return (path: IChemin, handler: Handler) => {
-						// Bind the handler to maintain correct 'this' context
 						wooter.addRoute.call(
 							wooter,
 							prop.toString(),
@@ -107,11 +126,37 @@ export class Wooter<
 					}
 				}
 				const value = Reflect.get(target, prop, receiver)
-				// Bind methods to maintain correct 'this' context
 				return typeof value === "function" ? value.bind(target) : value
 			},
 		})
 		return proxy as unknown as WooterWithMethods<TData, BaseParams>
+	}
+
+	/**
+	 * Creates a route builder using a wooter and a path name
+	 * @param wooter Wooter
+	 * @param path Path
+	 * @returns Route Builder
+	 */
+	private static makeRouteBuilder(wooter: Wooter, path: IChemin): Methods {
+		const proxy = new Proxy({} as Methods, {
+			get(target, prop, receiver) {
+				if (/^[A-Z]+$/g.test(prop.toString())) {
+					return (handler: Handler) => {
+						wooter.addRoute.call(
+							wooter,
+							prop.toString(),
+							path,
+							handler,
+						)
+						return proxy
+					}
+				}
+				const value = Reflect.get(target, prop, receiver)
+				return typeof value === "function" ? value.bind(target) : value
+			},
+		})
+		return proxy as unknown as Methods
 	}
 
 	/**
@@ -276,6 +321,20 @@ export class Wooter<
 				status: 404,
 			})
 		}
+	}
+
+	/**
+	 * Creates a route builder
+	 * @param path Path
+	 * @returns Route Builder
+	 */
+	route<Params extends Record<string, unknown> = Record<string, unknown>>(
+		path: IChemin<Params>,
+	): MethodsNoPath<TData, BaseParams & Params> {
+		return Wooter.makeRouteBuilder(this, path) as unknown as MethodsNoPath<
+			TData,
+			BaseParams & Params
+		>
 	}
 
 	/**
