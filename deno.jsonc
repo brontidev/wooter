@@ -12,7 +12,7 @@
 	"tasks": {
 		"check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
 		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty",
-		"doc": "deno doc --name='@ts-rex/wooter' --lint --html ./src/export/chemin.ts ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts"
+		"doc": "deno doc --name='@ts-rex/wooter' --json"
 	},
 	"imports": {
 		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1"

@@ -20,4 +20,5 @@ export type Handler<
 export type MiddlewareHandler<
 	Params extends Record<string, unknown> = Record<string, unknown>,
 	Data extends Record<string, unknown> = Record<string, unknown>,
-> = (event: MiddlewareEvent<Params, Data>) => Promise<void>
+	NextData extends Record<string, unknown> | undefined = Record<string, unknown>,
+> = (event: MiddlewareEvent<Params, Data, NextData>) => Promise<void>
