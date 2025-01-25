@@ -8,11 +8,13 @@ import { Graph, type RouteMatchDefinition } from "./graph.ts"
  * Options for creating a new Wooter
  */
 export type WooterOptions = {
-	throwOnDuplicate?: boolean
+	throwOnDuplicate: boolean,
+	catchErrors: boolean
 }
 
 const optsDefaults: WooterOptions = {
 	throwOnDuplicate: true,
+	catchErrors: true
 }
 
 function promiseState(p: Promise<unknown>) {
@@ -263,6 +265,7 @@ export class Wooter<
 				})
 				return await event.promise
 			} catch (e) {
+				if(!this.opts?.catchErrors) throw e;
 				console.error(e)
 				return new Response("Internal Server Error", {
 					status: 500,

@@ -7,14 +7,6 @@ import {
 } from "./export/chemin.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
 
-// function promiseState(p: Promise<unknown>) {
-// 	const t = {}
-// 	return Promise.race([p, t])
-// 		.then(
-// 			(v) => (v === t) ? "pending" : "fulfilled" as const,
-// 			() => "rejected" as const,
-// 		)
-// }
 export type RouteMatchDefinition = {
 	params: Record<string, unknown>
 	path: string
