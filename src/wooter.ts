@@ -34,7 +34,12 @@ export type WooterWithMethods<
 	BaseParams extends Record<string, unknown> = Record<string, unknown>,
 > = Wooter<TData, BaseParams> & Methods<TData, BaseParams>
 
-type WooterAddRoute<
+/**
+ * Registers a route to the wooter
+ * @param path chemin
+ * @param handler route handler
+ */
+export type WooterAddRoute<
 	TData extends Record<string, unknown> = Record<string, unknown>,
 	BaseParams extends Record<string, unknown> = Record<string, unknown>,
 	TParams extends Record<string, unknown> = Record<string, unknown>,
@@ -68,7 +73,11 @@ export type Methods<
 		[x in Uppercase<string>]: WooterAddRoute<TData, BaseParams>
 	}
 
-type RouteAddRoute<
+/**
+ * Registers a method to the route
+ * @param handler route handler
+ */
+export type RouteAddRoute<
 	TData extends Record<string, unknown> = Record<string, unknown>,
 	Params extends Record<string, unknown> = Record<string, unknown>,
 > = (
