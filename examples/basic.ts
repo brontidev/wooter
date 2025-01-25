@@ -1,5 +1,5 @@
 import { delay } from "jsr:@std/async"
-import { c, Wooter } from "./src/export/index.ts"
+import { c, Wooter } from "../src/export/index.ts"
 
 const wooter = Wooter.withMethods()
 

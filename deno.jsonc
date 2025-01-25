@@ -19,7 +19,7 @@
 		"include": ["./src", "./README.md"]
 	},
 	"lint": {
-		"exclude": ["./basic.ts", "./demo.ts", "./demo2.ts", "./docs"]
+		"exclude": ["./examples", "./docs"]
 	},
 	"fmt": {
 		"semiColons": false,

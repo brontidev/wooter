@@ -1,13 +1,13 @@
 // this is a simple example of wooter derived from the [oak example](https://github.com/oakserver/acorn/blob/main/_examples/server.ts)
 
-import { Wooter } from "./src/export/index.ts"
+import { Wooter } from "../src/export/index.ts"
 import {
 	errorResponse,
 	fixLocation,
 	jsonResponse,
 	redirectResponse,
-} from "./src/export/util.ts"
-import { chemin, pNumber } from "./src/export/chemin.ts" // "@ts-rex/wooter/chemin"
+} from "../src/export/util.ts"
+import { chemin, pNumber } from "../src/export/chemin.ts" // "@ts-rex/wooter/chemin"
 
 import {
 	parse,
@@ -15,7 +15,7 @@ import {
 	serialize,
 	type SerializeOptions,
 } from "npm:cookie"
-import { WooterWithMethods } from "./src/wooter.ts"
+import { WooterWithMethods } from "../src/wooter.ts"
 
 const db = await Deno.openKv()
 
