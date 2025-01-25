@@ -34,27 +34,46 @@ export type WooterWithMethods<
 	BaseParams extends Record<string, unknown> = Record<string, unknown>,
 > = Wooter<TData, BaseParams> & Methods<TData, BaseParams>
 
+type WooterAddRoute<
+	TData extends Record<string, unknown> = Record<string, unknown>,
+	BaseParams extends Record<string, unknown> = Record<string, unknown>,
+	TParams extends Record<string, unknown> = Record<string, unknown>,
+> = (
+	path: IChemin,
+	handler: Handler<TParams & BaseParams, TData>,
+) => WooterWithMethods<TData, BaseParams>
+
+/**
+ * Object map of HTTP verb method functions
+ */
 /**
  * Object map of HTTP verb method functions
  */
 export type Methods<
 	TData extends Record<string, unknown> = Record<string, unknown>,
 	BaseParams extends Record<string, unknown> = Record<string, unknown>,
-> = {
-	[
-		x in
-			| "GET"
-			| "HEAD"
-			| "PUT"
-			| "PATCH"
-			| "POST"
-			| "DELETE"
-			| Uppercase<string>
-	]: <TParams extends Record<string, unknown> = Record<string, unknown>>(
-		path: IChemin,
-		handler: Handler<TParams & BaseParams, TData>,
-	) => WooterWithMethods<TData, BaseParams>
-}
+> =
+	& {
+		[
+			x in
+				| "GET"
+				| "HEAD"
+				| "PUT"
+				| "PATCH"
+				| "POST"
+				| "DELETE"
+		]: WooterAddRoute<TData, BaseParams>
+	}
+	& {
+		[x in Uppercase<string>]: WooterAddRoute<TData, BaseParams>
+	}
+
+type RouteAddRoute<
+	TData extends Record<string, unknown> = Record<string, unknown>,
+	Params extends Record<string, unknown> = Record<string, unknown>,
+> = (
+	handler: Handler<Params, TData>,
+) => MethodsNoPath<TData, Params>
 
 /**
  * Object map of HTTP verb method functions with no path
@@ -62,20 +81,23 @@ export type Methods<
 export type MethodsNoPath<
 	TData extends Record<string, unknown> = Record<string, unknown>,
 	Params extends Record<string, unknown> = Record<string, unknown>,
-> = {
-	[
-		x in
-			| "GET"
-			| "HEAD"
-			| "PUT"
-			| "PATCH"
-			| "POST"
-			| "DELETE"
-			| Uppercase<string>
-	]: (
-		handler: Handler<Params, TData>,
-	) => MethodsNoPath<TData, Params>
-}
+> =
+	& {
+		[
+			x in Uppercase<string>
+		]: RouteAddRoute<TData, Params>
+	}
+	& {
+		[
+			x in
+				| "GET"
+				| "HEAD"
+				| "PUT"
+				| "PATCH"
+				| "POST"
+				| "DELETE"
+		]: RouteAddRoute<TData, Params>
+	}
 /**
  * The main class for Wooter
  */
