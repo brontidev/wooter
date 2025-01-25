@@ -51,4 +51,4 @@ wooter.GET(c.chemin("takes-a-while"), async ({ resp }) => {
 })
 
 const { fetch } = wooter
-Deno.serve({ port: 3000 }, fetch.bind(wooter))
+Deno.serve({ port: 3000 }, fetch)

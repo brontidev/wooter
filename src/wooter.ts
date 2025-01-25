@@ -318,8 +318,17 @@ export class Wooter<
 	 * @param request Request
 	 * @returns Response
 	 */
-	async fetch(request: Request): Promise<Response>
-	async fetch(
+	get fetch(): (request: Request) => Promise<Response> {
+		return this._fetch.bind(this)
+	}
+
+	/**
+	 * Passes a request through the wooter
+	 * @param request Request
+	 * @returns Response
+	 */
+	private async _fetch(request: Request): Promise<Response>
+	private async _fetch(
 		request: Request,
 		data?: TData,
 		params?: BaseParams,
