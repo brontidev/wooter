@@ -25,3 +25,17 @@ export class MiddlewareCalledUpTooManyTimes extends Error {
 	 */
 	override message: string = "Middleware called up() more than once"
 }
+
+/**
+ * Error thrown when middleware doesn't call up() or resp()
+ */
+export class MiddlewareDidntCallUp extends Error {
+		/**
+	 * Error name
+	 */
+		override name: string = "MiddlewareDidntCallUp"
+		/**
+		 * Error message
+		 */
+		override message: string = "Middleware called up() or resp(), causing the app to return null"
+}

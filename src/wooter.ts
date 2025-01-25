@@ -193,12 +193,13 @@ export class Wooter<
 	 * @param handler Middleware Handler
 	 * @returns Wooter
 	 */
-	use<_TData>(
-		handler: MiddlewareHandler<BaseParams, TData>,
-	): Wooter<TData & _TData, BaseParams> {
+	use<_TData extends Record<string, unknown> | undefined = undefined>(
+		handler: MiddlewareHandler<BaseParams, TData, _TData>,
+	): Wooter<_TData extends undefined ? TData : TData & _TData, BaseParams> {
 		// @ts-expect-error: Generics are not needed here and therefore should be ignored
 		this.graph.pushMiddleware(handler)
-		return this as Wooter<TData & _TData, BaseParams>
+		// @ts-expect-error: Generics are not needed here and therefore should be ignored
+		return this
 	}
 
 	/**
@@ -212,6 +213,7 @@ export class Wooter<
 		path: IChemin<TParams & BaseParams>,
 		handler: Handler<TParams & BaseParams, TData>,
 	) {
+        // @ts-expect-error: The generics are not needed here
 		this.graph.addRoute(method, path, handler)
 	}
 	/**

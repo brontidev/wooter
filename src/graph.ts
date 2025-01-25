@@ -5,7 +5,7 @@ import {
 	matchFirst,
 	matchFirstExact,
 } from "./export/chemin.ts"
-import { ExitWithoutResponse } from "./export/error.ts"
+import { ExitWithoutResponse, MiddlewareDidntCallUp } from "./export/error.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
 import { promiseState } from "./shared.ts"
 
@@ -46,17 +46,14 @@ export class Graph {
 	 * @param chemin - Chemin path of the route
 	 * @param handler - Handler of the route
 	 */
-	addRoute<
-		TParams extends Record<string, unknown> = Record<string, unknown>,
-		TData extends Record<string, unknown> = Record<string, unknown>,
-	>(
+	addRoute(
 		method: string,
-		chemin: IChemin<TParams>,
-		handler: Handler<TParams, TData>,
+		chemin: IChemin,
+		handler: Handler<Record<string, unknown>, Record<string, unknown>>,
 	) {
 		const path = chemin.stringify()
-		if (this.routeMatchers.has(path)) {
-			if (this.throwOnDuplicate) {
+		if (this.routes.has(path) && this.routes.get(path)?.has(method)) {
+            if (this.throwOnDuplicate) {
 				throw new Error(`Duplicate path detected: ${path}`)
 			}
 			console.warn(`Duplicate path detected: ${path}`)
@@ -131,10 +128,7 @@ export class Graph {
 					middlewareHandler(event).then(async () => {
 						if (await promiseState(event.promise) === "pending") {
 							if (!event.storedResponse) {
-								return await event.up().then(
-									event.resp,
-									event.err,
-								)
+                                return event.err(new MiddlewareDidntCallUp())
 							}
 							event.resp(event.storedResponse)
 						}
