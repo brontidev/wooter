@@ -163,11 +163,10 @@ wooter
 		wooter.GET(
 			chemin("gateway"),
 			async ({ request, resp, err, data: { username } }) => {
-				resp(jsonResponse({ 'ok': true }))
+				resp(jsonResponse({ "ok": true }))
 			},
 		)
 	})
-
 
 const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch.bind(wooter))

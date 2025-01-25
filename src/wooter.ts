@@ -1,12 +1,8 @@
 import { Event } from "./event.ts"
 import type { IChemin } from "./export/chemin.ts"
 import { ExitWithoutResponse } from "./export/error.ts"
-import type {
-	Handler,
-	MiddlewareHandler,
-	RouteMatchDefinition,
-} from "./export/types.ts"
-import { Graph } from "./graph.ts"
+import type { Handler, MiddlewareHandler } from "./export/types.ts"
+import { Graph, type RouteMatchDefinition } from "./graph.ts"
 
 /**
  * Options for creating a new Wooter
@@ -138,7 +134,7 @@ export class Wooter<
 	}
 
 	/**
-	 * Adds a route to a wooter
+	 * Registers a route to the wooter
 	 * @param method HTTP verb
 	 * @param path chemin
 	 * @param handler route handler
@@ -150,15 +146,48 @@ export class Wooter<
 	) {
 		this.graph.addRoute(method, path, handler)
 	}
-
+	/**
+	 * Registers another wooter as a namespace
+	 * @param path Path
+	 * @param wooter Wooter
+	 */
 	namespace(path: IChemin, wooter: Wooter): this
+
+	/**
+	 * Registers a namespace using a function that adds routes to a wooter
+	 * @param path Path
+	 * @param routeModifier Route modifier
+	 */
 	namespace<Params extends Record<string, unknown> = Record<string, unknown>>(
 		path: IChemin<Params>,
 		routeModifier: (wooter: Wooter<TData, BaseParams & Params>) => void,
 	): this
+
+	/**
+	 * Registers a namespace using a function that modifies the wooter, and a function that adds routes to a wooter
+	 *
+	 * @param path Path
+	 * @param wooterModifier Wooter modifier
+	 * @param routeModifier Route modifier
+	 *
+	 * @example
+	 * ```ts
+	 * 	wooter.namespace(chemin("group"), (wooter) => wooter.useMethods(), (wooter) => {
+	 * 		wooter.GET(
+	 * 			chemin("subroute"),
+	 * 			async ({ request, resp, err, data: { username } }) => {
+	 * 				resp(jsonResponse({ "ok": true }))
+	 * 			}
+	 * 		)
+	 * 	})
+	 * ```
+	 */
 	namespace<
 		Params extends Record<string, unknown> = Record<string, unknown>,
-		NWooter extends Wooter<TData, BaseParams & Params> = Wooter<TData, BaseParams & Params>
+		NWooter extends Wooter<TData, BaseParams & Params> = Wooter<
+			TData,
+			BaseParams & Params
+		>,
 	>(
 		path: IChemin<BaseParams & Params>,
 		wooterModifier: (
@@ -170,7 +199,10 @@ export class Wooter<
 	): this
 	namespace<
 		Params extends Record<string, unknown> = Record<string, unknown>,
-		NWooter extends Wooter<TData, BaseParams & Params> = Wooter<TData, BaseParams & Params>
+		NWooter extends Wooter<TData, BaseParams & Params> = Wooter<
+			TData,
+			BaseParams & Params
+		>,
 	>(
 		path: IChemin<BaseParams & Params>,
 		wooter:
@@ -250,7 +282,10 @@ export class Wooter<
 	 * @returns Route Match Definition
 	 * @internal
 	 */
-	private match(pathname: string[], method: string): RouteMatchDefinition | null {
+	private match(
+		pathname: string[],
+		method: string,
+	): RouteMatchDefinition | null {
 		return this.graph.getHandler(pathname, method)
 	}
 }

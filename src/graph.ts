@@ -5,11 +5,7 @@ import {
 	matchFirst,
 	matchFirstExact,
 } from "./export/chemin.ts"
-import type {
-	Handler,
-	MiddlewareHandler,
-	RouteMatchDefinition,
-} from "./export/types.ts"
+import type { Handler, MiddlewareHandler } from "./export/types.ts"
 
 // function promiseState(p: Promise<unknown>) {
 // 	const t = {}
@@ -19,9 +15,14 @@ import type {
 // 			() => "rejected" as const,
 // 		)
 // }
+export type RouteMatchDefinition = {
+	params: Record<string, unknown>
+	path: string
+	handle: Handler
+}
 
 export class MethodNotAllowed extends Error {
-    override message: string = "MethodNotAllowed"
+	override message: string = "MethodNotAllowed"
 }
 
 /**
@@ -161,11 +162,11 @@ export class Graph {
 			if (!route) return null
 			const { chemin, params } = route
 			const path = chemin.stringify()
-            const pathMethods = this.routes.get(path)
-            if(!pathMethods) return null;
-            if(!pathMethods?.has(method)) throw new MethodNotAllowed()
+			const pathMethods = this.routes.get(path)
+			if (!pathMethods) return null
+			if (!pathMethods?.has(method)) throw new MethodNotAllowed()
 			const handler = pathMethods.get(method)!
-            
+
 			const composedHandler = this.composeMiddleware(handler, params)
 			return {
 				params,
