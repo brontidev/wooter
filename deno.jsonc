@@ -11,8 +11,8 @@
 	},
 	"tasks": {
 		"check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
-		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty"
-		// "doc": "deno doc --name='@ts-rex/wooter' --json"
+		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty",
+		"doc": "deno doc --name='@ts-rex/wooter' --html --lint ./src/export/chemin.ts ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts"
 	},
 	"imports": {
 		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1"
