@@ -1,15 +1,26 @@
 import type { Event, MiddlewareEvent } from "../event.ts"
 
 /**
+ * Parameters
+ */
+export type Params = Record<string, unknown>
+
+/**
+ * Route data
+ */
+// deno-lint-ignore no-explicit-any
+export type Data = Record<keyof any, unknown>
+
+/**
  * Handler for routes
  *
  * @param event Event
  * @returns Empty promise
  */
 export type Handler<
-	Params extends Record<string, unknown> = Record<string, unknown>,
-	Data extends Record<string, unknown> = Record<string, unknown>,
-> = (event: Event<Params, Data>) => Promise<void>
+	TParams extends Params = Params,
+	TData extends Data = Data,
+> = (event: Event<TParams, TData>) => Promise<void>
 
 /**
  * Handler for middleware
@@ -18,10 +29,7 @@ export type Handler<
  * @returns Empty promise
  */
 export type MiddlewareHandler<
-	Params extends Record<string, unknown> = Record<string, unknown>,
-	Data extends Record<string, unknown> = Record<string, unknown>,
-	NextData extends Record<string, unknown> | undefined = Record<
-		string,
-		unknown
-	>,
-> = (event: MiddlewareEvent<Params, Data, NextData>) => Promise<void>
+	TParams extends Params = Params,
+	TData extends Data = Data,
+	TNextData extends Data | undefined = Data,
+> = (event: MiddlewareEvent<TParams, Data, TNextData>) => Promise<void>

@@ -1,6 +1,11 @@
 import { Event } from "./event.ts"
 import type { IChemin } from "./export/chemin.ts"
-import type { Handler, MiddlewareHandler } from "./export/types.ts"
+import type {
+	Data,
+	Handler,
+	MiddlewareHandler,
+	Params,
+} from "./export/types.ts"
 import { MethodNotAllowed } from "./graph.ts"
 import { Graph, type RouteMatchDefinition } from "./graph.ts"
 
@@ -23,8 +28,8 @@ const optsDefaults: WooterOptions = {
  * A Wooter with HTTP verb method functions
  */
 export type WooterWithMethods<
-	TData extends Record<string, unknown> = Record<string, unknown>,
-	BaseParams extends Record<string, unknown> = Record<string, unknown>,
+	TData extends Data = Data,
+	BaseParams extends Params = Params,
 > = Wooter<TData, BaseParams> & Methods<TData, BaseParams>
 
 /**
@@ -33,9 +38,9 @@ export type WooterWithMethods<
  * @param handler route handler
  */
 export type WooterAddRoute<
-	TData extends Record<string, unknown> = Record<string, unknown>,
-	BaseParams extends Record<string, unknown> = Record<string, unknown>,
-	TParams extends Record<string, unknown> = Record<string, unknown>,
+	TData extends Data = Data,
+	BaseParams extends Params = Params,
+	TParams extends Params = Params,
 > = (
 	path: IChemin,
 	handler: Handler<TParams & BaseParams, TData>,
@@ -48,8 +53,8 @@ export type WooterAddRoute<
  * Object map of HTTP verb method functions
  */
 export type Methods<
-	TData extends Record<string, unknown> = Record<string, unknown>,
-	BaseParams extends Record<string, unknown> = Record<string, unknown>,
+	TData extends Data = Data,
+	BaseParams extends Params = Params,
 > =
 	& {
 		[
@@ -71,23 +76,23 @@ export type Methods<
  * @param handler route handler
  */
 export type RouteAddRoute<
-	TData extends Record<string, unknown> = Record<string, unknown>,
-	Params extends Record<string, unknown> = Record<string, unknown>,
+	TData extends Data = Data,
+	TParams extends Params = Params,
 > = (
-	handler: Handler<Params, TData>,
-) => MethodsNoPath<TData, Params>
+	handler: Handler<TParams, TData>,
+) => MethodsNoPath<TData, TParams>
 
 /**
  * Object map of HTTP verb method functions with no path
  */
 export type MethodsNoPath<
-	TData extends Record<string, unknown> = Record<string, unknown>,
-	Params extends Record<string, unknown> = Record<string, unknown>,
+	TData extends Data = Data,
+	TParams extends Params = Params,
 > =
 	& {
 		[
 			x in Uppercase<string>
-		]: RouteAddRoute<TData, Params>
+		]: RouteAddRoute<TData, TParams>
 	}
 	& {
 		[
@@ -98,14 +103,14 @@ export type MethodsNoPath<
 				| "PATCH"
 				| "POST"
 				| "DELETE"
-		]: RouteAddRoute<TData, Params>
+		]: RouteAddRoute<TData, TParams>
 	}
 /**
  * The main class for Wooter
  */
 export class Wooter<
-	TData extends Record<string, unknown> = Record<string, unknown>,
-	BaseParams extends Record<string, unknown> = Record<string, unknown>,
+	TData extends Data = Data,
+	BaseParams extends Params = Params,
 > {
 	private graph: Graph
 	/**
@@ -196,12 +201,12 @@ export class Wooter<
 	 * @param handler Middleware Handler
 	 * @returns Wooter
 	 */
-	use<NewData extends Record<string, unknown> | undefined = undefined>(
+	use<NewData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<BaseParams, TData, NewData>,
 	): Wooter<NewData extends undefined ? TData : TData & NewData, BaseParams> {
-		// @ts-expect-error: Generics are not needed here and therefore should be ignored
+		// @ts-expect-error: useless Generics
 		this.graph.pushMiddleware(handler)
-		// @ts-expect-error: Generics are not needed here and therefore should be ignored
+		// @ts-expect-error: useless Generics
 		return this
 	}
 
@@ -211,12 +216,12 @@ export class Wooter<
 	 * @param path chemin
 	 * @param handler route handler
 	 */
-	addRoute<TParams extends Record<string, unknown> = Record<string, unknown>>(
+	addRoute<TParams extends Params = Params>(
 		method: string,
 		path: IChemin<TParams & BaseParams>,
 		handler: Handler<TParams & BaseParams, TData>,
 	) {
-		// @ts-expect-error: The generics are not needed here
+		// @ts-expect-error: useless Generics
 		this.graph.addRoute(method, path, handler)
 	}
 	/**
@@ -231,9 +236,9 @@ export class Wooter<
 	 * @param path Path
 	 * @param routeModifier Route modifier
 	 */
-	namespace<Params extends Record<string, unknown> = Record<string, unknown>>(
-		path: IChemin<Params>,
-		routeModifier: (wooter: Wooter<TData, BaseParams & Params>) => void,
+	namespace<TParams extends Params = Params>(
+		path: IChemin<TParams>,
+		routeModifier: (wooter: Wooter<TData, BaseParams & TParams>) => void,
 	): this
 
 	/**
@@ -256,33 +261,33 @@ export class Wooter<
 	 * ```
 	 */
 	namespace<
-		Params extends Record<string, unknown> = Record<string, unknown>,
-		NWooter extends Wooter<TData, BaseParams & Params> = Wooter<
+		TParams extends Params = Params,
+		NWooter extends Wooter<TData, BaseParams & TParams> = Wooter<
 			TData,
-			BaseParams & Params
+			BaseParams & TParams
 		>,
 	>(
-		path: IChemin<BaseParams & Params>,
+		path: IChemin<BaseParams & TParams>,
 		wooterModifier: (
-			wooter: Wooter<TData, BaseParams & Params>,
+			wooter: Wooter<TData, BaseParams & TParams>,
 		) => NWooter,
 		routeModifier: (
 			wooter: NWooter,
 		) => void,
 	): this
 	namespace<
-		Params extends Record<string, unknown> = Record<string, unknown>,
-		NWooter extends Wooter<TData, BaseParams & Params> = Wooter<
+		TParams extends Params = Params,
+		NWooter extends Wooter<TData, BaseParams & TParams> = Wooter<
 			TData,
-			BaseParams & Params
+			BaseParams & TParams
 		>,
 	>(
-		path: IChemin<BaseParams & Params>,
+		path: IChemin<BaseParams & TParams>,
 		wooter:
 			| Wooter
-			| ((wooter: Wooter<TData, BaseParams & Params>) => void)
+			| ((wooter: Wooter<TData, BaseParams & TParams>) => void)
 			| ((
-				wooter: Wooter<TData, BaseParams & Params>,
+				wooter: Wooter<TData, BaseParams & TParams>,
 			) => NWooter),
 		secondModifier?: (wooter: NWooter) => void,
 	): this {
@@ -365,13 +370,11 @@ export class Wooter<
 	 * @param path Path
 	 * @returns Route Builder
 	 */
-	route<Params extends Record<string, unknown> = Record<string, unknown>>(
-		path: IChemin<Params>,
-	): MethodsNoPath<TData, BaseParams & Params> {
-		return Wooter.makeRouteBuilder(this, path) as unknown as MethodsNoPath<
-			TData,
-			BaseParams & Params
-		>
+	route<TParams extends Params>(
+		path: IChemin<TParams>,
+	): MethodsNoPath<TData, BaseParams & TParams> {
+		// @ts-expect-error: useless Generics
+		return Wooter.makeRouteBuilder(this, path)
 	}
 
 	/**

@@ -1,11 +1,12 @@
 import { MiddlewareCalledUpTooManyTimes } from "./export/error.ts"
+import type { Data, Params } from "./export/types.ts"
 
 /**
  * Event class passed into route handlers
  */
 export class Event<
-	TParams extends Record<string, unknown> = Record<string, unknown>,
-	TData extends Record<string, unknown> = Record<string, unknown>,
+	TParams extends Params = Params,
+	TData extends Data = Data,
 > {
 	private resolvers: PromiseWithResolvers<Response>
 
@@ -60,12 +61,9 @@ export class Event<
  * Event class passed into middleware handlers
  */
 export class MiddlewareEvent<
-	TParams extends Record<string, unknown> = Record<string, unknown>,
-	TData extends Record<string, unknown> = Record<string, unknown>,
-	TNextData extends Record<string, unknown> | undefined = Record<
-		string,
-		unknown
-	>,
+	TParams extends Params = Params,
+	TData extends Data = Data,
+	TNextData extends Data | undefined = Data,
 > extends Event<TParams, TData> {
 	private hasCalledUp = false
 	private _storedResponse: Response | undefined
@@ -109,7 +107,8 @@ export class MiddlewareEvent<
 
 	/**
 	 * Evaluates the next handler
-	 * @param data New data
+	 * @param data Added data
+	 * @param request New Request
 	 * @returns Repsonse from the handler
 	 */
 	private async _up(data: TNextData, request?: Request): Promise<Response> {
