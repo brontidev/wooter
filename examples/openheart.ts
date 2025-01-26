@@ -1,5 +1,7 @@
-/**
- * OpenHeart protocol API
+const doc = `
+OpenHeart protocol API
+
+https://wooter-example-openheart.deno.dev
 
 GET /<domain>/<uid> to look up reactions for <uid> under <domain>
 GET /<domain> to look up reactions for everything under <domain>
@@ -8,11 +10,21 @@ POST /<domain>/<uid> to send an emoji
 
 <uid> must not contain a forward slash.
 <domain> owner has the right to remove data under its domain scope.
- */
 
-import { c, Wooter } from "../src/export/index.ts"
-import { errorResponse } from "../src/export/util.ts"
-import { jsonResponse } from "../src/export/util.ts"
+( derived from https://github.com/dddddddddzzzz/api-oh )
+
+code available at https://dash.deno.com/playground/wooter-example-openheart
+
+----- Test in CLI -----
+Send emoji:
+curl -d '<emoji>' -X POST 'https://wooter-example-openheart.deno.dev/example.com/uid'
+
+Get all emoji counts for /example.com/uid:
+curl 'https://wooter-example-openheart.deno.dev/example.com/uid'
+`
+
+import { c, Wooter } from "jsr:@ts-rex/wooter"
+import { errorResponse, jsonResponse } from "jsr:@ts-rex/wooter/util"
 
 /**
  * [emojis, 'example.com', 'uid', '🩷'] -> number
@@ -69,6 +81,10 @@ function ensureEmoji(emoji: string) {
 
 	if (/\p{Emoji}/u.test(parsedEmoji)) return parsedEmoji
 }
+
+wooter.GET(c.chemin(), async ({ resp }) => {
+    resp(new Response(doc))
+})
 
 wooter.namespace(
 	c.chemin(c.pString("_domain")),
