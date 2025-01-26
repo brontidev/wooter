@@ -338,17 +338,22 @@ export class Wooter<
 			routeDefinition = this.graph.getHandler(
 				new URL(request.url).pathname,
 				request.method,
-			) ?? (() => { throw new NotFound() })()
-		} catch(e) {
-			if(e instanceof MethodNotAllowed) {
+			) ?? (() => {
+				throw new NotFound()
+			})()
+		} catch (e) {
+			if (e instanceof MethodNotAllowed) {
 				return new Response(`Method not allowed`, {
 					status: 405,
 				})
 			}
-			if(e instanceof NotFound) {
-				return new Response(`Not found ${new URL(request.url).pathname}`, {
-					status: 404,
-				})
+			if (e instanceof NotFound) {
+				return new Response(
+					`Not found ${new URL(request.url).pathname}`,
+					{
+						status: 404,
+					},
+				)
 			}
 			throw e
 		}
