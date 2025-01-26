@@ -38,5 +38,5 @@ export class MiddlewareDidntCallUp extends Error {
 	 * Error message
 	 */
 	override message: string =
-		"Middleware called up() or resp(), causing the app to return null"
+		"Middleware didn't call up() or resp(), causing the app to return null"
 }
