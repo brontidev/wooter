@@ -1,7 +1,10 @@
 import { Event } from "./event.ts"
 import type { IChemin } from "./export/chemin.ts"
 import type { Handler, MiddlewareHandler } from "./export/types.ts"
+import { MethodNotAllowed } from "./graph.ts"
 import { Graph, type RouteMatchDefinition } from "./graph.ts"
+
+class NotFound {}
 
 /**
  * Options for creating a new Wooter
@@ -193,9 +196,9 @@ export class Wooter<
 	 * @param handler Middleware Handler
 	 * @returns Wooter
 	 */
-	use<_TData extends Record<string, unknown> | undefined = undefined>(
-		handler: MiddlewareHandler<BaseParams, TData, _TData>,
-	): Wooter<_TData extends undefined ? TData : TData & _TData, BaseParams> {
+	use<NewData extends Record<string, unknown> | undefined = undefined>(
+		handler: MiddlewareHandler<BaseParams, TData, NewData>,
+	): Wooter<NewData extends undefined ? TData : TData & NewData, BaseParams> {
 		// @ts-expect-error: Generics are not needed here and therefore should be ignored
 		this.graph.pushMiddleware(handler)
 		// @ts-expect-error: Generics are not needed here and therefore should be ignored
@@ -325,25 +328,34 @@ export class Wooter<
 		data?: TData,
 		params?: BaseParams,
 	): Promise<Response> {
-		const handler = this.graph.getHandler(
-			new URL(request.url).pathname,
-			request.method,
-		)
-		if (handler) {
-			const event = new Event(request, params ?? {}, data ?? {})
-			try {
-				handler.handle(event)
-				return await event.promise
-			} catch (e) {
-				if (!this.opts?.catchErrors) throw e
-				console.error(e)
-				return new Response("Internal Server Error", {
-					status: 500,
+		let routeDefinition: RouteMatchDefinition
+		try {
+			routeDefinition = this.graph.getHandler(
+				new URL(request.url).pathname,
+				request.method,
+			) ?? (() => { throw new NotFound() })()
+		} catch(e) {
+			if(e instanceof MethodNotAllowed) {
+				return new Response(`Method not allowed`, {
+					status: 405,
 				})
 			}
-		} else {
-			return new Response(`Not found ${new URL(request.url).pathname}`, {
-				status: 404,
+			if(e instanceof NotFound) {
+				return new Response(`Not found ${new URL(request.url).pathname}`, {
+					status: 404,
+				})
+			}
+			throw e
+		}
+		const event = new Event(request, params ?? {}, data ?? {})
+		try {
+			routeDefinition.handle(event)
+			return await event.promise
+		} catch (e) {
+			if (!this.opts?.catchErrors) throw e
+			console.error(e)
+			return new Response("Internal Server Error", {
+				status: 500,
 			})
 		}
 	}

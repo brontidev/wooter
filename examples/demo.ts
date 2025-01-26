@@ -47,8 +47,9 @@ const wooter = new Wooter()
 		async function json() {
 			if (_json) return _json
 			try {
-				return _json = await request.json()
-			} catch {
+				// we want to clone this incase something else also wants to read the same request data!
+				return _json = await request.clone().json()
+			} catch (e) {
 				return resp(
 					new Response("Invalid JSON", {
 						status: 400,
@@ -60,7 +61,7 @@ const wooter = new Wooter()
 			await up({ json })
 		} catch (e) {
 			if (e instanceof ZodError) {
-				return resp(jsonResponse(e, {
+				return resp(jsonResponse(e.issues, {
 					status: 400,
 				}))
 			}
@@ -192,8 +193,8 @@ wooter.route(chemin("book", pNumber("id")))
 		}
 		resp(jsonResponse(maybeBook.value))
 	})
-	.PUT(async ({ params: { id }, request, resp }) => {
-		const body = await request.json()
+	.PUT(async ({ params: { id }, resp, data: { json } }) => {
+		const body = book.parse(await json())
 		const bookEntry = await db.get<Book>(["books", id])
 		if (!bookEntry.value) {
 			return resp(errorResponse(404, "Book not found"))
@@ -207,8 +208,8 @@ wooter.route(chemin("book", pNumber("id")))
 		}
 		resp(jsonResponse(body))
 	})
-	.PATCH(async ({ params: { id }, request, resp }) => {
-		const body = await request.json()
+	.PATCH(async ({ params: { id }, resp, data: { json } }) => {
+		const body = bookPatch.parse(await json())
 		const bookEntry = await db.get<Book>(["books", id])
 		if (!bookEntry.value) {
 			return resp(errorResponse(404, "Book not found"))
@@ -225,7 +226,7 @@ wooter.route(chemin("book", pNumber("id")))
 	})
 	.DELETE(async ({ params: { id }, resp }) => {
 		await db.delete(["books", id])
-		resp(jsonResponse({ message: "Book deleted" }))
+		resp(jsonResponse("ok"))
 	})
 
 const { fetch } = wooter
