@@ -39,7 +39,10 @@ export class Graph {
 	private namespaceMatchers = new Map<string, IChemin>()
 	private namespaces = new Map<
 		string,
-		(match: ICheminMatch<unknown>, method: string) => RouteMatchDefinition | null
+		(
+			match: ICheminMatch<unknown>,
+			method: string,
+		) => RouteMatchDefinition | null
 	>()
 
 	constructor(private throwOnDuplicate: boolean = true) {}
@@ -75,7 +78,10 @@ export class Graph {
 
 	addNamespace(
 		chemin: IChemin<unknown>,
-		matcher: (match: ICheminMatch<unknown>, method: string) => RouteMatchDefinition | null,
+		matcher: (
+			match: ICheminMatch<unknown>,
+			method: string,
+		) => RouteMatchDefinition | null,
 	) {
 		const path = chemin.stringify()
 
@@ -109,7 +115,10 @@ export class Graph {
 			const data: Data = baseEvent.data
 			Object.assign(params, baseEvent.params)
 			const createNext = (idx: number) => {
-				return (nextData: Record<string, unknown>, request: Request) => {
+				return (
+					nextData: Record<string, unknown>,
+					request: Request,
+				) => {
 					Object.assign(data, nextData)
 
 					if (idx >= middleware.length) {
@@ -172,14 +181,14 @@ export class Graph {
 
 		if (!namespace) {
 			const routeMatcher = this.routeMatchers.get(method)
-			if(!routeMatcher) throw new MethodNotAllowed()
+			if (!routeMatcher) throw new MethodNotAllowed()
 			let route = matchFirstExact(
 				routeMatcher.values().toArray(),
 				pathname,
 			)
 			// if chemin is constructed as "" or "/" it will not match.
 			if (pathname === "/" && routeMatcher.has("/") && !route) {
-				route = { chemin: routeMatcher.get('/')!, params: {} }
+				route = { chemin: routeMatcher.get("/")!, params: {} }
 			}
 			if (!route) return null
 			const { chemin, params } = route
@@ -199,7 +208,7 @@ export class Graph {
 			const { params } = match
 			const path = chemin.stringify()
 			const handler = this.namespaces.get(path)!(match, method)
-			if(!handler) return null
+			if (!handler) return null
 			return {
 				params,
 				path,

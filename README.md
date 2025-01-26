@@ -7,9 +7,9 @@
 > \- kai, 2025
 
 > [!WARNING]
-> wooter is beta & WIP, the main features are implemented but there are some bugs that
-> may appear. I advise against using this for big influential projects until
-> v1.0.0\
+> wooter is beta & WIP, the main features are implemented but there are some
+> bugs that may appear. I advise against using this for big influential projects
+> until v1.0.0\
 > **woot around and find out**
 
 wooter is a simple router library written for Deno, it's inspired by Sveltekit's
@@ -19,8 +19,9 @@ router, as well as Oak and Hono.
   than a return from the route function's promise. This is useful for doing
   extra after responding.
 - Plug-and-play: wooter doesn't implement any server implementation directly.
-  Instead a `fetch` method is implemented, meaning wooter works anywhere where `Request` and `Response`, and `Promise.withResolvers()` are available, allowing you to plug it into any
-  existing HTTP server implementations.
+  Instead a `fetch` method is implemented, meaning wooter works anywhere where
+  `Request` and `Response`, and `Promise.withResolvers()` are available,
+  allowing you to plug it into any existing HTTP server implementations.
 - Smart type-safe paths: Wooter uses [chemin](https://jsr.io/@dldc/chemin) for
   route matching, a function based pattern builder for routes.
 
