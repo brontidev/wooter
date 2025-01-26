@@ -10,6 +10,11 @@ export class Event<
 	private resolvers: PromiseWithResolvers<Response>
 
 	/**
+	 * 
+	 */
+	readonly url: URL
+
+	/**
 	 * Respond function
 	 *
 	 * @example
@@ -47,6 +52,7 @@ export class Event<
 		readonly data: TData,
 	) {
 		this.resolvers = Promise.withResolvers()
+		this.url = new URL(request.url)
 	}
 }
 
