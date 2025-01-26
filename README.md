@@ -29,7 +29,7 @@ router, as well as Oak and Hono.
 
 ```ts
 import { delay } from "jsr:@std/async"
-import { c, Wooter } from "jsr:@bronti/wooter
+import { c, Wooter } from "jsr:@bronti/wooter"
 
 const wooter = Wooter.withMethods()
 
