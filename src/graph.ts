@@ -100,7 +100,7 @@ export class Graph {
 			const data: Record<string, unknown> = baseEvent.data
 			Object.assign(params, baseEvent.params)
 			const createNext = (idx: number) => {
-				return (nextData: Record<string, unknown>) => {
+				return (nextData: Record<string, unknown>, request: Request) => {
 					Object.assign(data, nextData)
 
 					if (idx >= middleware.length) {
@@ -119,7 +119,7 @@ export class Graph {
 
 					const middlewareHandler = middleware[idx]
 					const event = new MiddlewareEvent(
-						baseEvent.request,
+						request,
 						params,
 						data,
 						createNext(idx + 1),
@@ -138,7 +138,10 @@ export class Graph {
 					return event.promise
 				}
 			}
-			return createNext(0)(data).then(baseEvent.resp, baseEvent.err)
+			return createNext(0)(data, baseEvent.request).then(
+				baseEvent.resp,
+				baseEvent.err,
+			)
 		}
 	}
 

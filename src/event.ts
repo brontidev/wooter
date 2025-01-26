@@ -10,7 +10,7 @@ export class Event<
 	private resolvers: PromiseWithResolvers<Response>
 
 	/**
-	 * 
+	 * Request URL
 	 */
 	readonly url: URL
 
@@ -99,7 +99,10 @@ export class MiddlewareEvent<
 		override readonly request: Request,
 		override readonly params: TParams,
 		override readonly data: TData,
-		private readonly next: (data: TNextData) => Promise<Response>,
+		private readonly next: (
+			data: TNextData,
+			request: Request,
+		) => Promise<Response>,
 	) {
 		super(request, params, data)
 	}
@@ -109,12 +112,15 @@ export class MiddlewareEvent<
 	 * @param data New data
 	 * @returns Repsonse from the handler
 	 */
-	private async _up(data: TNextData): Promise<Response> {
+	private async _up(data: TNextData, request?: Request): Promise<Response> {
 		if (this.hasCalledUp) {
 			throw new MiddlewareCalledUpTooManyTimes()
 		}
 		this.hasCalledUp = true
-		const response = await this.next(data ?? {} as TNextData)
+		const response = await this.next(
+			data,
+			(request ?? this.request).clone(),
+		)
 		this._storedResponse = response
 		return response
 	}
