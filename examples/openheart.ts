@@ -1,3 +1,5 @@
+'use strict'
+
 const doc = `
 OpenHeart protocol API
 
@@ -102,10 +104,12 @@ wooter.namespace(
 
 				resp(
 					jsonResponse(
-						(await Array.fromAsync(kvList)).reduce((obj, entry) => {
-							obj[entry.key[2]] = entry.value
-							return obj
-						}, {}),
+						Object.fromEntries((await Array.fromAsync(kvList)).reduce((map, entry) => {
+                            const key = entry.key[2]
+                            const value = map.get(key) ?? 0
+                            map.set(key, value + (entry.value?? 0))
+							return map
+						}, new Map()).entries()),
 					),
 				)
 			},
