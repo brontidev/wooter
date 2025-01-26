@@ -6,11 +6,16 @@ import {
 	matchFirstExact,
 } from "./export/chemin.ts"
 import { ExitWithoutResponse, MiddlewareDidntCallUp } from "./export/error.ts"
-import type { Handler, MiddlewareHandler } from "./export/types.ts"
+import type {
+	Data,
+	Handler,
+	MiddlewareHandler,
+	Params,
+} from "./export/types.ts"
 import { promiseState } from "./shared.ts"
 
 export type RouteMatchDefinition = {
-	params: Record<string, unknown>
+	params: Params
 	path: string
 	handle: Handler
 }
@@ -49,7 +54,7 @@ export class Graph {
 	addRoute(
 		method: string,
 		chemin: IChemin,
-		handler: Handler<Record<string, unknown>, Record<string, unknown>>,
+		handler: Handler,
 	) {
 		const path = chemin.stringify()
 		if (this.routes.has(path) && this.routes.get(path)?.has(method)) {
@@ -92,12 +97,12 @@ export class Graph {
 
 	private composeMiddleware(
 		handler: Handler,
-		params: Record<string, unknown>,
+		params: Params,
 	): Handler {
 		const middleware = this.middleware.values().toArray()
 
 		return (baseEvent) => {
-			const data: Record<string, unknown> = baseEvent.data
+			const data: Data = baseEvent.data
 			Object.assign(params, baseEvent.params)
 			const createNext = (idx: number) => {
 				return (nextData: Record<string, unknown>, request: Request) => {
