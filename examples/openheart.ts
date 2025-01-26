@@ -23,8 +23,8 @@ Get all emoji counts for /example.com/uid:
 curl 'https://wooter-example-openheart.deno.dev/example.com/uid'
 `
 
-import { c, Wooter } from "jsr:@ts-rex/wooter"
-import { errorResponse, jsonResponse } from "jsr:@ts-rex/wooter/util"
+import { c, Wooter } from "jsr:@bronti/wooter"
+import { errorResponse, jsonResponse } from "jsr:@bronti/wooter/util"
 
 /**
  * [emojis, 'example.com', 'uid', '🩷'] -> number
@@ -83,7 +83,7 @@ function ensureEmoji(emoji: string) {
 }
 
 wooter.GET(c.chemin(), async ({ resp }) => {
-    resp(new Response(doc))
+	resp(new Response(doc))
 })
 
 wooter.namespace(
