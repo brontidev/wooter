@@ -1,11 +1,6 @@
 import { Event } from "./event.ts"
 import type { IChemin } from "./export/chemin.ts"
-import type {
-	Data,
-	Handler,
-	MiddlewareHandler,
-	Params,
-} from "./export/types.ts"
+import type { Data, Handler, MiddlewareHandler, Params } from "./export/types.ts"
 import { MethodNotAllowed } from "./graph.ts"
 import { Graph, type RouteMatchDefinition } from "./graph.ts"
 
@@ -40,9 +35,8 @@ export type WooterWithMethods<
 export type WooterAddRoute<
 	TData extends Data = Data,
 	BaseParams extends Params = Params,
-	TParams extends Params = Params,
-> = (
-	path: IChemin,
+> = <TParams extends Params = Params>(
+	path: IChemin<TParams>,
 	handler: Handler<TParams & BaseParams, TData>,
 ) => WooterWithMethods<TData, BaseParams>
 
@@ -306,9 +300,8 @@ export class Wooter<
 			finalWooter = wooter
 		}
 
-		// @ts-expect-error: useless Generics
-		this.graph.addNamespace(path, ({ rest }, method) => {
-			finalWooter.match([...rest], method)
+		this.graph.addNamespace(path as IChemin<unknown>, ({ rest }, method) => {
+			return finalWooter.match([...rest], method)
 		})
 		return this
 	}
@@ -338,22 +331,17 @@ export class Wooter<
 			routeDefinition = this.graph.getHandler(
 				new URL(request.url).pathname,
 				request.method,
-			) ?? (() => {
-				throw new NotFound()
-			})()
-		} catch (e) {
-			if (e instanceof MethodNotAllowed) {
+			) ?? (() => { throw new NotFound() })()
+		} catch(e) {
+			if(e instanceof MethodNotAllowed) {
 				return new Response(`Method not allowed`, {
 					status: 405,
 				})
 			}
-			if (e instanceof NotFound) {
-				return new Response(
-					`Not found ${new URL(request.url).pathname}`,
-					{
-						status: 404,
-					},
-				)
+			if(e instanceof NotFound) {
+				return new Response(`Not found ${new URL(request.url).pathname}`, {
+					status: 404,
+				})
 			}
 			throw e
 		}

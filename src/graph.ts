@@ -31,7 +31,7 @@ export class MethodNotAllowed extends Error {
  * @constructor
  */
 export class Graph {
-	private routeMatchers = new Map<string, IChemin>()
+	private routeMatchers = new Map<string, Map<string, IChemin>>()
 	private routes = new Map<string, Map<string, Handler>>()
 
 	private middleware = new Set<MiddlewareHandler>()
@@ -39,7 +39,7 @@ export class Graph {
 	private namespaceMatchers = new Map<string, IChemin>()
 	private namespaces = new Map<
 		string,
-		(match: ICheminMatch<unknown>, method: string) => Handler
+		(match: ICheminMatch<unknown>, method: string) => RouteMatchDefinition | null
 	>()
 
 	constructor(private throwOnDuplicate: boolean = true) {}
@@ -56,6 +56,7 @@ export class Graph {
 		chemin: IChemin,
 		handler: Handler,
 	) {
+		// method = method.toUpperCase()
 		const path = chemin.stringify()
 		if (this.routes.has(path) && this.routes.get(path)?.has(method)) {
 			if (this.throwOnDuplicate) {
@@ -63,7 +64,10 @@ export class Graph {
 			}
 			console.warn(`Duplicate path detected: ${path}`)
 		}
-		this.routeMatchers.set(path, chemin)
+		const routeMatcherMap = this.routeMatchers.get(method) ?? new Map()
+		routeMatcherMap.set(path, chemin)
+		this.routeMatchers.set(method, routeMatcherMap)
+
 		const routeMap = this.routes.get(path) ?? new Map()
 		routeMap.set(method, handler)
 		this.routes.set(path, routeMap)
@@ -71,7 +75,7 @@ export class Graph {
 
 	addNamespace(
 		chemin: IChemin<unknown>,
-		matcher: (match: ICheminMatch<unknown>, method: string) => Handler,
+		matcher: (match: ICheminMatch<unknown>, method: string) => RouteMatchDefinition | null,
 	) {
 		const path = chemin.stringify()
 
@@ -167,13 +171,15 @@ export class Graph {
 		)
 
 		if (!namespace) {
+			const routeMatcher = this.routeMatchers.get(method)
+			if(!routeMatcher) throw new MethodNotAllowed()
 			let route = matchFirstExact(
-				this.routeMatchers.values().toArray(),
+				routeMatcher.values().toArray(),
 				pathname,
 			)
 			// if chemin is constructed as "" or "/" it will not match.
-			if (pathname === "/" && this.routeMatchers.has("/") && !route) {
-				route = { chemin: this.routeMatchers.get("/")!, params: {} }
+			if (pathname === "/" && routeMatcher.has("/") && !route) {
+				route = { chemin: routeMatcher.get('/')!, params: {} }
 			}
 			if (!route) return null
 			const { chemin, params } = route
@@ -183,22 +189,21 @@ export class Graph {
 			if (!pathMethods?.has(method)) throw new MethodNotAllowed()
 			const handler = pathMethods.get(method)!
 
-			const composedHandler = this.composeMiddleware(handler, params)
 			return {
 				params,
 				path,
-				handle: composedHandler,
+				handle: this.composeMiddleware(handler, params),
 			}
 		} else {
 			const { chemin, match } = namespace
 			const { params } = match
 			const path = chemin.stringify()
 			const handler = this.namespaces.get(path)!(match, method)
-			const composedHandler = this.composeMiddleware(handler, params)
+			if(!handler) return null
 			return {
 				params,
 				path,
-				handle: composedHandler,
+				handle: this.composeMiddleware(handler?.handle, params),
 			}
 		}
 	}

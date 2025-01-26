@@ -32,4 +32,4 @@ export type MiddlewareHandler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 	TNextData extends Data | undefined = Data,
-> = (event: MiddlewareEvent<TParams, Data, TNextData>) => Promise<void>
+> = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void>
