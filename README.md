@@ -1,7 +1,7 @@
-# 🖲️ @ts-rex/wooter
+# 🖲️ @bronti/wooter
 
-[![JSR](https://jsr.io/badges/@ts-rex/wooter)](https://jsr.io/@ts-rex/wooter)
-[![JSR Score](https://jsr.io/badges/@ts-rex/wooter/score)](https://jsr.io/@ts-rex/wooter)
+[![JSR](https://jsr.io/badges/@bronti/wooter)](https://jsr.io/@bronti/wooter)
+[![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
 > _it's wootin time_\
 > \- kai, 2025
@@ -29,7 +29,7 @@ router, as well as Oak and Hono.
 
 ```ts
 import { delay } from "jsr:@std/async"
-import { c, Wooter } from "./src/export/index.ts"
+import { c, Wooter } from "jsr:@bronti/wooter"
 
 const wooter = Wooter.withMethods()
 
