@@ -1,9 +1,9 @@
-'use strict'
+const url = "https://openheart.wooter.bronti.dev"
 
 const doc = `
 OpenHeart protocol API
 
-https://wooter-example-openheart.deno.dev
+${url}
 
 GET /<domain>/<uid> to look up reactions for <uid> under <domain>
 GET /<domain> to look up reactions for everything under <domain>
@@ -15,14 +15,12 @@ POST /<domain>/<uid> to send an emoji
 
 ( derived from https://github.com/dddddddddzzzz/api-oh )
 
-code available at https://dash.deno.com/playground/wooter-example-openheart
-
 ----- Test in CLI -----
 Send emoji:
-curl -d '<emoji>' -X POST 'https://wooter-example-openheart.deno.dev/example.com/uid'
+curl -d '<emoji>' -X POST '${url}/example.com/uid'
 
 Get all emoji counts for /example.com/uid:
-curl 'https://wooter-example-openheart.deno.dev/example.com/uid'
+curl '${url}/example.com/uid'
 `
 
 import { c, Wooter } from "jsr:@bronti/wooter"
@@ -85,7 +83,7 @@ function ensureEmoji(emoji: string) {
 }
 
 wooter.GET(c.chemin(), async ({ resp }) => {
-	resp(new Response(doc))
+    resp(new Response(doc))
 })
 
 wooter.namespace(
