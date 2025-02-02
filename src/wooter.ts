@@ -112,7 +112,12 @@ export class Wooter<
 > {
 	private graph: Graph
 
-	private notFoundHandler: Handler<Record<string | number | symbol, never>, Record<string | number | symbol, never>> | undefined
+	private notFoundHandler:
+		| Handler<
+			Record<string | number | symbol, never>,
+			Record<string | number | symbol, never>
+		>
+		| undefined
 
 	/**
 	 * Create a new Wooter
@@ -324,14 +329,14 @@ export class Wooter<
 	get fetch(): (request: Request) => Promise<Response> {
 		return this._fetch.bind(this)
 	}
-	
+
 	/**
 	 * Creates a handler for when no route is found
 	 * @param handler Handler
 	 * @returns Wooter
 	 */
 	notFound(handler: Handler): this {
-		if(this.notFoundHandler) {
+		if (this.notFoundHandler) {
 			console.warn("notFound handler set twice")
 		}
 		this.notFoundHandler = handler
@@ -360,7 +365,7 @@ export class Wooter<
 			})()
 		} catch (e) {
 			if (e instanceof NotFound) {
-				if(this.notFoundHandler) {
+				if (this.notFoundHandler) {
 					try {
 						this.notFoundHandler(event)
 						return await event.promise

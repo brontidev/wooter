@@ -83,7 +83,7 @@ function ensureEmoji(emoji: string) {
 }
 
 wooter.GET(c.chemin(), async ({ resp }) => {
-    resp(new Response(doc))
+	resp(new Response(doc))
 })
 
 wooter.namespace(
@@ -102,12 +102,17 @@ wooter.namespace(
 
 				resp(
 					jsonResponse(
-						Object.fromEntries((await Array.fromAsync(kvList)).reduce((map, entry) => {
-                            const key = entry.key[2]
-                            const value = map.get(key) ?? 0
-                            map.set(key, value + (entry.value?? 0))
-							return map
-						}, new Map()).entries()),
+						Object.fromEntries(
+							(await Array.fromAsync(kvList)).reduce(
+								(map, entry) => {
+									const key = entry.key[2]
+									const value = map.get(key) ?? 0
+									map.set(key, value + (entry.value ?? 0))
+									return map
+								},
+								new Map(),
+							).entries(),
+						),
 					),
 				)
 			},
