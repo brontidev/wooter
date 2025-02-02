@@ -20,7 +20,7 @@ wooter.GET(
 
 wooter.GET(c.chemin("after"), async ({ err, resp }) => {
 	resp(new Response("ok!"))
-	await delay(400)
+	await delay(1000)
 	console.log("this ran after the response was sent.")
 })
 
@@ -46,7 +46,7 @@ wooter.GET(c.chemin("exits-without-response"), async ({}) => {
 })
 
 wooter.GET(c.chemin("takes-a-while"), async ({ resp }) => {
-	await delay(400)
+	await delay(1000)
 	resp(new Response("I'm here! sorry I took so long"))
 })
 

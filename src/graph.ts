@@ -20,10 +20,6 @@ export type RouteMatchDefinition = {
 	handle: Handler
 }
 
-export class MethodNotAllowed extends Error {
-	override message: string = "MethodNotAllowed"
-}
-
 /**
  * Datagraph for wooter's routes
  *
@@ -181,7 +177,7 @@ export class Graph {
 
 		if (!namespace) {
 			const routeMatcher = this.routeMatchers.get(method)
-			if (!routeMatcher) throw new MethodNotAllowed()
+			if (!routeMatcher) return null
 			let route = matchFirstExact(
 				routeMatcher.values().toArray(),
 				pathname,
@@ -195,7 +191,7 @@ export class Graph {
 			const path = chemin.stringify()
 			const pathMethods = this.routes.get(path)
 			if (!pathMethods) return null
-			if (!pathMethods?.has(method)) throw new MethodNotAllowed()
+			if (!pathMethods?.has(method)) return null
 			const handler = pathMethods.get(method)!
 
 			return {

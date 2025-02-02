@@ -6,7 +6,6 @@ import type {
 	MiddlewareHandler,
 	Params,
 } from "./export/types.ts"
-import { MethodNotAllowed } from "./graph.ts"
 import { Graph, type RouteMatchDefinition } from "./graph.ts"
 
 class NotFound {}
@@ -112,6 +111,9 @@ export class Wooter<
 	BaseParams extends Params = Params,
 > {
 	private graph: Graph
+
+	private notFoundHandler: Handler<Record<string | number | symbol, never>, Record<string | number | symbol, never>> | undefined
+
 	/**
 	 * Create a new Wooter
 	 * @param opts - Options
@@ -322,6 +324,19 @@ export class Wooter<
 	get fetch(): (request: Request) => Promise<Response> {
 		return this._fetch.bind(this)
 	}
+	
+	/**
+	 * Creates a handler for when no route is found
+	 * @param handler Handler
+	 * @returns Wooter
+	 */
+	notFound(handler: Handler): this {
+		if(this.notFoundHandler) {
+			console.warn("notFound handler set twice")
+		}
+		this.notFoundHandler = handler
+		return this
+	}
 
 	/**
 	 * Passes a request through the wooter
@@ -335,6 +350,7 @@ export class Wooter<
 		params?: BaseParams,
 	): Promise<Response> {
 		let routeDefinition: RouteMatchDefinition
+		const event = new Event(request, params ?? {}, data ?? {})
 		try {
 			routeDefinition = this.graph.getHandler(
 				new URL(request.url).pathname,
@@ -343,12 +359,16 @@ export class Wooter<
 				throw new NotFound()
 			})()
 		} catch (e) {
-			if (e instanceof MethodNotAllowed) {
-				return new Response(`Method not allowed`, {
-					status: 405,
-				})
-			}
 			if (e instanceof NotFound) {
+				if(this.notFoundHandler) {
+					try {
+						this.notFoundHandler(event)
+						return await event.promise
+					} catch (e) {
+						console.error("Unresolved error in notFound handler", e)
+						// Do nothing, return normal not found
+					}
+				}
 				return new Response(
 					`Not found ${new URL(request.url).pathname}`,
 					{
@@ -358,7 +378,6 @@ export class Wooter<
 			}
 			throw e
 		}
-		const event = new Event(request, params ?? {}, data ?? {})
 		try {
 			routeDefinition.handle(event)
 			return await event.promise
