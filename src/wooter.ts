@@ -29,8 +29,11 @@ const optsDefaults: WooterOptions = {
 export type WooterWithMethods<
 	TData extends Data = Data,
 	BaseParams extends Params = Params,
-> = Wooter<TData, BaseParams> & Methods<TData, BaseParams>
-
+> = {
+	use<NewData extends Data | undefined = undefined>(
+		handler: MiddlewareHandler<BaseParams, TData, NewData>,
+	): WooterWithMethods<NewData extends undefined ? TData : TData & NewData, BaseParams>
+} & Wooter<TData, BaseParams> & Methods<TData, BaseParams>
 /**
  * Registers a route to the wooter
  * @param path chemin
@@ -145,14 +148,12 @@ export class Wooter<
 	 * @returns Wooter With Methods
 	 */
 	useMethods(): WooterWithMethods<TData, BaseParams> {
-		// deno-lint-ignore no-this-alias
-		const wooter = this
-		const proxy = new Proxy(wooter, {
+		const proxy = new Proxy(this, {
 			get(target, prop, receiver) {
 				if (/^[A-Z]+$/g.test(prop.toString())) {
 					return (path: IChemin, handler: Handler) => {
-						wooter.addRoute.call(
-							wooter,
+						target.addRoute.call(
+							target,
 							prop.toString(),
 							path,
 							handler,
@@ -161,7 +162,10 @@ export class Wooter<
 					}
 				}
 				const value = Reflect.get(target, prop, receiver)
-				return typeof value === "function" ? value.bind(target) : value
+				return typeof value === "function" ? function () {
+					const result = value.apply(target, arguments)
+					return result === target ? receiver : result;
+				} : value
 			},
 		})
 		return proxy as unknown as WooterWithMethods<TData, BaseParams>
