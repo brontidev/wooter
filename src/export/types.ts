@@ -3,6 +3,18 @@ import type { Wooter } from "../wooter.ts"
 import type { IChemin } from "./chemin.ts"
 
 /**
+ * HTTP Methods
+ */
+export type HttpMethod = 
+	| "GET"
+	| "HEAD"
+	| "PUT"
+	| "PATCH"
+	| "POST"
+	| "DELETE"
+	| Uppercase<string>
+
+/**
  * Parameters
  */
 export type Params = Record<string, unknown>
@@ -70,22 +82,7 @@ export type WooterAddRoute<
 export type Methods<
 	TData extends Data = Data,
 	BaseParams extends Params = Params,
-> =
-	& {
-		[
-			x in
-				| "GET"
-				| "HEAD"
-				| "PUT"
-				| "PATCH"
-				| "POST"
-				| "DELETE"
-		]: WooterAddRoute<TData, BaseParams>
-	}
-	& {
-		[x in Uppercase<string>]: WooterAddRoute<TData, BaseParams>
-	}
-
+> = Record<HttpMethod, WooterAddRoute<TData, BaseParams>>
 /**
  * Registers a method to the route
  * @param handler route handler
@@ -103,13 +100,4 @@ export type RouteAddRoute<
 export type MethodsNoPath<
 	TData extends Data = Data,
 	TParams extends Params = Params,
-> = {
-		[
-			x in Uppercase<string> | "GET"
-			| "HEAD"
-			| "PUT"
-			| "PATCH"
-			| "POST"
-			| "DELETE"
-		]: RouteAddRoute<TData, TParams>
-	}
+> = Record<HttpMethod, RouteAddRoute<TData, TParams>>
