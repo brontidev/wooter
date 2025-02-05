@@ -26,7 +26,6 @@ const optsDefaults: WooterOptions = {
 	catchErrors: true,
 }
 
-
 /**
  * The main class for Wooter
  */
@@ -83,10 +82,12 @@ export class Wooter<
 					}
 				}
 				const value = Reflect.get(target, prop, receiver)
-				return typeof value === "function" ? function () {
-					const result = value.apply(target, arguments)
-					return result === target ? receiver : result;
-				} : value
+				return typeof value === "function"
+					? function () {
+						const result = value.apply(target, arguments)
+						return result === target ? receiver : result
+					}
+					: value
 			},
 		})
 		return proxy as unknown as WooterWithMethods<TData, BaseParams>
@@ -134,7 +135,11 @@ export class Wooter<
 	 */
 	use<NewData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<BaseParams, TData, NewData>,
-	): Wooter<NewData extends undefined ? TData : Omit<TData, keyof NewData> & NewData, BaseParams> {
+	): Wooter<
+		NewData extends undefined ? TData
+			: Omit<TData, keyof NewData> & NewData,
+		BaseParams
+	> {
 		// @ts-expect-error: useless Generics
 		this.graph.pushMiddleware(handler)
 		// @ts-expect-error: useless Generics

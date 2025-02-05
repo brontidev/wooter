@@ -5,7 +5,7 @@ import type { IChemin } from "./chemin.ts"
 /**
  * HTTP Methods
  */
-export type HttpMethod = 
+export type HttpMethod =
 	| "GET"
 	| "HEAD"
 	| "PUT"
@@ -48,18 +48,24 @@ export type MiddlewareHandler<
 	TNextData extends Data | undefined = Data,
 > = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void>
 
-
 /**
  * A Wooter with HTTP verb method functions
  */
 export type WooterWithMethods<
 	TData extends Data = Data,
 	BaseParams extends Params = Params,
-> = {
-	use<NewData extends Data | undefined = undefined>(
-		handler: MiddlewareHandler<BaseParams, TData, NewData>,
-	): WooterWithMethods<NewData extends undefined ? TData : Omit<TData, keyof NewData> & NewData, BaseParams>
-} & Wooter<TData, BaseParams> & Methods<TData, BaseParams>
+> =
+	& {
+		use<NewData extends Data | undefined = undefined>(
+			handler: MiddlewareHandler<BaseParams, TData, NewData>,
+		): WooterWithMethods<
+			NewData extends undefined ? TData
+				: Omit<TData, keyof NewData> & NewData,
+			BaseParams
+		>
+	}
+	& Wooter<TData, BaseParams>
+	& Methods<TData, BaseParams>
 /**
  * Registers a route to the wooter
  * @param path chemin
