@@ -32,7 +32,7 @@ export type WooterWithMethods<
 > = {
 	use<NewData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<BaseParams, TData, NewData>,
-	): WooterWithMethods<NewData extends undefined ? TData : TData & NewData, BaseParams>
+	): WooterWithMethods<NewData extends undefined ? TData : Omit<TData, keyof NewData> & NewData, BaseParams>
 } & Wooter<TData, BaseParams> & Methods<TData, BaseParams>
 /**
  * Registers a route to the wooter
@@ -213,7 +213,7 @@ export class Wooter<
 	 */
 	use<NewData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<BaseParams, TData, NewData>,
-	): Wooter<NewData extends undefined ? TData : TData & NewData, BaseParams> {
+	): Wooter<NewData extends undefined ? TData : Omit<TData, keyof NewData> & NewData, BaseParams> {
 		// @ts-expect-error: useless Generics
 		this.graph.pushMiddleware(handler)
 		// @ts-expect-error: useless Generics
