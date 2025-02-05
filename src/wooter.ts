@@ -145,14 +145,12 @@ export class Wooter<
 	 * @returns Wooter With Methods
 	 */
 	useMethods(): WooterWithMethods<TData, BaseParams> {
-		// deno-lint-ignore no-this-alias
-		const wooter = this
-		const proxy = new Proxy(wooter, {
+		const proxy = new Proxy(this, {
 			get(target, prop, receiver) {
 				if (/^[A-Z]+$/g.test(prop.toString())) {
 					return (path: IChemin, handler: Handler) => {
-						wooter.addRoute.call(
-							wooter,
+						target.addRoute.call(
+							target,
 							prop.toString(),
 							path,
 							handler,
@@ -161,7 +159,10 @@ export class Wooter<
 					}
 				}
 				const value = Reflect.get(target, prop, receiver)
-				return typeof value === "function" ? value.bind(target) : value
+				return typeof value === "function" ? (...args: unknown[]) => {
+					const result = value.apply(target, args)
+					return result === target ? receiver : result;
+				} : value
 			},
 		})
 		return proxy as unknown as WooterWithMethods<TData, BaseParams>
