@@ -29,8 +29,11 @@ const optsDefaults: WooterOptions = {
 export type WooterWithMethods<
 	TData extends Data = Data,
 	BaseParams extends Params = Params,
-> = Wooter<TData, BaseParams> & Methods<TData, BaseParams>
-
+> = {
+	use<NewData extends Data | undefined = undefined>(
+		handler: MiddlewareHandler<BaseParams, TData, NewData>,
+	): WooterWithMethods<NewData extends undefined ? TData : TData & NewData, BaseParams>
+} & Wooter<TData, BaseParams> & Methods<TData, BaseParams>
 /**
  * Registers a route to the wooter
  * @param path chemin
@@ -159,8 +162,8 @@ export class Wooter<
 					}
 				}
 				const value = Reflect.get(target, prop, receiver)
-				return typeof value === "function" ? (...args: unknown[]) => {
-					const result = value.apply(target, args)
+				return typeof value === "function" ? function () {
+					const result = value.apply(target, arguments)
 					return result === target ? receiver : result;
 				} : value
 			},
