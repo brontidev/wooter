@@ -48,7 +48,7 @@ export class Wooter<
 	 */
 	constructor(private opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
-		this.graph = new Graph(this.opts?.throwOnDuplicate)
+		this.graph = new Graph()
 	}
 
 	/**
