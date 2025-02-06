@@ -133,9 +133,15 @@ export class Wooter<
 	 * @returns Wooter
 	 */
 	use<NewData extends Data | undefined = undefined>(
-		handler: MiddlewareHandler<BaseParams, TData extends undefined ? Data : TData, NewData>,
+		handler: MiddlewareHandler<
+			BaseParams,
+			TData extends undefined ? Data : TData,
+			NewData
+		>,
 	): Wooter<
-		TData extends undefined ? NewData : NewData extends undefined ? TData : { [K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K] },
+		TData extends undefined ? NewData
+			: NewData extends undefined ? TData
+			: { [K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K] },
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
@@ -153,7 +159,10 @@ export class Wooter<
 	addRoute<TParams extends Params = Params>(
 		method: string,
 		path: IChemin<TParams & BaseParams>,
-		handler: Handler<TParams & BaseParams, TData extends undefined ? Data : TData>,
+		handler: Handler<
+			TParams & BaseParams,
+			TData extends undefined ? Data : TData
+		>,
 	) {
 		// @ts-expect-error: useless Generics
 		this.graph.addRoute(method, path, handler)
@@ -331,7 +340,10 @@ export class Wooter<
 	 */
 	route<TParams extends Params>(
 		path: IChemin<TParams>,
-	): MethodsNoPath<TData extends undefined ? Data : TData, BaseParams & TParams> {
+	): MethodsNoPath<
+		TData extends undefined ? Data : TData,
+		BaseParams & TParams
+	> {
 		// @ts-expect-error: useless Generics
 		return Wooter.makeRouteBuilder(this, path)
 	}
