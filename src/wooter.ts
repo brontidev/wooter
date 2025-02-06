@@ -285,11 +285,9 @@ export class Wooter<
 	): Promise<Response> {
 		let routeDefinition: RouteMatchDefinition
 		const event = new Event(request, params ?? {}, data ?? {})
+		const pathname = new URL(request.url).pathname
 		try {
-			const routeCheck = this.graph.getHandler(
-				new URL(request.url).pathname,
-				request.method,
-			)
+			const routeCheck = this.graph.getHandler(pathname, request.method)
 			if(!routeCheck) {
 				throw new NotFound()
 			}
@@ -306,7 +304,7 @@ export class Wooter<
 					}
 				}
 				return new Response(
-					`Not found ${new URL(request.url).pathname}`,
+					`Not found ${request.method} ${pathname}`,
 					{
 						status: 404,
 					},
