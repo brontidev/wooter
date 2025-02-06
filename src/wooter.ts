@@ -17,12 +17,10 @@ class NotFound {}
  * Options for creating a new Wooter
  */
 export type WooterOptions = {
-	throwOnDuplicate: boolean
 	catchErrors: boolean
 }
 
 const optsDefaults: WooterOptions = {
-	throwOnDuplicate: true,
 	catchErrors: true,
 }
 
@@ -48,7 +46,7 @@ export class Wooter<
 	 */
 	constructor(private opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
-		this.graph = new Graph(this.opts?.throwOnDuplicate)
+		this.graph = new Graph()
 	}
 
 	/**
@@ -243,7 +241,8 @@ export class Wooter<
 		}
 
 		this.graph.addNamespace(
-			path as IChemin<unknown>,
+			// @ts-expect-error: useless Generics
+			path,
 			({ rest }, method) => {
 				return finalWooter.match([...rest], method)
 			},
@@ -286,13 +285,13 @@ export class Wooter<
 	): Promise<Response> {
 		let routeDefinition: RouteMatchDefinition
 		const event = new Event(request, params ?? {}, data ?? {})
+		const pathname = new URL(request.url).pathname
 		try {
-			routeDefinition = this.graph.getHandler(
-				new URL(request.url).pathname,
-				request.method,
-			) ?? (() => {
+			const routeCheck = this.graph.getHandler(pathname, request.method)
+			if (!routeCheck) {
 				throw new NotFound()
-			})()
+			}
+			routeDefinition = routeCheck
 		} catch (e) {
 			if (e instanceof NotFound) {
 				if (this.notFoundHandler) {
@@ -305,7 +304,7 @@ export class Wooter<
 					}
 				}
 				return new Response(
-					`Not found ${new URL(request.url).pathname}`,
+					`Not found ${request.method} ${pathname}`,
 					{
 						status: 404,
 					},
@@ -339,15 +338,15 @@ export class Wooter<
 
 	/**
 	 * Matches a route based on a path array (used internally)
-	 * @param pathname Path array
+	 * @param pathParts Path array
 	 * @param method HTTP verb
 	 * @returns Route Match Definition
 	 * @internal
 	 */
 	private match(
-		pathname: string[],
+		pathParts: string[],
 		method: string,
-	): RouteMatchDefinition | null {
-		return this.graph.getHandler(pathname, method)
+	): RouteMatchDefinition | undefined {
+		return this.graph.getHandler(pathParts, method)
 	}
 }

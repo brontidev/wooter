@@ -2,8 +2,9 @@ import { Event, MiddlewareEvent } from "./event.ts"
 import {
 	type IChemin,
 	type ICheminMatch,
-	matchFirst,
-	matchFirstExact,
+	match,
+	matchExact,
+	splitPathname,
 } from "./export/chemin.ts"
 import { ExitWithoutResponse, MiddlewareDidntCallUp } from "./export/error.ts"
 import type {
@@ -16,88 +17,54 @@ import { promiseState } from "./shared.ts"
 
 export type RouteMatchDefinition = {
 	params: Params
-	path: string
 	handle: Handler
 }
 
-/**
- * Datagraph for wooter's routes
- *
- * TODO: implement namespaces
- * @constructor
- */
+type ExtractSetType<T> = T extends Set<infer U> ? U : never
+
 export class Graph {
-	private routeMatchers = new Map<string, Map<string, IChemin>>()
-	private routes = new Map<string, Map<string, Handler>>()
+	private routes = new Set<
+		{ path: IChemin<Params>; method: string; handler: Handler }
+	>()
 
 	private middleware = new Set<MiddlewareHandler>()
 
-	private namespaceMatchers = new Map<string, IChemin>()
-	private namespaces = new Map<
-		string,
-		(
-			match: ICheminMatch<unknown>,
-			method: string,
-		) => RouteMatchDefinition | null
+	private namespaces = new Set<
+		{
+			path: IChemin<Params>
+			matcher: (
+				match: ICheminMatch<Params>,
+				method: string,
+			) => RouteMatchDefinition | undefined
+		}
 	>()
 
-	constructor(private throwOnDuplicate: boolean = true) {}
-
-	/**
-	 * Add a route to the graph
-	 *
-	 * @param method - HTTP method
-	 * @param chemin - Chemin path of the route
-	 * @param handler - Handler of the route
-	 */
 	addRoute(
 		method: string,
-		chemin: IChemin,
+		path: IChemin,
 		handler: Handler,
 	) {
-		// method = method.toUpperCase()
-		const path = chemin.stringify()
-		if (this.routes.has(path) && this.routes.get(path)?.has(method)) {
-			if (this.throwOnDuplicate) {
-				throw new Error(`Duplicate path detected: ${path}`)
-			}
-			console.warn(`Duplicate path detected: ${path}`)
-		}
-		const routeMatcherMap = this.routeMatchers.get(method) ?? new Map()
-		routeMatcherMap.set(path, chemin)
-		this.routeMatchers.set(method, routeMatcherMap)
+		method = method.toUpperCase()
 
-		const routeMap = this.routes.get(path) ?? new Map()
-		routeMap.set(method, handler)
-		this.routes.set(path, routeMap)
+		this.routes.add({
+			path,
+			method,
+			handler,
+		})
 	}
 
 	addNamespace(
-		chemin: IChemin<unknown>,
-		matcher: (
-			match: ICheminMatch<unknown>,
-			method: string,
-		) => RouteMatchDefinition | null,
+		path: IChemin<Params>,
+		// @ts-expect-error: Suppressing type error because namespaces is private but the utility type is local.
+		matcher: ExtractSetType<typeof this["namespaces"]>["matcher"],
 	) {
-		const path = chemin.stringify()
-
-		if (this.namespaceMatchers.has(path)) {
-			if (this.throwOnDuplicate) {
-				throw new Error(`Duplicate namespace path detected: ${path}`)
-			}
-			console.warn(`Duplicate namespace path detected: ${path}`)
-		}
-		this.namespaceMatchers.set(path, chemin)
-		this.namespaces.set(path, matcher)
+		this.namespaces.add({
+			path,
+			matcher,
+		})
 	}
 
-	/**
-	 * Add a middleware function to the graph
-	 *
-	 * @param middleware - middleware function
-	 */
-	// @ts-expect-error: The generics are not needed here
-	pushMiddleware(middleware: MiddlewareHandler<unknown, unknown>) {
+	pushMiddleware(middleware: MiddlewareHandler) {
 		this.middleware.add(middleware)
 	}
 
@@ -159,57 +126,37 @@ export class Graph {
 		}
 	}
 
-	/**
-	 * Gets a handler from a path and method
-	 *
-	 * @param pathname - Path name to match
-	 * @param method - HTTP method
-	 * @returns - Handler and match data
-	 */
 	getHandler(
 		pathname: string | string[],
 		method: string,
-	): RouteMatchDefinition | null {
-		const namespace = matchFirst(
-			this.namespaceMatchers.values().toArray(),
-			pathname,
-		)
+	): RouteMatchDefinition | undefined {
+		const pathParts = Array.isArray(pathname)
+			? pathname
+			: splitPathname(pathname)
 
-		if (!namespace) {
-			const routeMatcher = this.routeMatchers.get(method)
-			if (!routeMatcher) return null
-			let route = matchFirstExact(
-				routeMatcher.values().toArray(),
-				pathname,
-			)
-			// if chemin is constructed as "" or "/" it will not match.
-			if (pathname === "/" && routeMatcher.has("/") && !route) {
-				route = { chemin: routeMatcher.get("/")!, params: {} }
-			}
-			if (!route) return null
-			const { chemin, params } = route
-			const path = chemin.stringify()
-			const pathMethods = this.routes.get(path)
-			if (!pathMethods) return null
-			if (!pathMethods?.has(method)) return null
-			const handler = pathMethods.get(method)!
-
+		for (const { path, matcher } of this.namespaces) {
+			const matchValue = match(path, pathParts)
+			if (!matchValue) continue
+			const { params } = matchValue
+			const handler = matcher(matchValue, method)
+			if (!handler) continue // This namespace doesn't have that full route, ignore
 			return {
 				params,
-				path,
-				handle: this.composeMiddleware(handler, params),
-			}
-		} else {
-			const { chemin, match } = namespace
-			const { params } = match
-			const path = chemin.stringify()
-			const handler = this.namespaces.get(path)!(match, method)
-			if (!handler) return null
-			return {
-				params,
-				path,
 				handle: this.composeMiddleware(handler?.handle, params),
 			}
 		}
+		// At this point we haven't found a namespace, we should check our local routes.
+
+		for (const { handler, method: intendedMethod, path } of this.routes) {
+			if (method !== intendedMethod) continue // This route isn't the method we want to check for
+			const params = matchExact(path, pathParts)
+			if (!params) continue
+			return {
+				params,
+				handle: this.composeMiddleware(handler, params),
+			}
+		}
+
+		return undefined
 	}
 }
