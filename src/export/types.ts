@@ -35,7 +35,7 @@ export type Data = Record<keyof any, unknown>
 export type Handler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
-> = (event: Event<TParams, TData>) => Promise<void>
+> = (event: Event<TParams, TData>) => Promise<void> | void
 /**
  * Standalone Middleware Handler type
  */
@@ -54,7 +54,7 @@ export type MiddlewareHandler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 	TNextData extends Data | undefined = Data,
-> = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void>
+> = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void> | void
 
 /**
  * A Wooter with HTTP verb method functions
