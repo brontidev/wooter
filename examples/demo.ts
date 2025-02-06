@@ -9,11 +9,7 @@ import {
 } from "../src/export/util.ts"
 import { chemin, pNumber } from "../src/export/chemin.ts" // "@ts-rex/wooter/chemin"
 
-import {
-	parse,
-	serialize,
-	type SerializeOptions,
-} from "npm:cookie"
+import { parse, serialize, type SerializeOptions } from "npm:cookie"
 
 import { z, ZodError } from "npm:zod"
 
