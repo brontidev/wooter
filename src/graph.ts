@@ -4,7 +4,7 @@ import {
 	type ICheminMatch,
 	match,
 	matchExact,
-	splitPathname
+	splitPathname,
 } from "./export/chemin.ts"
 import { ExitWithoutResponse, MiddlewareDidntCallUp } from "./export/error.ts"
 import type {
@@ -16,21 +16,24 @@ import type {
 import { promiseState } from "./shared.ts"
 
 export type RouteMatchDefinition = {
-	params: Params,
+	params: Params
 	handle: Handler
 }
 
-type ExtractSetType<T> = T extends Set<infer U> ? U : never;
+type ExtractSetType<T> = T extends Set<infer U> ? U : never
 
 export class Graph {
-	private routes = new Set<{ path: IChemin<any>, method: string, handler: Handler }>()
+	private routes = new Set<
+		{ path: IChemin<Params>; method: string; handler: Handler }
+	>()
 
 	private middleware = new Set<MiddlewareHandler>()
 
 	private namespaces = new Set<
 		{
-			path: IChemin<any>, matcher: (
-				match: ICheminMatch<unknown>,
+			path: IChemin<Params>
+			matcher: (
+				match: ICheminMatch<Params>,
 				method: string,
 			) => RouteMatchDefinition | undefined
 		}
@@ -46,14 +49,14 @@ export class Graph {
 		this.routes.add({
 			path,
 			method,
-			handler
+			handler,
 		})
 	}
 
 	addNamespace(
-		path: IChemin<unknown>,
+		path: IChemin<Params>,
 		// @ts-expect-error: The fact this error exists doesn't even make much sense to me.
-		matcher: ExtractSetType<typeof this['namespaces']>['matcher'],
+		matcher: ExtractSetType<typeof this["namespaces"]>["matcher"],
 	) {
 		this.namespaces.add({
 			path,
@@ -127,11 +130,13 @@ export class Graph {
 		pathname: string | string[],
 		method: string,
 	): RouteMatchDefinition | undefined {
-		const pathParts = Array.isArray(pathname) ? pathname : splitPathname(pathname)
+		const pathParts = Array.isArray(pathname)
+			? pathname
+			: splitPathname(pathname)
 
-		for(const { path, matcher } of this.namespaces) {
+		for (const { path, matcher } of this.namespaces) {
 			const matchValue = match(path, pathParts)
-			if(matchValue) {
+			if (matchValue) {
 				const { params } = matchValue
 				const handler = matcher(matchValue, method)
 				if (!handler) continue // This namespace doesn't have that full route, ignore
@@ -143,11 +148,11 @@ export class Graph {
 		}
 		// At this point we haven't found a namespace, we should check our local routes.
 
-		for(const { handler, method: intendedMethod, path } of this.routes) {
-			if(method !== intendedMethod) continue // This route isn't the method we want to check for
+		for (const { handler, method: intendedMethod, path } of this.routes) {
+			if (method !== intendedMethod) continue // This route isn't the method we want to check for
 			const matchValue = matchExact(path, pathParts)
-			if(matchValue) {
-				const { params } = matchValue
+			if (matchValue) {
+				const params = matchValue
 				return {
 					params,
 					handle: this.composeMiddleware(handler, params),

@@ -241,7 +241,8 @@ export class Wooter<
 		}
 
 		this.graph.addNamespace(
-			path as IChemin<unknown>,
+			// @ts-expect-error: useless Generics
+			path,
 			({ rest }, method) => {
 				return finalWooter.match([...rest], method)
 			},
