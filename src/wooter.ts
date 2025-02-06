@@ -286,12 +286,14 @@ export class Wooter<
 		let routeDefinition: RouteMatchDefinition
 		const event = new Event(request, params ?? {}, data ?? {})
 		try {
-			routeDefinition = this.graph.getHandler(
+			const routeCheck = this.graph.getHandler(
 				new URL(request.url).pathname,
 				request.method,
-			) ?? (() => {
+			)
+			if(!routeCheck) {
 				throw new NotFound()
-			})()
+			}
+			routeDefinition = routeCheck
 		} catch (e) {
 			if (e instanceof NotFound) {
 				if (this.notFoundHandler) {
