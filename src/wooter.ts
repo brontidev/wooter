@@ -17,12 +17,10 @@ class NotFound {}
  * Options for creating a new Wooter
  */
 export type WooterOptions = {
-	throwOnDuplicate: boolean
 	catchErrors: boolean
 }
 
 const optsDefaults: WooterOptions = {
-	throwOnDuplicate: true,
 	catchErrors: true,
 }
 
@@ -347,7 +345,7 @@ export class Wooter<
 	private match(
 		pathname: string[],
 		method: string,
-	): RouteMatchDefinition | null {
+	): RouteMatchDefinition | undefined {
 		return this.graph.getHandler(pathname, method)
 	}
 }
