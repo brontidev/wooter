@@ -1,4 +1,5 @@
 import type { Event, MiddlewareEvent } from "../event.ts"
+import type { Merge } from "../util_types.ts"
 import type { Wooter } from "../wooter.ts"
 import type { IChemin } from "./chemin.ts"
 
@@ -52,20 +53,21 @@ export type MiddlewareHandler<
  * A Wooter with HTTP verb method functions
  */
 export type WooterWithMethods<
-	TData extends Data = Data,
+	TData extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
 > =
 	& {
 		use<NewData extends Data | undefined = undefined>(
-			handler: MiddlewareHandler<BaseParams, TData, NewData>,
+			handler: MiddlewareHandler<BaseParams, TData extends undefined ? Data : TData, NewData>,
 		): WooterWithMethods<
-			NewData extends undefined ? TData
-				: Omit<TData, keyof NewData> & NewData,
+			TData extends undefined ? NewData : NewData extends undefined ? TData : { [K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K] },
+			// Omit<TData, keyof NewData> & ,
 			BaseParams
 		>
 	}
 	& Wooter<TData, BaseParams>
-	& Methods<TData, BaseParams>
+	& Methods<TData extends undefined ? Data : TData, BaseParams>
+
 /**
  * Registers a route to the wooter
  * @param path chemin

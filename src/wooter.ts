@@ -10,6 +10,7 @@ import type {
 	WooterWithMethods,
 } from "./export/types.ts"
 import { Graph, type RouteMatchDefinition } from "./graph.ts"
+import type { Merge } from "./util_types.ts"
 
 class NotFound {}
 
@@ -28,7 +29,7 @@ const optsDefaults: WooterOptions = {
  * The main class for Wooter
  */
 export class Wooter<
-	TData extends Data = Data,
+	TData extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
 > {
 	private graph: Graph
@@ -132,10 +133,9 @@ export class Wooter<
 	 * @returns Wooter
 	 */
 	use<NewData extends Data | undefined = undefined>(
-		handler: MiddlewareHandler<BaseParams, TData, NewData>,
+		handler: MiddlewareHandler<BaseParams, TData extends undefined ? Data : TData, NewData>,
 	): Wooter<
-		NewData extends undefined ? TData
-			: Omit<TData, keyof NewData> & NewData,
+		TData extends undefined ? NewData : NewData extends undefined ? TData : { [K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K] },
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
@@ -153,7 +153,7 @@ export class Wooter<
 	addRoute<TParams extends Params = Params>(
 		method: string,
 		path: IChemin<TParams & BaseParams>,
-		handler: Handler<TParams & BaseParams, TData>,
+		handler: Handler<TParams & BaseParams, TData extends undefined ? Data : TData>,
 	) {
 		// @ts-expect-error: useless Generics
 		this.graph.addRoute(method, path, handler)
@@ -331,7 +331,7 @@ export class Wooter<
 	 */
 	route<TParams extends Params>(
 		path: IChemin<TParams>,
-	): MethodsNoPath<TData, BaseParams & TParams> {
+	): MethodsNoPath<TData extends undefined ? Data : TData, BaseParams & TParams> {
 		// @ts-expect-error: useless Generics
 		return Wooter.makeRouteBuilder(this, path)
 	}
