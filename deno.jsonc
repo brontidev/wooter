@@ -23,12 +23,12 @@
 		"include": ["./src", "./README.md"]
 	},
 	"lint": {
-		"exclude": ["./examples", "./docs"]
+		"exclude": ["./examples", "./docs", "./coverage"]
 	},
 	"fmt": {
 		"semiColons": false,
 		"useTabs": true,
 		"indentWidth": 4,
-		"exclude": ["./docs"]
+		"exclude": ["./docs", "./coverage"]
 	}
 }
