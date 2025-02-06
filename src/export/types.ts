@@ -61,7 +61,6 @@ export type WooterWithMethods<
 			handler: MiddlewareHandler<BaseParams, TData extends undefined ? Data : TData, NewData>,
 		): WooterWithMethods<
 			TData extends undefined ? NewData : NewData extends undefined ? TData : { [K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K] },
-			// Omit<TData, keyof NewData> & ,
 			BaseParams
 		>
 	}
