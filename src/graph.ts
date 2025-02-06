@@ -136,28 +136,27 @@ export class Graph {
 
 		for (const { path, matcher } of this.namespaces) {
 			const matchValue = match(path, pathParts)
-			if (matchValue) {
-				const { params } = matchValue
-				const handler = matcher(matchValue, method)
-				if (!handler) continue // This namespace doesn't have that full route, ignore
-				return {
-					params,
-					handle: this.composeMiddleware(handler?.handle, params),
-				}
+			if(!matchValue) continue
+			const { params } = matchValue
+			const handler = matcher(matchValue, method)
+			if (!handler) continue // This namespace doesn't have that full route, ignore
+			return {
+				params,
+				handle: this.composeMiddleware(handler?.handle, params),
 			}
 		}
 		// At this point we haven't found a namespace, we should check our local routes.
 
 		for (const { handler, method: intendedMethod, path } of this.routes) {
 			if (method !== intendedMethod) continue // This route isn't the method we want to check for
-			const matchValue = matchExact(path, pathParts)
-			if (matchValue) {
-				const params = matchValue
-				return {
-					params,
-					handle: this.composeMiddleware(handler, params),
-				}
+			const params = matchExact(path, pathParts)
+			if (!params) continue
+			return {
+				params,
+				handle: this.composeMiddleware(handler, params),
 			}
 		}
+
+		return undefined
 	}
 }

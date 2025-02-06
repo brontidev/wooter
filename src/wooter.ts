@@ -338,15 +338,15 @@ export class Wooter<
 
 	/**
 	 * Matches a route based on a path array (used internally)
-	 * @param pathname Path array
+	 * @param pathParts Path array
 	 * @param method HTTP verb
 	 * @returns Route Match Definition
 	 * @internal
 	 */
 	private match(
-		pathname: string[],
+		pathParts: string[],
 		method: string,
 	): RouteMatchDefinition | undefined {
-		return this.graph.getHandler(pathname, method)
+		return this.graph.getHandler(pathParts, method)
 	}
 }
