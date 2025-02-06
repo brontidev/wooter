@@ -86,15 +86,27 @@ export class Graph {
 
 					if (idx >= middleware.length) {
 						const event = new Event(baseEvent.request, params, data)
-						handler(event).then(async () => {
-							if (
-								await promiseState(event.promise) === "pending"
-							) {
-								return event.err(new ExitWithoutResponse())
+						Promise.resolve().then(async () => {
+							try {
+								await handler(event)
+								if (
+									await promiseState(event.promise) === "pending"
+								) {
+									return event.err(new ExitWithoutResponse())
+								}
+							} catch(e) {
+								event.err(e)
 							}
-						}, (e) => {
-							event.err(e)
 						})
+						// handler(event).then(async () => {
+						// 	if (
+						// 		await promiseState(event.promise) === "pending"
+						// 	) {
+						// 		return event.err(new ExitWithoutResponse())
+						// 	}
+						// }, (e) => {
+						// 	event.err(e)
+						// })
 						return event.promise
 					}
 
@@ -106,16 +118,30 @@ export class Graph {
 						createNext(idx + 1),
 					)
 
-					middlewareHandler(event).then(async () => {
-						if (await promiseState(event.promise) === "pending") {
-							if (!event.storedResponse) {
-								return event.err(new MiddlewareDidntCallUp())
+
+					Promise.resolve().then(async () => {
+						try {
+							await middlewareHandler(event)
+							if (await promiseState(event.promise) === "pending") {
+								if (!event.storedResponse) {
+									return event.err(new MiddlewareDidntCallUp())
+								}
+								event.resp(event.storedResponse)
 							}
-							event.resp(event.storedResponse)
+						} catch (e) {
+							event.err(e)
 						}
-					}, (e) => {
-						event.err(e)
 					})
+					// middlewareHandler(event).then(async () => {
+					// 	if (await promiseState(event.promise) === "pending") {
+					// 		if (!event.storedResponse) {
+					// 			return event.err(new MiddlewareDidntCallUp())
+					// 		}
+					// 		event.resp(event.storedResponse)
+					// 	}
+					// }, (e) => {
+					// 	event.err(e)
+					// })
 					return event.promise
 				}
 			}
