@@ -52,7 +52,7 @@ export class Graph {
 
 	addNamespace(
 		path: IChemin<unknown>,
-		// @ts-expect-error: The fact this error exists doesn't even make much sense to me.
+		// @ts-expect-error: Suppressing type error due to incompatible types between 'matcher' functions.
 		matcher: ExtractSetType<typeof this['namespaces']>['matcher'],
 	) {
 		this.namespaces.add({
