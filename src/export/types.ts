@@ -7,6 +7,7 @@ import type { IChemin } from "./chemin.ts"
  * https://stackoverflow.com/a/49683575/15910952
  */
 type OptionalPropertyNames<T> = {
+	// deno-lint-ignore ban-types
 	[K in keyof T]-?: ({} extends { [P in K]: T[K] } ? K : never)
 }[keyof T]
 
