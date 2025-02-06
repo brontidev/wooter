@@ -36,6 +36,13 @@ export type Handler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 > = (event: Event<TParams, TData>) => Promise<void>
+/**
+ * Standalone Middleware Handler type
+ */
+export type StandaloneMiddlewareHandler<
+	TNextData extends Data | undefined = Data,
+	TData extends Data = Data,
+> = MiddlewareHandler<Params, TData, TNextData>
 
 /**
  * Handler for middleware

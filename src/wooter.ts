@@ -139,9 +139,11 @@ export class Wooter<
 			NewData
 		>,
 	): Wooter<
-		TData extends undefined ? NewData
-			: NewData extends undefined ? TData
-			: { [K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K] },
+		(TData extends undefined ? NewData
+			: (NewData extends undefined ? TData
+				: {
+					[K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K]
+				})),
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics

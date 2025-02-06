@@ -11,7 +11,6 @@ import { chemin, pNumber } from "../src/export/chemin.ts" // "@ts-rex/wooter/che
 
 import {
 	parse,
-	type ParseOptions,
 	serialize,
 	type SerializeOptions,
 } from "npm:cookie"
