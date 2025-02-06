@@ -1,5 +1,5 @@
 {
-  "scriptId": "348",
+  "scriptId": "361",
   "url": "file:///Users/maverickdev/Projects/wooter/src/event.ts",
   "functions": [
     {
@@ -9,7 +9,7 @@
     },
     {
       "functionName": "<instance_members_initializer>",
-      "ranges": [{ "startOffset": 141, "endOffset": 211, "count": 33 }],
+      "ranges": [{ "startOffset": 141, "endOffset": 211, "count": 34 }],
       "isBlockCoverage": true
     },
     {
@@ -29,7 +29,7 @@
     },
     {
       "functionName": "Event",
-      "ranges": [{ "startOffset": 715, "endOffset": 913, "count": 33 }],
+      "ranges": [{ "startOffset": 715, "endOffset": 913, "count": 34 }],
       "isBlockCoverage": true
     },
     {
