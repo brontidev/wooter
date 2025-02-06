@@ -55,7 +55,7 @@ export class Graph {
 
 	addNamespace(
 		path: IChemin<Params>,
-		// @ts-expect-error: Suppressing type error due to incompatible types between 'matcher' functions.
+		// @ts-expect-error: Suppressing type error because namespaces is private but the utility type is local.
 		matcher: ExtractSetType<typeof this["namespaces"]>["matcher"],
 	) {
 		this.namespaces.add({
