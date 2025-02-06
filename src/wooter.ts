@@ -81,12 +81,13 @@ export class Wooter<
 					}
 				}
 				const value = Reflect.get(target, prop, receiver)
-				return typeof value === "function"
-					? function () {
+				if (typeof value === "function") {
+					return function functionValue() {
 						const result = value.apply(target, arguments)
 						return result === target ? receiver : result
 					}
-					: value
+				}
+				return value
 			},
 		})
 		return proxy as unknown as WooterWithMethods<TData, BaseParams>
@@ -100,7 +101,7 @@ export class Wooter<
 	 */
 	private static makeRouteBuilder(wooter: Wooter, path: IChemin): Methods {
 		const proxy = new Proxy({} as Methods, {
-			get(target, prop, receiver) {
+			get(_a, prop, _b) {
 				if (/^[A-Z]+$/g.test(prop.toString())) {
 					return (handler: Handler) => {
 						wooter.addRoute.call(
@@ -112,10 +113,6 @@ export class Wooter<
 						return proxy
 					}
 				}
-				// deno-coverage-ignore-start
-				const value = Reflect.get(target, prop, receiver)
-				return typeof value === "function" ? value.bind(target) : value
-				// deno-coverage-ignore-stop
 			},
 		})
 		return proxy as unknown as Methods
@@ -128,9 +125,6 @@ export class Wooter<
 	 */
 	use<
 		NewData extends Data | undefined = undefined,
-		MergedData extends Data = {
-			[K in keyof Merge<TData, NewData>]: (Merge<TData, NewData>)[K]
-		},
 	>(
 		handler: MiddlewareHandler<
 			BaseParams,
@@ -139,8 +133,7 @@ export class Wooter<
 		>,
 	): Wooter<
 		TData extends undefined ? NewData
-			: (NewData extends undefined ? TData
-				: MergedData),
+			: (NewData extends undefined ? undefined : Merge<TData, NewData>),
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
@@ -318,7 +311,6 @@ export class Wooter<
 					},
 				)
 			}
-			// deno-coverage-ignore-next
 			throw e
 		}
 		try {

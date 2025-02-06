@@ -4,8 +4,36 @@ import type { IChemin } from "./chemin.ts"
 
 /**
  * @internal
+ * https://stackoverflow.com/a/49683575/15910952
  */
-export type Merge<A, B> = Omit<A, keyof B> & B
+type OptionalPropertyNames<T> = {
+	[K in keyof T]-?: ({} extends { [P in K]: T[K] } ? K : never)
+}[keyof T]
+
+/**
+ * @internal
+ * https://stackoverflow.com/a/49683575/15910952
+ */
+type SpreadProperties<L, R, K extends keyof L & keyof R> = {
+	[P in K]: L[P] | Exclude<R[P], undefined>
+}
+
+/**
+ * @internal
+ * https://stackoverflow.com/a/49683575/15910952
+ */
+type Id<T> = T extends infer U ? { [K in keyof U]: U[K] } : never
+
+/**
+ * @internal
+ * https://stackoverflow.com/a/49683575/15910952
+ */
+export type Merge<L, R> = Id<
+	& Pick<L, Exclude<keyof L, keyof R>>
+	& Pick<R, Exclude<keyof R, OptionalPropertyNames<R>>>
+	& Pick<R, Exclude<OptionalPropertyNames<R>, keyof L>>
+	& SpreadProperties<L, R, OptionalPropertyNames<R> & keyof L>
+>
 
 /**
  * HTTP Methods
@@ -69,9 +97,6 @@ export type WooterWithMethods<
 	& {
 		use<
 			NewData extends Data | undefined = undefined,
-			MergedData extends Data = {
-				[K in keyof Merge<TData, NewData>]: (Merge<TData, NewData>)[K]
-			},
 		>(
 			handler: MiddlewareHandler<
 				BaseParams,
@@ -80,8 +105,8 @@ export type WooterWithMethods<
 			>,
 		): WooterWithMethods<
 			TData extends undefined ? NewData
-				: (NewData extends undefined ? TData
-					: MergedData),
+				: (NewData extends undefined ? undefined
+					: Merge<TData, NewData>),
 			BaseParams
 		>
 	}
