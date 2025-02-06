@@ -1,5 +1,5 @@
 {
-  "scriptId": "361",
+  "scriptId": "348",
   "url": "file:///Users/maverickdev/Projects/wooter/src/event.ts",
   "functions": [
     {
@@ -14,7 +14,7 @@
     },
     {
       "functionName": "get resp",
-      "ranges": [{ "startOffset": 319, "endOffset": 370, "count": 29 }],
+      "ranges": [{ "startOffset": 319, "endOffset": 370, "count": 28 }],
       "isBlockCoverage": true
     },
     {
@@ -39,7 +39,7 @@
     },
     {
       "functionName": "get up",
-      "ranges": [{ "startOffset": 1193, "endOffset": 1284, "count": 4 }],
+      "ranges": [{ "startOffset": 1193, "endOffset": 1284, "count": 3 }],
       "isBlockCoverage": true
     },
     {

@@ -90,11 +90,12 @@ export class Graph {
 							try {
 								await handler(event)
 								if (
-									await promiseState(event.promise) === "pending"
+									await promiseState(event.promise) ===
+										"pending"
 								) {
 									return event.err(new ExitWithoutResponse())
 								}
-							} catch(e) {
+							} catch (e) {
 								event.err(e)
 							}
 						})
@@ -118,13 +119,16 @@ export class Graph {
 						createNext(idx + 1),
 					)
 
-
 					Promise.resolve().then(async () => {
 						try {
 							await middlewareHandler(event)
-							if (await promiseState(event.promise) === "pending") {
+							if (
+								await promiseState(event.promise) === "pending"
+							) {
 								if (!event.storedResponse) {
-									return event.err(new MiddlewareDidntCallUp())
+									return event.err(
+										new MiddlewareDidntCallUp(),
+									)
 								}
 								event.resp(event.storedResponse)
 							}

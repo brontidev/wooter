@@ -1,9 +1,13 @@
-import { assert, assertEquals, assertThrows, fail } from "jsr:@std/assert"
+import { assert, assertEquals, fail } from "jsr:@std/assert"
 import { Wooter } from "./wooter.ts"
 import { chemin } from "./export/chemin.ts"
-import { MiddlewareDidntCallUp, MiddlewareCalledUpTooManyTimes, ExitWithoutResponse } from "./export/error.ts"
+import {
+	ExitWithoutResponse,
+	MiddlewareCalledUpTooManyTimes,
+	MiddlewareDidntCallUp,
+} from "./export/error.ts"
 
-import { mockSession, stub, assertSpyCall } from "jsr:@std/testing/mock"
+import { assertSpyCall, stub } from "jsr:@std/testing/mock"
 
 class TestError {}
 
@@ -66,210 +70,221 @@ Deno.test("Wooter - namespace handling", async () => {
 })
 
 Deno.test("Wooter - methods proxy", async () => {
-    const wooter = Wooter.withMethods()
+	const wooter = Wooter.withMethods()
 
-    wooter.GET(chemin('page'), ({ resp }) => {
-        resp(new Response("Methods!"))
-    })
+	wooter.GET(chemin("page"), ({ resp }) => {
+		resp(new Response("Methods!"))
+	})
 
-    const request = new Request("http://localhost/page", { method: "GET" })
+	const request = new Request("http://localhost/page", { method: "GET" })
 	const response = await wooter.fetch(request)
 	const text = await response.text()
 
-    assertEquals(response.status, 200)
+	assertEquals(response.status, 200)
 	assertEquals(text, "Methods!")
 })
 
 Deno.test("Wooter - middleware", async () => {
-    const wooter = Wooter.withMethods().use<{ setTestHeader: (value: string) => void }>(async ({ up, resp }) => {
-        let header: string | undefined;
-        const response = await up({
-            setTestHeader: (value) => {
-                header = value
-            }
-        })
-        if(header) response.headers.set("X-Test", header)
-        resp(response)
-    })
-    wooter.GET(chemin('page'), ({ data: { setTestHeader }, resp }) => {
-        setTestHeader("HELLO")
-        resp(new Response('world'))
-    })
+	const wooter = Wooter.withMethods().use<
+		{ setTestHeader: (value: string) => void }
+	>(async ({ up, resp }) => {
+		let header: string | undefined
+		const response = await up({
+			setTestHeader: (value) => {
+				header = value
+			},
+		})
+		if (header) response.headers.set("X-Test", header)
+		resp(response)
+	})
+	wooter.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+		setTestHeader("HELLO")
+		resp(new Response("world"))
+	})
 
-    const request = new Request("http://localhost/page", { method: "GET" })
+	const request = new Request("http://localhost/page", { method: "GET" })
 	const response = await wooter.fetch(request)
 
-    assertEquals(response.status, 200)
-    assertEquals(response.headers.get('X-Test'), "HELLO")
+	assertEquals(response.status, 200)
+	assertEquals(response.headers.get("X-Test"), "HELLO")
 })
 
 Deno.test("Wooter - middleware - call up twice", async () => {
-    const wooter = Wooter.withMethods({ catchErrors: false }).use<{ setTestHeader: (value: string) => void }>(async ({ up, resp }) => {
-        let header: string | undefined;
-        const response = await up({
-            setTestHeader: (value) => {
-                header = value
-            }
-        })
-        await up({
-            setTestHeader: (value) => {
-                header = value
-            }
-        })
-        if(header) response.headers.set("X-Test", header)
-        resp(response)
-    })
-    wooter.GET(chemin('page'), ({ data: { setTestHeader }, resp }) => {
-        setTestHeader("HELLO")
-        resp(new Response('world'))
-    })
+	const wooter = Wooter.withMethods({ catchErrors: false }).use<
+		{ setTestHeader: (value: string) => void }
+	>(async ({ up, resp }) => {
+		let header: string | undefined
+		const response = await up({
+			setTestHeader: (value) => {
+				header = value
+			},
+		})
+		await up({
+			setTestHeader: (value) => {
+				header = value
+			},
+		})
+		if (header) response.headers.set("X-Test", header)
+		resp(response)
+	})
+	wooter.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+		setTestHeader("HELLO")
+		resp(new Response("world"))
+	})
 
-    let response: Response | undefined
-    try {
-        const request = new Request("http://localhost/page", { method: "GET" })
-        response = await wooter.fetch(request)
-        fail("Wooter caught the error!")
-    } catch(e) {
-        assert(e instanceof MiddlewareCalledUpTooManyTimes)
-    }
+	try {
+		const request = new Request("http://localhost/page", { method: "GET" })
+		await wooter.fetch(request)
+		fail("Wooter caught the error!")
+	} catch (e) {
+		assert(e instanceof MiddlewareCalledUpTooManyTimes)
+	}
 })
 
 Deno.test("Wooter - middleware - didn't call up", async () => {
-    const wooter = Wooter.withMethods({ catchErrors: false }).use<{ setTestHeader: (value: string) => void }>(async ({ up, resp }) => {
-    })
+	const wooter = Wooter.withMethods({ catchErrors: false }).use<
+		{ setTestHeader: (value: string) => void }
+	>(async () => {
+	})
 
-    
-    wooter.GET(chemin('page'), ({ data: { setTestHeader }, resp }) => {
-        setTestHeader("HELLO")
-        resp(new Response('world'))
-    })
+	wooter.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+		setTestHeader("HELLO")
+		resp(new Response("world"))
+	})
 
-    let response: Response | undefined
-    try {
-        const request = new Request("http://localhost/page", { method: "GET" })
-        response = await wooter.fetch(request)
-        fail("Wooter caught the error!")
-    } catch(e) {
-        assert(e instanceof MiddlewareDidntCallUp)
-    }
+	try {
+		const request = new Request("http://localhost/page", { method: "GET" })
+		await wooter.fetch(request)
+		fail("Wooter caught the error!")
+	} catch (e) {
+		assert(e instanceof MiddlewareDidntCallUp)
+	}
 })
 
 Deno.test("Wooter - middleware - called up but not resp", async () => {
-    const wooter = Wooter.withMethods().use(async ({ up }) => {
-        await up()
-    })
-    
-    wooter.GET(chemin('page'), ({ resp }) => {
-        resp(new Response('world'))
-    })
+	const wooter = Wooter.withMethods().use(async ({ up }) => {
+		await up()
+	})
 
-    const request = new Request("http://localhost/page", { method: "GET" })
+	wooter.GET(chemin("page"), ({ resp }) => {
+		resp(new Response("world"))
+	})
+
+	const request = new Request("http://localhost/page", { method: "GET" })
 	const response = await wooter.fetch(request)
 	const text = await response.text()
 
-    assertEquals(response.status, 200)
+	assertEquals(response.status, 200)
 	assertEquals(text, "world")
 })
 
 Deno.test("Wooter - notFound set twice", () => {
-    const warn = stub(console, "warn")
+	const warn = stub(console, "warn")
 
-    new Wooter().notFound(() => {}).notFound(() => {})
-    assertSpyCall(warn, 0, { args: ["notFound handler set twice"] })
+	new Wooter().notFound(() => {}).notFound(() => {})
+	assertSpyCall(warn, 0, { args: ["notFound handler set twice"] })
 })
 
 Deno.test("Wooter - don't catch errors", async () => {
-    const wooter = new Wooter({ catchErrors: false })
-    wooter.addRoute("GET", chemin("page"), () => {
-        throw new TestError()
-    })
-    let response: Response | undefined
-    try {
-        const request = new Request("http://localhost/page", { method: "GET" })
-        response = await wooter.fetch(request)
-        fail("Wooter caught the error!")
-    } catch(e) {
-        assert(e instanceof TestError)
-    }
+	const wooter = new Wooter({ catchErrors: false })
+	wooter.addRoute("GET", chemin("page"), () => {
+		throw new TestError()
+	})
+	try {
+		const request = new Request("http://localhost/page", { method: "GET" })
+		await wooter.fetch(request)
+		fail("Wooter caught the error!")
+	} catch (e) {
+		assert(e instanceof TestError)
+	}
 })
 
 Deno.test("No response", async () => {
-    const wooter = new Wooter({ catchErrors: false })
-    wooter.addRoute("GET", chemin("page"), () => {
-    })
-    let response: Response | undefined
-    try {
-        const request = new Request("http://localhost/page", { method: "GET" })
-        response = await wooter.fetch(request)
-        fail("Wooter caught the error!")
-    } catch(e) {
-        assert(e instanceof ExitWithoutResponse)
-    }
+	const wooter = new Wooter({ catchErrors: false })
+	wooter.addRoute("GET", chemin("page"), () => {
+	})
+	try {
+		const request = new Request("http://localhost/page", { method: "GET" })
+		await wooter.fetch(request)
+		fail("Wooter caught the error!")
+	} catch (e) {
+		assert(e instanceof ExitWithoutResponse)
+	}
 })
 
 Deno.test("Namespace with another route after", async () => {
-    const wooter = new Wooter().useMethods()
+	const wooter = new Wooter().useMethods()
 
-    wooter.namespace(chemin('something'), wooter => wooter.useMethods(), wooter => {
-        wooter.GET(chemin("page"), ({ resp }) => {
-            resp(new Response("page"))
-        })
-    })
-    wooter.namespace(chemin("api"), wooter => wooter.useMethods(), wooter => {
-        wooter.GET(chemin("page"), ({ resp }) => {
-            resp(new Response("page"))
-        })
-    })
-    wooter.GET(chemin('api'), ({ resp }) => {
-        resp(new Response(""))
-    })
+	wooter.namespace(
+		chemin("something"),
+		(wooter) => wooter.useMethods(),
+		(wooter) => {
+			wooter.GET(chemin("page"), ({ resp }) => {
+				resp(new Response("page"))
+			})
+		},
+	)
+	wooter.namespace(
+		chemin("api"),
+		(wooter) => wooter.useMethods(),
+		(wooter) => {
+			wooter.GET(chemin("page"), ({ resp }) => {
+				resp(new Response("page"))
+			})
+		},
+	)
+	wooter.GET(chemin("api"), ({ resp }) => {
+		resp(new Response(""))
+	})
 
-    const request = new Request("http://localhost/api", { method: "GET" })
+	const request = new Request("http://localhost/api", { method: "GET" })
 	const response = await wooter.fetch(request)
 	const text = await response.text()
 
-    assertEquals(response.status, 200)
+	assertEquals(response.status, 200)
 	assertEquals(text, "")
 })
 
 Deno.test("Multiple methods", async () => {
-    const wooter = new Wooter()
+	const wooter = new Wooter()
 
-    wooter.route(chemin("page"))
-        .POST(({ resp }) => {
-            resp(new Response('ok'))
-        })
-        .GET(({ resp }) => {
-            resp(new Response('ok'))
-        })
-    
-    const request = new Request("http://localhost/page", { method: "GET" })
-    const response = await wooter.fetch(request)
-    const text = await response.text()
+	wooter.route(chemin("page"))
+		.POST(({ resp }) => {
+			resp(new Response("ok"))
+		})
+		.GET(({ resp }) => {
+			resp(new Response("ok"))
+		})
 
-    assertEquals(response.status, 200)
-    assertEquals(text, "ok")
+	const request = new Request("http://localhost/page", { method: "GET" })
+	const response = await wooter.fetch(request)
+	const text = await response.text()
+
+	assertEquals(response.status, 200)
+	assertEquals(text, "ok")
 })
 
 Deno.test("namespace with existing wooter", async () => {
-    const wooter1 = new Wooter().useMethods()
-    wooter1.GET(chemin('page'), async ({ resp }) => {
-        resp(new Response('ok'))
-    })
+	const wooter1 = new Wooter().useMethods()
+	wooter1.GET(chemin("page"), ({ resp }) => {
+		resp(new Response("ok"))
+	})
 
-    const wooter2 = new Wooter()
-    wooter2.namespace(chemin('namespace'), wooter1)
+	const wooter2 = new Wooter()
+	wooter2.namespace(chemin("namespace"), wooter1)
 
-    const request = new Request("http://localhost/namespace/page", { method: "GET" })
-    const response = await wooter2.fetch(request)
-    const text = await response.text()
+	const request = new Request("http://localhost/namespace/page", {
+		method: "GET",
+	})
+	const response = await wooter2.fetch(request)
+	const text = await response.text()
 
-    assertEquals(response.status, 200)
-    assertEquals(text, "ok")
+	assertEquals(response.status, 200)
+	assertEquals(text, "ok")
 })
 
 Deno.test("default 404", async () => {
-    const wooter = new Wooter()
+	const wooter = new Wooter()
 
 	const request = new Request("http://localhost/unknown", { method: "GET" })
 	const response = await wooter.fetch(request)
