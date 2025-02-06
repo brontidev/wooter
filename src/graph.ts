@@ -56,7 +56,7 @@ export class Graph {
 	addNamespace(
 		path: IChemin<Params>,
 		// @ts-expect-error: Suppressing type error due to incompatible types between 'matcher' functions.
-		matcher: ExtractSetType<typeof this['namespaces']>['matcher'],
+		matcher: ExtractSetType<typeof this["namespaces"]>["matcher"],
 	) {
 		this.namespaces.add({
 			path,
@@ -136,7 +136,7 @@ export class Graph {
 
 		for (const { path, matcher } of this.namespaces) {
 			const matchValue = match(path, pathParts)
-			if(!matchValue) continue
+			if (!matchValue) continue
 			const { params } = matchValue
 			const handler = matcher(matchValue, method)
 			if (!handler) continue // This namespace doesn't have that full route, ignore

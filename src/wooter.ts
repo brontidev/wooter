@@ -288,7 +288,7 @@ export class Wooter<
 		const pathname = new URL(request.url).pathname
 		try {
 			const routeCheck = this.graph.getHandler(pathname, request.method)
-			if(!routeCheck) {
+			if (!routeCheck) {
 				throw new NotFound()
 			}
 			routeDefinition = routeCheck
