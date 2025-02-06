@@ -1,0 +1,11 @@
+{
+  "scriptId": "317",
+  "url": "file:///Users/maverickdev/Projects/wooter/src/export/chemin.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 0, "endOffset": 101, "count": 1 }],
+      "isBlockCoverage": true
+    }
+  ]
+}

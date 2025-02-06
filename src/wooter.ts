@@ -120,14 +120,6 @@ export class Wooter<
 	}
 
 	/**
-	 * reapplies WooterWithMethods type (after adding middleware)
-	 * @returns Wooter with Methods
-	 */
-	retypeWithMethods(): WooterWithMethods<TData, BaseParams> {
-		return this as unknown as WooterWithMethods<TData, BaseParams>
-	}
-
-	/**
 	 * Apply some middleware to a wooter
 	 * @param handler Middleware Handler
 	 * @returns Wooter
@@ -321,6 +313,7 @@ export class Wooter<
 					},
 				)
 			}
+			// deno-coverage-ignore-next
 			throw e
 		}
 		try {

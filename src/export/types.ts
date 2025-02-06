@@ -13,7 +13,7 @@ export type HttpMethod =
 	| "PATCH"
 	| "POST"
 	| "DELETE"
-	| Uppercase<string>
+
 
 /**
  * Parameters
@@ -104,7 +104,8 @@ export type WooterAddRoute<
 export type Methods<
 	TData extends Data = Data,
 	BaseParams extends Params = Params,
-> = Record<HttpMethod, WooterAddRoute<TData, BaseParams>>
+	AddRoute = WooterAddRoute<TData, BaseParams>
+> = Record<HttpMethod, AddRoute> & Record<Uppercase<string>, AddRoute>
 /**
  * Registers a method to the route
  * @param handler route handler

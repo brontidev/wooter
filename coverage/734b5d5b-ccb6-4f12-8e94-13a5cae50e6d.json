@@ -1,0 +1,26 @@
+{
+  "scriptId": "318",
+  "url": "file:///Users/maverickdev/Projects/wooter/src/export/error.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 0, "endOffset": 813, "count": 1 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "<instance_members_initializer>",
+      "ranges": [{ "startOffset": 139, "endOffset": 243, "count": 1 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "<instance_members_initializer>",
+      "ranges": [{ "startOffset": 399, "endOffset": 518, "count": 1 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "<instance_members_initializer>",
+      "ranges": [{ "startOffset": 667, "endOffset": 809, "count": 1 }],
+      "isBlockCoverage": true
+    }
+  ]
+}
