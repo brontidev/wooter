@@ -1,7 +1,11 @@
 import type { Event, MiddlewareEvent } from "../event.ts"
-import type { Merge } from "../util_types.ts"
 import type { Wooter } from "../wooter.ts"
 import type { IChemin } from "./chemin.ts"
+
+/**
+ * @internal
+ */
+export type Merge<A, B> = Omit<A, keyof B> & B
 
 /**
  * HTTP Methods
@@ -63,7 +67,12 @@ export type WooterWithMethods<
 	BaseParams extends Params = Params,
 > =
 	& {
-		use<NewData extends Data | undefined = undefined>(
+		use<
+			NewData extends Data | undefined = undefined,
+			MergedData extends Data = {
+				[K in keyof Merge<TData, NewData>]: (Merge<TData, NewData>)[K]
+			},
+		>(
 			handler: MiddlewareHandler<
 				BaseParams,
 				TData extends undefined ? Data : TData,
@@ -71,10 +80,8 @@ export type WooterWithMethods<
 			>,
 		): WooterWithMethods<
 			TData extends undefined ? NewData
-				: NewData extends undefined ? TData
-				: {
-					[K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K]
-				},
+				: (NewData extends undefined ? TData
+					: MergedData),
 			BaseParams
 		>
 	}

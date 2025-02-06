@@ -13,12 +13,7 @@ import type {
 	MiddlewareHandler,
 	Params,
 } from "./export/types.ts"
-import { promiseState } from "./shared.ts"
-
-export type RouteMatchDefinition = {
-	params: Params
-	handle: Handler
-}
+import { promiseResolved } from "./shared.ts"
 
 type ExtractSetType<T> = T extends Set<infer U> ? U : never
 
@@ -35,7 +30,7 @@ export class Graph {
 			matcher: (
 				match: ICheminMatch<Params>,
 				method: string,
-			) => RouteMatchDefinition | undefined
+			) => Handler | undefined
 		}
 	>()
 
@@ -89,25 +84,13 @@ export class Graph {
 						Promise.resolve().then(async () => {
 							try {
 								await handler(event)
-								if (
-									await promiseState(event.promise) ===
-										"pending"
-								) {
+								if (!await promiseResolved(event.promise)) {
 									return event.err(new ExitWithoutResponse())
 								}
 							} catch (e) {
 								event.err(e)
 							}
 						})
-						// handler(event).then(async () => {
-						// 	if (
-						// 		await promiseState(event.promise) === "pending"
-						// 	) {
-						// 		return event.err(new ExitWithoutResponse())
-						// 	}
-						// }, (e) => {
-						// 	event.err(e)
-						// })
 						return event.promise
 					}
 
@@ -123,7 +106,7 @@ export class Graph {
 						try {
 							await middlewareHandler(event)
 							if (
-								await promiseState(event.promise) === "pending"
+								!await promiseResolved(event.promise)
 							) {
 								if (!event.storedResponse) {
 									return event.err(
@@ -136,16 +119,6 @@ export class Graph {
 							event.err(e)
 						}
 					})
-					// middlewareHandler(event).then(async () => {
-					// 	if (await promiseState(event.promise) === "pending") {
-					// 		if (!event.storedResponse) {
-					// 			return event.err(new MiddlewareDidntCallUp())
-					// 		}
-					// 		event.resp(event.storedResponse)
-					// 	}
-					// }, (e) => {
-					// 	event.err(e)
-					// })
 					return event.promise
 				}
 			}
@@ -158,8 +131,8 @@ export class Graph {
 
 	getHandler(
 		pathname: string | string[],
-		method: string,
-	): RouteMatchDefinition | undefined {
+		intendedMethod: string,
+	): Handler | undefined {
 		const pathParts = Array.isArray(pathname)
 			? pathname
 			: splitPathname(pathname)
@@ -168,23 +141,17 @@ export class Graph {
 			const matchValue = match(path, pathParts)
 			if (!matchValue) continue
 			const { params } = matchValue
-			const handler = matcher(matchValue, method)
-			if (!handler) continue // This namespace doesn't have that full route, ignore
-			return {
-				params,
-				handle: this.composeMiddleware(handler?.handle, params),
-			}
+			const handler = matcher(matchValue, intendedMethod)
+			if (!handler) continue // This namespace doesn't have that route, continue to next
+			return this.composeMiddleware(handler, params)
 		}
-		// At this point we haven't found a namespace, we should check our local routes.
+		// No route has been found in namespaces, check local routess
 
-		for (const { handler, method: intendedMethod, path } of this.routes) {
-			if (method !== intendedMethod) continue // This route isn't the method we want to check for
+		for (const { handler, method, path } of this.routes) {
+			if (intendedMethod !== method) continue
 			const params = matchExact(path, pathParts)
 			if (!params) continue
-			return {
-				params,
-				handle: this.composeMiddleware(handler, params),
-			}
+			return this.composeMiddleware(handler, params)
 		}
 
 		return undefined

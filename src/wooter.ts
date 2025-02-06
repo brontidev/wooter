@@ -3,14 +3,14 @@ import type { IChemin } from "./export/chemin.ts"
 import type {
 	Data,
 	Handler,
+	Merge,
 	Methods,
 	MethodsNoPath,
 	MiddlewareHandler,
 	Params,
 	WooterWithMethods,
 } from "./export/types.ts"
-import { Graph, type RouteMatchDefinition } from "./graph.ts"
-import type { Merge } from "./util_types.ts"
+import { Graph } from "./graph.ts"
 
 class NotFound {}
 
@@ -112,8 +112,10 @@ export class Wooter<
 						return proxy
 					}
 				}
+				// deno-coverage-ignore-start
 				const value = Reflect.get(target, prop, receiver)
 				return typeof value === "function" ? value.bind(target) : value
+				// deno-coverage-ignore-stop
 			},
 		})
 		return proxy as unknown as Methods
@@ -124,18 +126,21 @@ export class Wooter<
 	 * @param handler Middleware Handler
 	 * @returns Wooter
 	 */
-	use<NewData extends Data | undefined = undefined>(
+	use<
+		NewData extends Data | undefined = undefined,
+		MergedData extends Data = {
+			[K in keyof Merge<TData, NewData>]: (Merge<TData, NewData>)[K]
+		},
+	>(
 		handler: MiddlewareHandler<
 			BaseParams,
 			TData extends undefined ? Data : TData,
 			NewData
 		>,
 	): Wooter<
-		(TData extends undefined ? NewData
+		TData extends undefined ? NewData
 			: (NewData extends undefined ? TData
-				: {
-					[K in keyof Merge<TData, NewData>]: Merge<TData, NewData>[K]
-				})),
+				: MergedData),
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
@@ -286,15 +291,15 @@ export class Wooter<
 		data?: TData,
 		params?: BaseParams,
 	): Promise<Response> {
-		let routeDefinition: RouteMatchDefinition
+		let handler: Handler
 		const event = new Event(request, params ?? {}, data ?? {})
 		const pathname = new URL(request.url).pathname
 		try {
-			const routeCheck = this.graph.getHandler(pathname, request.method)
-			if (!routeCheck) {
+			const handlerCheck = this.graph.getHandler(pathname, request.method)
+			if (!handlerCheck) {
 				throw new NotFound()
 			}
-			routeDefinition = routeCheck
+			handler = handlerCheck
 		} catch (e) {
 			if (e instanceof NotFound) {
 				if (this.notFoundHandler) {
@@ -317,7 +322,7 @@ export class Wooter<
 			throw e
 		}
 		try {
-			routeDefinition.handle(event)
+			handler(event)
 			return await event.promise
 		} catch (e) {
 			if (!this.opts?.catchErrors) throw e
@@ -353,7 +358,7 @@ export class Wooter<
 	private match(
 		pathParts: string[],
 		method: string,
-	): RouteMatchDefinition | undefined {
+	): Handler | undefined {
 		return this.graph.getHandler(pathParts, method)
 	}
 }

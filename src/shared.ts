@@ -1,8 +1,7 @@
-export function promiseState(p: Promise<unknown>) {
+export function promiseResolved(p: Promise<unknown>): Promise<boolean> {
 	const t = {}
 	return Promise.race([p, t])
 		.then(
-			(v) => (v === t) ? "pending" : "fulfilled" as const,
-			() => "rejected" as const,
+			(v) => (v === t) ? false : true
 		)
 }

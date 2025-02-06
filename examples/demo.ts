@@ -37,6 +37,7 @@ const bookPatch = z.object({
 })
 
 const wooter = new Wooter()
+	.useMethods()
 	.use<{ json: () => Promise<any> }>(async ({ request, resp, up, err }) => {
 		let _json: any
 		async function json() {
@@ -125,7 +126,6 @@ const wooter = new Wooter()
 
 		resp(response)
 	})
-	.useMethods()
 
 wooter.GET(chemin(), async ({ resp, data: { cookies } }) => {
 	const count = parseInt(cookies.get("count") ?? "0") + 1

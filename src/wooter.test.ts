@@ -185,6 +185,22 @@ Deno.test("Wooter - notFound set twice", () => {
 	assertSpyCall(warn, 0, { args: ["notFound handler set twice"] })
 })
 
+Deno.test("Wooter - notFound has an error", async () => {
+	const error = stub(console, "error")
+	const testerror = new TestError()
+	const wooter = new Wooter().notFound(() => {
+		throw testerror
+	})
+
+	const request = new Request("http://localhost/page", { method: "GET" })
+	const response = await wooter.fetch(request)
+
+	assertEquals(response.status, 404)
+	assertSpyCall(error, 0, {
+		args: ["Unresolved error in notFound handler", testerror],
+	})
+})
+
 Deno.test("Wooter - don't catch errors", async () => {
 	const wooter = new Wooter({ catchErrors: false })
 	wooter.addRoute("GET", chemin("page"), () => {
