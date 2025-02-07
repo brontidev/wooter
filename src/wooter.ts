@@ -197,7 +197,7 @@ export class Wooter<
 	 */
 	namespace<
 		TParams extends Params = Params,
-		NWooter extends Wooter<TData, BaseParams & TParams> = Wooter<
+		NWooter extends unknown = Wooter<
 			TData,
 			BaseParams & TParams
 		>,
