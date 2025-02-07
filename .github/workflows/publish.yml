@@ -13,6 +13,10 @@ jobs:
             contents: read
             id-token: write
 
+        defaults:
+            run:
+                working-directory: "./wooter"
+
         steps:
             - uses: actions/checkout@v4
             - uses: denoland/setup-deno@v1
@@ -21,6 +25,7 @@ jobs:
             - name: Check
               run: deno task check
             - name: Test
-              run: deno task test
+              working-directory: "/wooter"
+              run: deno task
             - name: Publish package
               run: deno publish

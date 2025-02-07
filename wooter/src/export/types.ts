@@ -72,7 +72,7 @@ export type Handler<
  * Standalone Middleware Handler type
  */
 export type StandaloneMiddlewareHandler<
-	TNextData extends Data | undefined = Data,
+	TNextData extends Data | undefined = undefined,
 	TData extends Data = Data,
 > = MiddlewareHandler<Params, TData, TNextData>
 

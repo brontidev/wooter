@@ -1,0 +1,33 @@
+{
+	"name": "@bronti/wooter",
+	"version": "0.2.4",
+	"license": "MIT",
+	"exports": {
+		".": "./src/export/index.ts",
+		"./util": "./src/export/util.ts",
+		"./chemin": "./src/export/chemin.ts",
+		"./types": "./src/export/types.ts",
+		"./error": "./src/export/error.ts"
+	},
+	"tasks": {
+		"doc": "deno doc --name='@ts-rex/wooter' --html --lint ./src/export/chemin.ts ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts",
+		"test": "deno test",
+		"coverage": "rm -rf ./coverage && deno test --coverage && deno coverage --html"
+	},
+	"imports": {
+		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1"
+	},
+	"publish": {
+		"include": ["./src", "./README.md"],
+		"exclude": ["./src/*.test.ts"]
+	},
+	"lint": {
+		"exclude": ["./examples", "./docs", "./coverage"]
+	},
+	"fmt": {
+		// "semiColons": false,
+		// "useTabs": true,
+		// "indentWidth": 4,
+		"exclude": ["./docs", "./coverage"]
+	}
+}
