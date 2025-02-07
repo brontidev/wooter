@@ -1,6 +1,6 @@
 {
 	"workspace": {
-		"members": ["./middleware", "./wooter"]
+		"members": ["./wooter"]
 	},
 	"tasks": {
 		"check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
