@@ -12,6 +12,9 @@
 > until v1.0.0\
 > **woot around and find out**
 
+> [!NOTE]
+> wooter uses [epoch semver](https://antfu.me/posts/epoch-semver).
+
 wooter is a simple router library written for Deno, it's inspired by Sveltekit's
 router, as well as Oak and Hono.
 
