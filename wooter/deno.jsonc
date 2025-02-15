@@ -15,7 +15,8 @@
 		"coverage": "rm -rf ./coverage && deno test --coverage && deno coverage --html"
 	},
 	"imports": {
-		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1"
+		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1",
+		"@/": "./src/"
 	},
 	"publish": {
 		"include": ["./src", "./README.md"],
