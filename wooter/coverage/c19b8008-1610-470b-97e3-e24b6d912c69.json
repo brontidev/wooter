@@ -1,6 +1,6 @@
 {
   "scriptId": "319",
-  "url": "file:///Users/maverickdev/Projects/wooter/src/export/error.ts",
+  "url": "file:///Users/maverickdev/Projects/wooter/wooter/src/export/error.ts",
   "functions": [
     {
       "functionName": "",
@@ -9,7 +9,7 @@
     },
     {
       "functionName": "<instance_members_initializer>",
-      "ranges": [{ "startOffset": 139, "endOffset": 243, "count": 1 }],
+      "ranges": [{ "startOffset": 139, "endOffset": 243, "count": 12 }],
       "isBlockCoverage": true
     },
     {

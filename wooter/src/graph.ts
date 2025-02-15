@@ -83,7 +83,9 @@ export class Graph {
 						Promise.resolve().then(async () => {
 							try {
 								await handler(event)
-								if (event[SymbolResolvers].state === 'pending') {
+								if (
+									event[SymbolResolvers].state === "pending"
+								) {
 									return event.err(new ExitWithoutResponse())
 								}
 							} catch (e) {
@@ -104,7 +106,7 @@ export class Graph {
 					Promise.resolve().then(async () => {
 						try {
 							await middlewareHandler(event)
-							if (event[SymbolResolvers].state === 'pending') {
+							if (event[SymbolResolvers].state === "pending") {
 								if (!event.storedResponse) {
 									return event.err(
 										new MiddlewareDidntCallUp(),

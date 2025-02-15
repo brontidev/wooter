@@ -387,12 +387,12 @@ pre.prettyprint {
           <div class='fl pad1y space-right2'>
             <span class='strong'>100.00%</span>
             <span class='quiet'>Branches</span>
-            <span class='fraction'>23/23</span>
+            <span class='fraction'>22/22</span>
           </div>
           <div class='fl pad1y space-right2'>
             <span class='strong'>100.00%</span>
             <span class='quiet'>Lines</span>
-            <span class='fraction'>117/117</span>
+            <span class='fraction'>116/116</span>
           </div>
         </div>
       </div>
@@ -557,8 +557,7 @@ pre.prettyprint {
 <a name='L155'></a><a href='#L155'>155</a>
 <a name='L156'></a><a href='#L156'>156</a>
 <a name='L157'></a><a href='#L157'>157</a>
-<a name='L158'></a><a href='#L158'>158</a>
-<a name='L159'></a><a href='#L159'>159</a></pre></td>
+<a name='L158'></a><a href='#L158'>158</a></pre></td>
           <td class='line-coverage quiet'><pre><span class='cline-any cline-yes' title='This line is covered 1 time'>x1</span>
 <span class='cline-any cline-yes' title='This line is covered 1 time'>x1</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
@@ -574,7 +573,6 @@ pre.prettyprint {
 <span class='cline-any cline-neutral'>&nbsp</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
-<span class='cline-any cline-yes' title='This line is covered 1 time'>x1</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
@@ -645,9 +643,11 @@ pre.prettyprint {
 <span class='cline-any cline-yes' title='This line is covered 82 times'>x82</span>
 <span class='cline-any cline-yes' title='This line is covered 96 times'>x96</span>
 <span class='cline-any cline-yes' title='This line is covered 96 times'>x96</span>
-<span class='cline-any cline-yes' title='This line is covered 96 times'>x96</span>
-<span class='cline-any cline-yes' title='This line is covered 97 times'>x97</span>
-<span class='cline-any cline-yes' title='This line is covered 97 times'>x97</span>
+<span class='cline-any cline-yes' title='This line is covered 108 times'>x108</span>
+<span class='cline-any cline-yes' title='This line is covered 108 times'>x108</span>
+<span class='cline-any cline-yes' title='This line is covered 108 times'>x108</span>
+<span class='cline-any cline-yes' title='This line is covered 108 times'>x108</span>
+<span class='cline-any cline-yes' title='This line is covered 108 times'>x108</span>
 <span class='cline-any cline-yes' title='This line is covered 96 times'>x96</span>
 <span class='cline-any cline-yes' title='This line is covered 98 times'>x98</span>
 <span class='cline-any cline-yes' title='This line is covered 98 times'>x98</span>
@@ -666,16 +666,14 @@ pre.prettyprint {
 <span class='cline-any cline-yes' title='This line is covered 72 times'>x72</span>
 <span class='cline-any cline-yes' title='This line is covered 76 times'>x76</span>
 <span class='cline-any cline-yes' title='This line is covered 76 times'>x76</span>
-<span class='cline-any cline-yes' title='This line is covered 76 times'>x76</span>
-<span class='cline-any cline-yes' title='This line is covered 76 times'>x76</span>
-<span class='cline-any cline-yes' title='This line is covered 76 times'>x76</span>
-<span class='cline-any cline-yes' title='This line is covered 78 times'>x78</span>
 <span class='cline-any cline-yes' title='This line is covered 79 times'>x79</span>
 <span class='cline-any cline-yes' title='This line is covered 79 times'>x79</span>
+<span class='cline-any cline-yes' title='This line is covered 80 times'>x80</span>
+<span class='cline-any cline-yes' title='This line is covered 80 times'>x80</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
-<span class='cline-any cline-yes' title='This line is covered 79 times'>x79</span>
-<span class='cline-any cline-yes' title='This line is covered 79 times'>x79</span>
-<span class='cline-any cline-yes' title='This line is covered 79 times'>x79</span>
+<span class='cline-any cline-yes' title='This line is covered 80 times'>x80</span>
+<span class='cline-any cline-yes' title='This line is covered 81 times'>x81</span>
+<span class='cline-any cline-yes' title='This line is covered 81 times'>x81</span>
 <span class='cline-any cline-yes' title='This line is covered 76 times'>x76</span>
 <span class='cline-any cline-yes' title='This line is covered 77 times'>x77</span>
 <span class='cline-any cline-yes' title='This line is covered 77 times'>x77</span>
@@ -875,9 +873,8 @@ pre.prettyprint {
 
 
 
-
 </pre></td>
-          <td class='text'><pre class='prettyprint'>import { Event, MiddlewareEvent } from "./event.ts"
+          <td class='text'><pre class='prettyprint'>import { Event, MiddlewareEvent, SymbolResolvers } from "./event.ts"
 import {
 	type IChemin,
 	type ICheminMatch,
@@ -892,7 +889,6 @@ import type {
 	MiddlewareHandler,
 	Params,
 } from "./export/types.ts"
-import { promiseResolved } from "./shared.ts"
 
 type ExtractSetType&lt;T&gt; = T extends Set&lt;infer U&gt; ? U : never
 
@@ -963,7 +959,9 @@ export class Graph {
 						Promise.resolve().then(async () =&gt; {
 							try {
 								await handler(event)
-								if (!await promiseResolved(event.promise)) {
+								if (
+									event[SymbolResolvers].state === "pending"
+								) {
 									return event.err(new ExitWithoutResponse())
 								}
 							} catch (e) {
@@ -984,9 +982,7 @@ export class Graph {
 					Promise.resolve().then(async () =&gt; {
 						try {
 							await middlewareHandler(event)
-							if (
-								!await promiseResolved(event.promise)
-							) {
+							if (event[SymbolResolvers].state === "pending") {
 								if (!event.storedResponse) {
 									return event.err(
 										new MiddlewareDidntCallUp(),
@@ -1046,7 +1042,7 @@ export class Graph {
       <div class='footer quiet pad2 space-top1 center small'>
         Code coverage generated by
         <a href='https://deno.com/' target='_blank'>Deno v2.0.6</a>
-        at Thu, 6 Feb 2025 23:25:19 +0000
+        at Sat, 15 Feb 2025 18:09:50 +0000
       </div>
         </body>
       </html>

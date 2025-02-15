@@ -44,6 +44,9 @@ export class Event<
 		return this.resolvers.promise
 	}
 
+	/**
+	 * @internal
+	 */
 	get [SymbolResolvers](): Resolvers<Response> {
 		return this.resolvers
 	}

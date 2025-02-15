@@ -3,7 +3,7 @@
         
       <head>
         <meta charset='utf-8'>
-        <title>Coverage report for shared.ts</title>
+        <title>Coverage report for promise.ts</title>
         <style>/* Copyright 2015 the Istanbul contributors. All rights reserved. ISC license. */
 /* Copyright 2018-2023 the Deno authors. All rights reserved. MIT license. */
 
@@ -382,7 +382,7 @@ pre.prettyprint {
           <div class='wrapper'>
             
       <div class='pad1'>
-        <h1><a href='index.html'>All files</a> / shared.ts</h1>
+        <h1><a href='index.html'>All files</a> / promise.ts</h1>
         <div class='clearfix'>
           <div class='fl pad1y space-right2'>
             <span class='strong'>100.00%</span>
@@ -392,7 +392,7 @@ pre.prettyprint {
           <div class='fl pad1y space-right2'>
             <span class='strong'>100.00%</span>
             <span class='quiet'>Lines</span>
-            <span class='fraction'>6/6</span>
+            <span class='fraction'>20/20</span>
           </div>
         </div>
       </div>
@@ -406,27 +406,123 @@ pre.prettyprint {
 <a name='L4'></a><a href='#L4'>4</a>
 <a name='L5'></a><a href='#L5'>5</a>
 <a name='L6'></a><a href='#L6'>6</a>
-<a name='L7'></a><a href='#L7'>7</a></pre></td>
-          <td class='line-coverage quiet'><pre><span class='cline-any cline-yes' title='This line is covered 1 time'>x1</span>
-<span class='cline-any cline-yes' title='This line is covered 16 times'>x16</span>
-<span class='cline-any cline-yes' title='This line is covered 64 times'>x64</span>
-<span class='cline-any cline-yes' title='This line is covered 16 times'>x16</span>
-<span class='cline-any cline-yes' title='This line is covered 16 times'>x16</span>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a></pre></td>
+          <td class='line-coverage quiet'><pre><span class='cline-any cline-neutral'>&nbsp</span>
 <span class='cline-any cline-neutral'>&nbsp</span>
-<span class='cline-any cline-yes' title='This line is covered 16 times'>x16</span></pre></td>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-yes' title='This line is covered 1 time'>x1</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 79 times'>x79</span>
+<span class='cline-any cline-yes' title='This line is covered 111 times'>x111</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-neutral'>&nbsp</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 56 times'>x56</span>
+<span class='cline-any cline-yes' title='This line is covered 56 times'>x56</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 58 times'>x58</span>
+<span class='cline-any cline-yes' title='This line is covered 58 times'>x58</span>
+<span class='cline-any cline-yes' title='This line is covered 58 times'>x58</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span>
+<span class='cline-any cline-yes' title='This line is covered 35 times'>x35</span></pre></td>
           <td class='branch-coverage quiet'><pre>
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </pre></td>
-          <td class='text'><pre class='prettyprint'>export function promiseResolved(p: Promise&lt;unknown&gt;): Promise&lt;boolean&gt; {
-	const t = {}
-	return Promise.race([p, t])
-		.then(
-			(v) =&gt; (v === t) ? false : true,
-		)
+          <td class='text'><pre class='prettyprint'>export type PromiseState = "pending" | "fulfilled" | "rejected"
+
+export interface Resolvers&lt;T&gt; {
+	state: PromiseState
+	promise: Promise&lt;T&gt;
+	resolve: (value: T | PromiseLike&lt;T&gt;) =&gt; void
+	reject: (reason?: unknown) =&gt; void
+}
+
+export function createResolvers&lt;T&gt;(): Resolvers&lt;T&gt; {
+	let state: PromiseState = "pending"
+	const { promise, reject, resolve } = Promise.withResolvers&lt;T&gt;()
+
+	const updateState = (newState: PromiseState) =&gt; {
+		if (state !== "pending") return // if the promise had already been resolved, the state won't end up internally changing anyway
+		state = newState
+	}
+
+	return {
+		state,
+		promise,
+		reject(...args) {
+			updateState("rejected")
+			reject(...args)
+		},
+		resolve(...args) {
+			updateState("rejected")
+			resolve(...args)
+		},
+	}
 }
 </pre></td>
         </tr>
@@ -438,7 +534,7 @@ pre.prettyprint {
       <div class='footer quiet pad2 space-top1 center small'>
         Code coverage generated by
         <a href='https://deno.com/' target='_blank'>Deno v2.0.6</a>
-        at Thu, 6 Feb 2025 23:25:19 +0000
+        at Sat, 15 Feb 2025 18:09:50 +0000
       </div>
         </body>
       </html>
