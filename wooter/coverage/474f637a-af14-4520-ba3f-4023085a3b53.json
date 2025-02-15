@@ -1,0 +1,67 @@
+{
+  "scriptId": "366",
+  "url": "file:///Users/maverickdev/Projects/wooter/wooter/src/graph/basic.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 0, "endOffset": 2829, "count": 1 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "<instance_members_initializer>",
+      "ranges": [{ "startOffset": 317, "endOffset": 350, "count": 21 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "InheritableCheminGraph",
+      "ranges": [{ "startOffset": 466, "endOffset": 591, "count": 21 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "pushNode",
+      "ranges": [{ "startOffset": 685, "endOffset": 763, "count": 16 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "pushSubgraph",
+      "ranges": [{ "startOffset": 987, "endOffset": 1075, "count": 4 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "getNode",
+      "ranges": [
+        { "startOffset": 1227, "endOffset": 2074, "count": 19 },
+        { "startOffset": 1299, "endOffset": 1309, "count": 3 },
+        { "startOffset": 1310, "endOffset": 1335, "count": 16 },
+        { "startOffset": 1386, "endOffset": 1829, "count": 4 },
+        { "startOffset": 1466, "endOffset": 1475, "count": 1 },
+        { "startOffset": 1475, "endOffset": 1642, "count": 3 },
+        { "startOffset": 1642, "endOffset": 1651, "count": 1 },
+        { "startOffset": 1651, "endOffset": 1829, "count": 2 },
+        { "startOffset": 1829, "endOffset": 1874, "count": 17 },
+        { "startOffset": 1874, "endOffset": 2070, "count": 15 },
+        { "startOffset": 1917, "endOffset": 1926, "count": 1 },
+        { "startOffset": 1926, "endOffset": 2002, "count": 14 },
+        { "startOffset": 2002, "endOffset": 2011, "count": 1 },
+        { "startOffset": 2011, "endOffset": 2070, "count": 13 },
+        { "startOffset": 2070, "endOffset": 2073, "count": 4 }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "getNode",
+      "ranges": [{ "startOffset": 2311, "endOffset": 2382, "count": 0 }],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "pushNode",
+      "ranges": [{ "startOffset": 2476, "endOffset": 2534, "count": 0 }],
+      "isBlockCoverage": false
+    },
+    {
+      "functionName": "pushSubgraph",
+      "ranges": [{ "startOffset": 2758, "endOffset": 2826, "count": 0 }],
+      "isBlockCoverage": false
+    }
+  ]
+}
