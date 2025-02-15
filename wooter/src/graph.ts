@@ -1,4 +1,4 @@
-import { Event, MiddlewareEvent } from "./event.ts"
+import { Event, MiddlewareEvent, SymbolResolvers } from "./event.ts"
 import {
 	type IChemin,
 	type ICheminMatch,
@@ -13,7 +13,6 @@ import type {
 	MiddlewareHandler,
 	Params,
 } from "./export/types.ts"
-import { promiseResolved } from "./shared.ts"
 
 type ExtractSetType<T> = T extends Set<infer U> ? U : never
 
@@ -84,7 +83,7 @@ export class Graph {
 						Promise.resolve().then(async () => {
 							try {
 								await handler(event)
-								if (!await promiseResolved(event.promise)) {
+								if (event[SymbolResolvers].state === 'pending') {
 									return event.err(new ExitWithoutResponse())
 								}
 							} catch (e) {
@@ -105,9 +104,7 @@ export class Graph {
 					Promise.resolve().then(async () => {
 						try {
 							await middlewareHandler(event)
-							if (
-								!await promiseResolved(event.promise)
-							) {
+							if (event[SymbolResolvers].state === 'pending') {
 								if (!event.storedResponse) {
 									return event.err(
 										new MiddlewareDidntCallUp(),
