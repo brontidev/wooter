@@ -1,4 +1,4 @@
-import { CheminGraph } from "@/graph/basic.ts"
+import { InheritableCheminGraph } from "@/graph/basic.ts"
 import type { IChemin } from "@/export/chemin.ts"
 import type {
 	Data,
@@ -13,7 +13,8 @@ import { MiddlewareEvent } from "@/event/middleware.ts"
 type Node = { path: IChemin<Params>; method: string; handler: Handler }
 type FindData = { method: string }
 
-export class RouteGraph extends CheminGraph<Node, FindData, RouteGraph> {
+export class RouteGraph
+	extends InheritableCheminGraph<Node, FindData, RouteGraph> {
 	private middleware = new Set<MiddlewareHandler>()
 
 	constructor() {

@@ -1,1 +1,1 @@
-export { CheminGraph } from "@/graph/basic.ts"
+export { CheminGraph, InheritableCheminGraph } from "@/graph/basic.ts"

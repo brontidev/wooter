@@ -11,7 +11,7 @@
 		"./util": "./src/export/util.ts"
 	},
 	"tasks": {
-		"doc": "deno doc --name='@ts-rex/wooter' --html --lint ./src/export/chemin.ts ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts",
+		"doc": "deno doc --name='@ts-rex/wooter' --html --lint ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts ./src/export/graph.ts ./src/export/chemin.ts",
 		"test": "deno test",
 		"coverage": "rm -rf ./coverage && deno test --coverage && deno coverage --html"
 	},
