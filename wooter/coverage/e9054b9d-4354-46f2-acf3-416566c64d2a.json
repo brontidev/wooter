@@ -1,0 +1,52 @@
+{
+  "scriptId": "365",
+  "url": "file:///Users/maverickdev/Projects/wooter/wooter/src/graph/basic.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 0, "endOffset": 1322, "count": 1 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "<instance_members_initializer>",
+      "ranges": [{ "startOffset": 135, "endOffset": 168, "count": 21 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "CheminGraph",
+      "ranges": [{ "startOffset": 172, "endOffset": 297, "count": 21 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "pushNode",
+      "ranges": [{ "startOffset": 300, "endOffset": 378, "count": 16 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "pushSubgraph",
+      "ranges": [{ "startOffset": 381, "endOffset": 469, "count": 4 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "getNode",
+      "ranges": [
+        { "startOffset": 472, "endOffset": 1319, "count": 19 },
+        { "startOffset": 544, "endOffset": 554, "count": 3 },
+        { "startOffset": 555, "endOffset": 580, "count": 16 },
+        { "startOffset": 631, "endOffset": 1074, "count": 4 },
+        { "startOffset": 711, "endOffset": 720, "count": 1 },
+        { "startOffset": 720, "endOffset": 887, "count": 3 },
+        { "startOffset": 887, "endOffset": 896, "count": 1 },
+        { "startOffset": 896, "endOffset": 1074, "count": 2 },
+        { "startOffset": 1074, "endOffset": 1119, "count": 17 },
+        { "startOffset": 1119, "endOffset": 1315, "count": 15 },
+        { "startOffset": 1162, "endOffset": 1171, "count": 1 },
+        { "startOffset": 1171, "endOffset": 1247, "count": 14 },
+        { "startOffset": 1247, "endOffset": 1256, "count": 1 },
+        { "startOffset": 1256, "endOffset": 1315, "count": 13 },
+        { "startOffset": 1315, "endOffset": 1318, "count": 4 }
+      ],
+      "isBlockCoverage": true
+    }
+  ]
+}

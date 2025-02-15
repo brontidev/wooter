@@ -1,21 +1,19 @@
 import {
 	type IChemin,
-	type ICheminMatch,
 	match as matchChemin,
 	matchExact as matchCheminExact,
 	splitPathname,
 } from "@/export/chemin.ts"
 
-export type Matcher<Node, FindData> = (
-	match: ICheminMatch<unknown>,
-	data: FindData,
-) => Node | undefined
-
-export class CheminGraph<Node, FindData> {
+export class CheminGraph<
+	Node,
+	FindData,
+	This = CheminGraph<Node, FindData, unknown>,
+> {
 	private nodes = new Set<{ path: IChemin; node: Node }>()
 
 	private subgraphs = new Set<
-		{ path: IChemin; match: Matcher<Node, FindData> }
+		{ path: IChemin; match: () => This }
 	>()
 
 	constructor(private dataMatcher: (node: Node, data: FindData) => boolean) {}
@@ -24,7 +22,7 @@ export class CheminGraph<Node, FindData> {
 		this.nodes.add({ path, node })
 	}
 
-	protected pushSubgraph(path: IChemin, match: Matcher<Node, FindData>) {
+	protected pushSubgraph(path: IChemin, match: () => This) {
 		this.subgraphs.add({ path, match })
 	}
 
@@ -39,9 +37,12 @@ export class CheminGraph<Node, FindData> {
 		for (const { path, match } of this.subgraphs) {
 			const matchValue = matchChemin(path, pathParts)
 			if (!matchValue) continue
-			const { params } = matchValue
-			const node = match(matchValue, data)
-			if (!node) continue // This namespace doesn't have that route, continue to next
+			const { params: parentParams } = matchValue
+			const graph = match() as unknown as this
+			const definition = graph.getNode(matchValue.rest as string[], data)
+			if (!definition) continue
+			const { params: childParams, node } = definition
+			const params = Object.assign(parentParams, childParams)
 			return { params, node }
 		}
 

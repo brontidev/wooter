@@ -32,7 +32,7 @@ export class Wooter<
 	TData extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
 > {
-	private graph: RouteGraph
+	private internalGraph: RouteGraph
 
 	private notFoundHandler:
 		| Handler<
@@ -47,7 +47,7 @@ export class Wooter<
 	 */
 	constructor(private opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
-		this.graph = new RouteGraph()
+		this.internalGraph = new RouteGraph()
 	}
 
 	/**
@@ -137,7 +137,7 @@ export class Wooter<
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
-		this.graph.pushMiddleware(handler)
+		this.internalGraph.pushMiddleware(handler)
 		// @ts-expect-error: useless Generics
 		return this
 	}
@@ -157,7 +157,7 @@ export class Wooter<
 		>,
 	) {
 		// @ts-expect-error: useless Generics
-		this.graph.addRoute(method, path, handler)
+		this.internalGraph.addRoute(method, path, handler)
 	}
 	/**
 	 * Registers another wooter as a namespace
@@ -241,11 +241,10 @@ export class Wooter<
 			finalWooter = wooter
 		}
 
-		this.graph.addNamespace(
-			// @ts-expect-error: useless Generics
-			path,
-			({ rest }, { method }) => {
-				return finalWooter.match([...rest], method)
+		this.internalGraph.addNamespace(
+			path as IChemin<Params>,
+			() => {
+				return finalWooter.graph
 			},
 		)
 		return this
@@ -288,7 +287,10 @@ export class Wooter<
 		const event = new RouteEvent(request, params ?? {}, data ?? {})
 		const pathname = new URL(request.url).pathname
 		try {
-			const handlerCheck = this.graph.getHandler(pathname, request.method)
+			const handlerCheck = this.internalGraph.getHandler(
+				pathname,
+				request.method,
+			)
 			if (!handlerCheck) {
 				throw new NotFound()
 			}
@@ -341,16 +343,13 @@ export class Wooter<
 	}
 
 	/**
-	 * Matches a route based on a path array (used internally)
+	 * Gets the internal graph from the wooter (used internally)
 	 * @param pathParts Path array
 	 * @param method HTTP verb
 	 * @returns Route Match Definition
 	 * @internal
 	 */
-	private match(
-		pathParts: string[],
-		method: string,
-	): Handler | undefined {
-		return this.graph.getHandler(pathParts, method)
+	private get graph() {
+		return this.internalGraph
 	}
 }

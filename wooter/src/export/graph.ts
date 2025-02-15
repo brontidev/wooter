@@ -1,1 +1,1 @@
-export { CheminGraph, type Matcher } from "@/graph/basic.ts"
+export { CheminGraph } from "@/graph/basic.ts"

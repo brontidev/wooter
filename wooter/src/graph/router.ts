@@ -1,4 +1,4 @@
-import { CheminGraph, type Matcher } from "@/graph/basic.ts"
+import { CheminGraph } from "@/graph/basic.ts"
 import type { IChemin } from "@/export/chemin.ts"
 import type {
 	Data,
@@ -13,7 +13,7 @@ import { MiddlewareEvent } from "@/event/middleware.ts"
 type Node = { path: IChemin<Params>; method: string; handler: Handler }
 type FindData = { method: string }
 
-export class RouteGraph extends CheminGraph<Node, FindData> {
+export class RouteGraph extends CheminGraph<Node, FindData, RouteGraph> {
 	private middleware = new Set<MiddlewareHandler>()
 
 	constructor() {
@@ -22,7 +22,6 @@ export class RouteGraph extends CheminGraph<Node, FindData> {
 
 	private composeMiddleware(node: Node, params: Params): Handler {
 		const middleware = this.middleware.values().toArray()
-
 		const { handler } = node
 		return (baseEvent) => {
 			const data: Data = baseEvent.data
@@ -94,7 +93,7 @@ export class RouteGraph extends CheminGraph<Node, FindData> {
 
 	addNamespace(
 		path: IChemin<Params>,
-		matcher: Matcher<Node, FindData>,
+		matcher: () => RouteGraph,
 	): void {
 		super.pushSubgraph(path, matcher)
 	}
@@ -107,9 +106,12 @@ export class RouteGraph extends CheminGraph<Node, FindData> {
 		pathname: string | string[],
 		method: string,
 	): Handler | undefined {
-		const _node = super.getNode(pathname, { method })
-		if (_node) {
-			return this.composeMiddleware(_node.node, _node.params as Params)
+		const definition = super.getNode(pathname, { method })
+		if (definition) {
+			return this.composeMiddleware(
+				definition.node,
+				definition.params as Params,
+			)
 		}
 	}
 }

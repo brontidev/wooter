@@ -1,0 +1,138 @@
+{
+  "scriptId": "317",
+  "url": "file:///Users/maverickdev/Projects/wooter/wooter/src/wooter.ts",
+  "functions": [
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 0, "endOffset": 5016, "count": 1 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "<instance_members_initializer>",
+      "ranges": [{ "startOffset": 221, "endOffset": 261, "count": 21 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "Wooter",
+      "ranges": [{ "startOffset": 324, "endOffset": 473, "count": 21 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "withMethods",
+      "ranges": [{ "startOffset": 598, "endOffset": 663, "count": 5 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "useMethods",
+      "ranges": [{ "startOffset": 833, "endOffset": 1474, "count": 9 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "get",
+      "ranges": [
+        { "startOffset": 890, "endOffset": 1444, "count": 29 },
+        { "startOffset": 968, "endOffset": 1128, "count": 9 },
+        { "startOffset": 1128, "endOffset": 1229, "count": 20 },
+        { "startOffset": 1229, "endOffset": 1414, "count": 18 },
+        { "startOffset": 1414, "endOffset": 1443, "count": 2 }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 987, "endOffset": 1117, "count": 9 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "functionValue",
+      "ranges": [
+        { "startOffset": 1248, "endOffset": 1403, "count": 18 },
+        { "startOffset": 1371, "endOffset": 1381, "count": 6 },
+        { "startOffset": 1382, "endOffset": 1390, "count": 12 }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "makeRouteBuilder",
+      "ranges": [{ "startOffset": 1625, "endOffset": 1958, "count": 4 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "get",
+      "ranges": [{ "startOffset": 1698, "endOffset": 1928, "count": 5 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 1785, "endOffset": 1909, "count": 5 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "use",
+      "ranges": [{ "startOffset": 2066, "endOffset": 2233, "count": 4 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "addRoute",
+      "ranges": [{ "startOffset": 2365, "endOffset": 2500, "count": 16 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "namespace",
+      "ranges": [
+        { "startOffset": 2503, "endOffset": 3062, "count": 4 },
+        { "startOffset": 2602, "endOffset": 2912, "count": 3 },
+        { "startOffset": 2695, "endOffset": 2791, "count": 2 },
+        { "startOffset": 2791, "endOffset": 2877, "count": 1 },
+        { "startOffset": 2912, "endOffset": 2953, "count": 1 }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "",
+      "ranges": [{ "startOffset": 2996, "endOffset": 3039, "count": 3 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "get fetch",
+      "ranges": [{ "startOffset": 3163, "endOffset": 3215, "count": 16 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "notFound",
+      "ranges": [
+        { "startOffset": 3323, "endOffset": 3487, "count": 4 },
+        { "startOffset": 3373, "endOffset": 3430, "count": 1 }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "_fetch",
+      "ranges": [
+        { "startOffset": 3490, "endOffset": 4586, "count": 16 },
+        { "startOffset": 3785, "endOffset": 3824, "count": 3 },
+        { "startOffset": 3824, "endOffset": 3861, "count": 13 },
+        { "startOffset": 3861, "endOffset": 4341, "count": 3 },
+        { "startOffset": 3942, "endOffset": 4205, "count": 2 },
+        { "startOffset": 4053, "endOffset": 4195, "count": 1 },
+        { "startOffset": 4205, "endOffset": 4320, "count": 2 },
+        { "startOffset": 4320, "endOffset": 4341, "count": 0 },
+        { "startOffset": 4341, "endOffset": 4414, "count": 13 },
+        { "startOffset": 4414, "endOffset": 4582, "count": 5 },
+        { "startOffset": 4461, "endOffset": 4469, "count": 4 },
+        { "startOffset": 4469, "endOffset": 4582, "count": 1 }
+      ],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "route",
+      "ranges": [{ "startOffset": 4674, "endOffset": 4781, "count": 4 }],
+      "isBlockCoverage": true
+    },
+    {
+      "functionName": "get graph",
+      "ranges": [{ "startOffset": 4965, "endOffset": 5013, "count": 3 }],
+      "isBlockCoverage": true
+    }
+  ]
+}

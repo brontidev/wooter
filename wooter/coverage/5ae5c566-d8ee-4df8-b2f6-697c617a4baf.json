@@ -9,7 +9,7 @@
     },
     {
       "functionName": "<instance_members_initializer>",
-      "ranges": [{ "startOffset": 139, "endOffset": 243, "count": 12 }],
+      "ranges": [{ "startOffset": 139, "endOffset": 243, "count": 10 }],
       "isBlockCoverage": true
     },
     {
