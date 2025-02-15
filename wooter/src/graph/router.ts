@@ -1,25 +1,29 @@
 import { CheminGraph, type Matcher } from "@/graph/basic.ts"
 import type { IChemin } from "@/export/chemin.ts"
-import type { Data, Handler, MiddlewareHandler, Params } from "@/export/types.ts"
+import type {
+	Data,
+	Handler,
+	MiddlewareHandler,
+	Params,
+} from "@/export/types.ts"
 import { RouteEvent, SymbolResolvers } from "@/event/index.ts"
 import { ExitWithoutResponse, MiddlewareDidntCallUp } from "@/export/error.ts"
 import { MiddlewareEvent } from "@/event/middleware.ts"
-
 
 type Node = { path: IChemin<Params>; method: string; handler: Handler }
 type FindData = { method: string }
 
 export class RouteGraph extends CheminGraph<Node, FindData> {
-    private middleware = new Set<MiddlewareHandler>()
+	private middleware = new Set<MiddlewareHandler>()
 
-    constructor() {
-        super((node, data) => node.method === data.method)
-    }
+	constructor() {
+		super((node, data) => node.method === data.method)
+	}
 
-    private composeMiddleware(node: Node, params: Params): Handler {
+	private composeMiddleware(node: Node, params: Params): Handler {
 		const middleware = this.middleware.values().toArray()
 
-        const { handler } = node
+		const { handler } = node
 		return (baseEvent) => {
 			const data: Data = baseEvent.data
 			Object.assign(params, baseEvent.params)
@@ -31,7 +35,11 @@ export class RouteGraph extends CheminGraph<Node, FindData> {
 					Object.assign(data, nextData)
 
 					if (idx >= middleware.length) {
-						const event = new RouteEvent(baseEvent.request, params, data)
+						const event = new RouteEvent(
+							baseEvent.request,
+							params,
+							data,
+						)
 						Promise.resolve().then(async () => {
 							try {
 								await handler(event)
@@ -80,20 +88,28 @@ export class RouteGraph extends CheminGraph<Node, FindData> {
 		}
 	}
 
-    addRoute(method: string, path: IChemin, handler: Handler): void {
-        super.pushNode(path, { path, method, handler })
-    }
+	addRoute(method: string, path: IChemin, handler: Handler): void {
+		super.pushNode(path, { path, method, handler })
+	}
 
-    addNamespace(path: IChemin<Params>, matcher: Matcher<Node, FindData>): void {
-        super.pushSubgraph(path, matcher)
-    }
+	addNamespace(
+		path: IChemin<Params>,
+		matcher: Matcher<Node, FindData>,
+	): void {
+		super.pushSubgraph(path, matcher)
+	}
 
-    pushMiddleware(middleware: MiddlewareHandler): void {
-        this.middleware.add(middleware)
-    }
+	pushMiddleware(middleware: MiddlewareHandler): void {
+		this.middleware.add(middleware)
+	}
 
-    getHandler(pathname: string | string[], method: string): Handler | undefined {
-        const _node = super.getNode(pathname, { method })
-        if(_node) return this.composeMiddleware(_node.node, _node.params as Params)
-    }
+	getHandler(
+		pathname: string | string[],
+		method: string,
+	): Handler | undefined {
+		const _node = super.getNode(pathname, { method })
+		if (_node) {
+			return this.composeMiddleware(_node.node, _node.params as Params)
+		}
+	}
 }
