@@ -1,5 +1,8 @@
 import { MiddlewareCalledUpTooManyTimes } from "./export/error.ts"
 import type { Data, Params } from "./export/types.ts"
+import { createResolvers, type Resolvers } from "./promise.ts"
+
+export const SymbolResolvers = Symbol("event_Resolvers")
 
 /**
  * Event class passed into route handlers
@@ -8,7 +11,7 @@ export class Event<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 > {
-	private resolvers: PromiseWithResolvers<Response>
+	private resolvers: Resolvers<Response>
 
 	/**
 	 * Request URL
@@ -41,6 +44,10 @@ export class Event<
 		return this.resolvers.promise
 	}
 
+	get [SymbolResolvers](): Resolvers<Response> {
+		return this.resolvers
+	}
+
 	/**
 	 * Creates a new Event
 	 * @param request Request
@@ -52,7 +59,7 @@ export class Event<
 		readonly params: TParams,
 		readonly data: TData,
 	) {
-		this.resolvers = Promise.withResolvers()
+		this.resolvers = createResolvers()
 		this.url = new URL(request.url)
 	}
 }

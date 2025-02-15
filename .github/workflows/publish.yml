@@ -24,6 +24,6 @@ jobs:
               run: deno task check
             - name: Test
               working-directory: "./${{ matrix.project }}"
-              run: deno task
+              run: deno task test
             - name: Publish package
               run: deno publish
