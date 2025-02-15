@@ -1,6 +1,6 @@
 {
 	"name": "@bronti/wooter",
-	"version": "0.3.5",
+	"version": "0.3.6",
 	"license": "MIT",
 	"exports": {
 		"./chemin": "./src/export/chemin.ts",
