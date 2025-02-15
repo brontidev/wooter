@@ -60,10 +60,3 @@ wooter.GET(c.chemin("after"), async ({ err, resp }) => {
 const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch.bind(wooter))
 ```
-
-### Roadmap
-
-- [x] Basic Router
-- [x] Middleware
-- [x] Namespaces
-- [x] wooter.route(path)\[VERB\]
