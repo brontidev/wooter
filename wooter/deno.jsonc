@@ -3,11 +3,12 @@
 	"version": "0.2.5",
 	"license": "MIT",
 	"exports": {
-		".": "./src/export/index.ts",
-		"./util": "./src/export/util.ts",
 		"./chemin": "./src/export/chemin.ts",
+		"./error": "./src/export/error.ts",
+		"./graph": "./src/export/graph.ts",
+		".": "./src/export/index.ts",
 		"./types": "./src/export/types.ts",
-		"./error": "./src/export/error.ts"
+		"./util": "./src/export/util.ts"
 	},
 	"tasks": {
 		"doc": "deno doc --name='@ts-rex/wooter' --html --lint ./src/export/chemin.ts ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts",
