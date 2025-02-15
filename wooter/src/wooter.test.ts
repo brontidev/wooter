@@ -1,11 +1,11 @@
 import { assert, assertEquals, fail } from "jsr:@std/assert"
-import { Wooter } from "./wooter.ts"
-import { chemin } from "./export/chemin.ts"
+import { Wooter } from "@/wooter.ts"
+import { chemin } from "@/export/chemin.ts"
 import {
 	ExitWithoutResponse,
 	MiddlewareCalledUpTooManyTimes,
 	MiddlewareDidntCallUp,
-} from "./export/error.ts"
+} from "@/export/error.ts"
 
 import { assertSpyCall, stub } from "jsr:@std/testing/mock"
 

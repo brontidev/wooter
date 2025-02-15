@@ -1,6 +1,7 @@
-import type { Event, MiddlewareEvent } from "../event.ts"
-import type { Wooter } from "../wooter.ts"
-import type { IChemin } from "./chemin.ts"
+import type { RouteEvent } from "@/event/index.ts"
+import type { MiddlewareEvent } from "@/event/middleware.ts"
+import type { Wooter } from "@/wooter.ts"
+import type { IChemin } from "@/export/chemin.ts"
 
 /**
  * @internal
@@ -67,7 +68,7 @@ export type Data = Record<keyof any, unknown>
 export type Handler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
-> = (event: Event<TParams, TData>) => Promise<void> | void
+> = (event: RouteEvent<TParams, TData>) => Promise<void> | void
 /**
  * Standalone Middleware Handler type
  */

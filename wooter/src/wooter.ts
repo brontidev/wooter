@@ -1,5 +1,5 @@
-import { Event } from "./event.ts"
-import type { IChemin } from "./export/chemin.ts"
+import { RouteEvent } from "@/event/index.ts"
+import type { IChemin } from "@/export/chemin.ts"
 import type {
 	Data,
 	Handler,
@@ -9,8 +9,8 @@ import type {
 	MiddlewareHandler,
 	Params,
 	WooterWithMethods,
-} from "./export/types.ts"
-import { Graph } from "./graph.ts"
+} from "@/export/types.ts"
+import { RouteGraph } from "@/graph/router.ts"
 
 class NotFound {}
 
@@ -32,7 +32,7 @@ export class Wooter<
 	TData extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
 > {
-	private graph: Graph
+	private graph: RouteGraph
 
 	private notFoundHandler:
 		| Handler<
@@ -47,7 +47,7 @@ export class Wooter<
 	 */
 	constructor(private opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
-		this.graph = new Graph()
+		this.graph = new RouteGraph()
 	}
 
 	/**
@@ -244,7 +244,7 @@ export class Wooter<
 		this.graph.addNamespace(
 			// @ts-expect-error: useless Generics
 			path,
-			({ rest }, method) => {
+			({ rest }, { method }) => {
 				return finalWooter.match([...rest], method)
 			},
 		)
@@ -285,7 +285,7 @@ export class Wooter<
 		params?: BaseParams,
 	): Promise<Response> {
 		let handler: Handler
-		const event = new Event(request, params ?? {}, data ?? {})
+		const event = new RouteEvent(request, params ?? {}, data ?? {})
 		const pathname = new URL(request.url).pathname
 		try {
 			const handlerCheck = this.graph.getHandler(pathname, request.method)
