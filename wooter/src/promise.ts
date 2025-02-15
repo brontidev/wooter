@@ -19,13 +19,13 @@ export function createResolvers<T>(): Resolvers<T> {
     return {
         state,
         promise,
-        reject() {
+        reject(...args) {
             updateState('rejected')
-            reject(...arguments)
+            reject(...args)
         },
-        resolve() {
+        resolve(...args) {
             updateState('rejected')
-            resolve(...arguments)
+            resolve(...args)
         }
     }
 }
