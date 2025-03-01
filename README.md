@@ -65,7 +65,7 @@ Deno.serve({ port: 3000 }, fetch.bind(wooter))
 
 - [x] Get rid of `wooter.useMethods()` and `Wooter.withMethods()`
 - [x] replace `wooter.addRoute()` and `wooter.route()` with a new multi-use
-  function:
+      function:
   - [x] `wooter.route\[METHOD]\(chemin, handler)`
   - [x] `wooter.route(METHOD, chemin, handler)`
   - [x] `wooter.route(chemin, { METHOD: handler })`

@@ -1,5 +1,11 @@
-import { MiddlewareEvent, useMiddleware } from "@/event/middleware.ts"
-import type { MiddlewareHandler, Handler, Params, Data, StandaloneMiddlewareHandler, Merge} from "@/export/types.ts"
+import { useMiddleware } from "@/event/middleware.ts"
+import type {
+	Data,
+	Handler,
+	Merge,
+	MiddlewareHandler,
+	Params,
+} from "@/export/types.ts"
 import { useHandler } from "@/event/index.ts"
 
 /**
@@ -82,12 +88,39 @@ export function fixLocation(
 	}
 }
 
-export function use<TParams extends Params, BaseData extends Data, NewData extends Data | undefined = undefined, TData extends Data = Merge<BaseData, NewData>>(middleware: MiddlewareHandler<Params, BaseData, NewData>, handler: Handler<TParams, TData>): Handler<TParams, TData> {
-  return (event) => {
-    event.resp(useMiddleware(middleware, event.request, event.params, event.data, (data, request) => {
-      return useHandler(handler, request, event.params, data)
-    }))
-  }
+/**
+ * Applies a middleware directly to a handler, returning a new handler
+ * @param middleware - Middleware to apply
+ * @param handler - Handler to apply middleware to
+ * @returns Handler - Handler that wraps the handler in the middleware
+ */
+export function use<
+	TParams extends Params,
+	BaseData extends Data,
+	NewData extends Data | undefined = undefined,
+	TData extends Data = Merge<BaseData, NewData>,
+>(
+	middleware: MiddlewareHandler<Params, BaseData, NewData>,
+	handler: Handler<TParams, TData>,
+): Handler<TParams, TData> {
+	return (event) => {
+		event.resp(
+			useMiddleware(
+				middleware as MiddlewareHandler,
+				event.request,
+				event.params,
+				event.data,
+				(data, request) => {
+					return useHandler(
+						handler as Handler,
+						request,
+						event.params,
+						data,
+					)
+				},
+			),
+		)
+	}
 }
 
 const encoder = new TextEncoder()

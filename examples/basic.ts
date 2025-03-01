@@ -37,13 +37,17 @@ wooter.route.GET(
 	},
 )
 
-const skibidiMiddleware: StandaloneMiddlewareHandler<{ skibidi: number }> = async ({ up }) => {
-  await up({ skibidi: Math.random() })
-}
+const skibidiMiddleware: StandaloneMiddlewareHandler<{ skibidi: number }> =
+	async ({ up }) => {
+		await up({ skibidi: Math.random() })
+	}
 
-wooter.route.GET(c.chemin("mddd"), use(skibidiMiddleware, async ({ resp, data: { skibidi } }) => {
-  resp(new Response("mddd: " + skibidi))
-}))
+wooter.route.GET(
+	c.chemin("mddd"),
+	use(skibidiMiddleware, async ({ resp, data: { skibidi } }) => {
+		resp(new Response("mddd: " + skibidi))
+	}),
+)
 
 // wooter.GET(c.chemin("after"), async ({ err, resp }) => {
 // 	resp(new Response("ok!"))

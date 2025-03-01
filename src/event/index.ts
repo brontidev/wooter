@@ -67,23 +67,28 @@ export class RouteEvent<
 	}
 }
 
-export function useHandler(handler: Handler, request: Request, params: Params, data: Data) {
-  const event = new RouteEvent(
-							request,
-							params,
-							data,
-						)
-						Promise.resolve().then(async () => {
-							try {
-								await handler(event)
-								if (
-									event[SymbolResolvers].state === "pending"
-								) {
-									return event.err(new ExitWithoutResponse())
-								}
-							} catch (e) {
-								event.err(e)
-							}
-						})
-						return event.promise
+export function useHandler(
+	handler: Handler,
+	request: Request,
+	params: Params,
+	data: Data,
+) {
+	const event = new RouteEvent(
+		request,
+		params,
+		data,
+	)
+	Promise.resolve().then(async () => {
+		try {
+			await handler(event)
+			if (
+				event[SymbolResolvers].state === "pending"
+			) {
+				return event.err(new ExitWithoutResponse())
+			}
+		} catch (e) {
+			event.err(e)
+		}
+	})
+	return event.promise
 }

@@ -6,9 +6,8 @@ import type {
 	MiddlewareHandler,
 	Params,
 } from "@/export/types.ts"
-import { RouteEvent, SymbolResolvers, useHandler } from "@/event/index.ts"
-import { ExitWithoutResponse, MiddlewareDidntCallUp } from "@/export/error.ts"
-import { MiddlewareEvent, useMiddleware } from "@/event/middleware.ts"
+import { useHandler } from "@/event/index.ts"
+import { useMiddleware } from "@/event/middleware.ts"
 
 type Node = { path: IChemin<Params>; method: string; handler: Handler }
 type FindData = { method: string }
@@ -35,9 +34,15 @@ export class RouteGraph
 					Object.assign(data, nextData)
 
 					if (idx >= middleware.length) {
-  					return useHandler(handler, request, params, data)
+						return useHandler(handler, request, params, data)
 					}
-					return useMiddleware(middleware[idx], request, params, data, createNext(idx + 1))
+					return useMiddleware(
+						middleware[idx],
+						request,
+						params,
+						data,
+						createNext(idx + 1),
+					)
 				}
 			}
 			return createNext(0)(data, baseEvent.request).then(

@@ -3,10 +3,10 @@ import type { IChemin } from "@/export/chemin.ts"
 import type {
 	Data,
 	Handler,
-	HttpMethod,
 	Merge,
 	MiddlewareHandler,
 	Params,
+	RouteFunction,
 } from "@/export/types.ts"
 import { RouteGraph } from "@/graph/router.ts"
 
@@ -22,30 +22,6 @@ export type WooterOptions = {
 const optsDefaults: WooterOptions = {
 	catchErrors: true,
 }
-
-type RouteFunction<TData extends Data, BaseParams> =
-	& {
-		[method in HttpMethod]: (path: IChemin, handler: Handler) => void
-	}
-	& {
-		[method in string]: (path: IChemin, handler: Handler) => void
-	}
-	& {
-		<TParams extends Params = Params>(
-			path: IChemin<TParams>,
-			methodOrMethods:
-				| string
-				| Record<string, Handler<Merge<BaseParams, TParams>, TData>>,
-			handler?: Handler<Merge<BaseParams, TParams>, TData>,
-		): void
-		(path: IChemin, method: string, handler: Handler): void
-		(path: IChemin, method: HttpMethod, handler: Handler): void
-		(
-			path: IChemin,
-			methods: Record<HttpMethod, Handler> & Record<string, Handler>,
-			__?: undefined,
-		): void
-	}
 
 /**
  * The main class for Wooter
@@ -266,7 +242,11 @@ export class Wooter<
 
 	// @ts-expect-error: It works for now
 	#route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
-		(path: IChemin, methodOrMethods: string | Record<string, Handler>, handler?: Handler) => {
+		(
+			path: IChemin,
+			methodOrMethods: string | Record<string, Handler>,
+			handler?: Handler,
+		) => {
 			if (typeof methodOrMethods === "string" && !!handler) {
 				this.internalGraph.addRoute(methodOrMethods, path, handler)
 			} else if (typeof methodOrMethods === "object") {
@@ -276,10 +256,13 @@ export class Wooter<
 			}
 		}
 
+	/**
+  	Create a new route
+	*/
 	route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
 		new Proxy(this.#route, {
 			apply(target, thisArg, args) {
-  			// @ts-expect-error: This error is literally too annoying to fix
+				// @ts-expect-error: This error is literally too annoying to fix
 				return target.apply(thisArg, args)
 			},
 			get(target, prop, receiver) {
