@@ -60,14 +60,3 @@ wooter.GET(c.chemin("after"), async ({ err, resp }) => {
 const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch.bind(wooter))
 ```
-
-# Planned features
-
-- [x] Get rid of `wooter.useMethods()` and `Wooter.withMethods()`
-- [x] replace `wooter.addRoute()` and `wooter.route()` with a new multi-use
-      function:
-  - [x] `wooter.route\[METHOD]\(chemin, handler)`
-  - [x] `wooter.route(METHOD, chemin, handler)`
-  - [x] `wooter.route(chemin, { METHOD: handler })`
-- [x] new function to apply middleware directly to a handler
-  - [x] `use(middleware, handler): handler`
