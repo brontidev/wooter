@@ -1,37 +1,37 @@
 name: Publish
 on:
-  workflow_dispatch:
-  # push:
-  #     branches:
-  #         - main
+    workflow_dispatch:
+    # push:
+    #     branches:
+    #         - main
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+    publish:
+        runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-      id-token: write
+        permissions:
+            contents: write
+            id-token: write
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
-        with:
-          deno-version: v2
-      - name: Check
-        run: deno task check
-      - name: Test
-        run: deno task test
-      - name: Create docs
-        run: deno task doc
-      - name: Publish package
-        run: deno publish
-      - name: Get version
-        id: version
-        run: echo "VERSION=$(deno run -A ./publish-cli.ts version)" >> "$GITHUB_OUTPUT"
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.VERSION }}
-          files: |
-            tsdoc.jsonc
+        steps:
+            - uses: actions/checkout@v4
+            - uses: denoland/setup-deno@v1
+              with:
+                  deno-version: v2
+            - name: Check
+              run: deno task check
+            - name: Test
+              run: deno task test
+            - name: Create docs
+              run: deno task doc
+            - name: Publish package
+              run: deno publish
+            - name: Get version
+              id: version
+              run: echo "VERSION=$(deno run -A ./publish-cli.ts version)" >> "$GITHUB_OUTPUT"
+            - name: Create release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.version.outputs.VERSION }}
+                  files: |
+                      tsdoc.jsonc
