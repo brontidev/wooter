@@ -1,29 +1,26 @@
 name: Publish
 on:
-    workflow_dispatch:
-    # push:
-    #     branches:
-    #         - main
+  workflow_dispatch:
+  # push:
+  #     branches:
+  #         - main
 
 jobs:
-    publish:
-        runs-on: ubuntu-latest
+  publish:
+    runs-on: ubuntu-latest
 
-        permissions:
-            contents: read
-            id-token: write
-        strategy:
-            matrix:
-                project: [wooter]
-        steps:
-            - uses: actions/checkout@v4
-            - uses: denoland/setup-deno@v1
-              with:
-                  deno-version: v2
-            - name: Check
-              run: deno task check
-            - name: Test
-              working-directory: "./${{ matrix.project }}"
-              run: deno task test
-            - name: Publish package
-              run: deno publish
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2
+      - name: Check
+        run: deno task check
+      - name: Test
+        run: deno task test
+      - name: Publish package
+        run: deno publish

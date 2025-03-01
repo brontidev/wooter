@@ -7,7 +7,7 @@ import {
 
 /**
  * A chemin based graph that will match nodes to a pathname
- * All the methods are protected (for inheritance), to use the graph directly, use {@link CheminGraph}
+ * All elements are protected (for inheritance), to use the graph directly, use {@linkcode CheminGraph}
  */
 export class InheritableCheminGraph<
 	Node,
@@ -16,7 +16,7 @@ export class InheritableCheminGraph<
 > {
 	private nodes = new Set<{ path: IChemin; node: Node }>()
 
-	private subgraphs = new Set<
+	private subGraphs = new Set<
 		{ path: IChemin; match: () => This }
 	>()
 
@@ -24,7 +24,9 @@ export class InheritableCheminGraph<
 	 * Construct a new graph
 	 * @param dataMatcher Callback that returns true if a node matches the data
 	 */
-	constructor(private dataMatcher: (node: Node, data: FindData) => boolean) {}
+	constructor(
+		protected dataMatcher: (node: Node, data: FindData) => boolean,
+	) {}
 
 	/**
 	 * Adds a node to the graph
@@ -37,13 +39,13 @@ export class InheritableCheminGraph<
 
 	/**
 	 * Adds a subgraph to the graph
-	 * @param path Chhmin to match
+	 * @param path Chemin to match
 	 * @param match Callback that returns a subgraph
 	 *
 	 * Refrain from creating the graph inside the callback, as it will be called multiple times
 	 */
 	protected pushSubgraph(path: IChemin, match: () => This) {
-		this.subgraphs.add({ path, match })
+		this.subGraphs.add({ path, match })
 	}
 
 	/**
@@ -60,7 +62,7 @@ export class InheritableCheminGraph<
 			? pathname
 			: splitPathname(pathname)
 
-		for (const { path, match } of this.subgraphs) {
+		for (const { path, match } of this.subGraphs) {
 			const matchValue = matchChemin(path, pathParts)
 			if (!matchValue) continue
 			const { params: parentParams } = matchValue
@@ -111,7 +113,7 @@ export class CheminGraph<
 	}
 	/**
 	 * Adds a subgraph to the graph
-	 * @param path Chhmin to match
+	 * @param path Chemin to match
 	 * @param match Callback that returns a subgraph
 	 *
 	 * Refrain from creating the graph inside the callback, as it will be called multiple times

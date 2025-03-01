@@ -1,14 +1,37 @@
 {
-	"workspace": {
-		"members": ["./wooter"]
-	},
-	"tasks": {
-		"check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
-		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty"
-	},
-	"fmt": {
-		"semiColons": false,
-		"useTabs": true,
-		"indentWidth": 4
-	}
+  "name": "@bronti/wooter",
+  "version": "0.3.6",
+  "license": "MIT",
+  "exports": {
+    "./chemin": "./src/export/chemin.ts",
+    "./error": "./src/export/error.ts",
+    "./graph": "./src/export/graph.ts",
+    ".": "./src/export/index.ts",
+    "./types": "./src/export/types.ts",
+    "./util": "./src/export/util.ts",
+  },
+  "tasks": {
+    "doc": "deno doc --name='@bronti/wooter' --lint --json ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts ./src/export/graph.ts ./src/export/chemin.ts > ./tsdoc.jsonc",
+    "test": "deno test",
+    "coverage": "rm -rf ./coverage && deno test --coverage && deno coverage --html",
+    "check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
+    "fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty",
+  },
+  "imports": {
+    "@dldc/chemin": "jsr:@dldc/chemin@^12.0.1",
+    "@/": "./src/",
+  },
+  "publish": {
+    "include": ["./src", "./README.md"],
+    "exclude": ["./src/*.test.ts"],
+  },
+  "lint": {
+    "exclude": ["./examples", "./docs", "./coverage"],
+  },
+  "fmt": {
+    "semiColons": false,
+    "useTabs": true,
+    "indentWidth": 4,
+    "exclude": ["./docs", "./coverage"],
+  },
 }
