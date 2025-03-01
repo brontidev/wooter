@@ -1,6 +1,9 @@
-import type { Data, Params } from "@/export/types.ts"
-import { RouteEvent } from "@/event/index.ts"
-import { MiddlewareCalledUpTooManyTimes } from "@/export/error.ts"
+import type { Data, MiddlewareHandler, Params } from "@/export/types.ts"
+import { RouteEvent, SymbolResolvers } from "@/event/index.ts"
+import {
+	MiddlewareCalledUpTooManyTimes,
+	MiddlewareDidntCallUp,
+} from "@/export/error.ts"
 
 /**
  * Event class passed into middleware handlers
@@ -68,4 +71,39 @@ export class MiddlewareEvent<
 		this._storedResponse = response
 		return response
 	}
+}
+
+export function useMiddleware(
+	middlewareHandler: MiddlewareHandler,
+	request: Request,
+	params: Params,
+	data: Data,
+	next: (
+		data: Data,
+		request: Request,
+	) => Promise<Response>,
+) {
+	const event = new MiddlewareEvent(
+		request,
+		params,
+		data,
+		next,
+	)
+
+	Promise.resolve().then(async () => {
+		try {
+			await middlewareHandler(event)
+			if (event[SymbolResolvers].state === "pending") {
+				if (!event.storedResponse) {
+					return event.err(
+						new MiddlewareDidntCallUp(),
+					)
+				}
+				event.resp(event.storedResponse)
+			}
+		} catch (e) {
+			event.err(e)
+		}
+	})
+	return event.promise
 }

@@ -69,6 +69,5 @@ Deno.serve({ port: 3000 }, fetch.bind(wooter))
   - [x] `wooter.route\[METHOD]\(chemin, handler)`
   - [x] `wooter.route(METHOD, chemin, handler)`
   - [x] `wooter.route(chemin, { METHOD: handler })`
-- [] new function to apply middleware directly to a handler
-  - [] `apply([middleware1, middleware2, middlewareN], handler): handler`
-  - [] `apply(middleware, handler): handler`
+- [x] new function to apply middleware directly to a handler
+  - [x] `use(middleware, handler): handler`

@@ -1,5 +1,7 @@
 import { delay } from "jsr:@std/async"
 import { c, Wooter } from "../src/export/index.ts"
+import { StandaloneMiddlewareHandler } from "@/export/types.ts"
+import { use } from "@/export/util.ts"
 
 const wooter = new Wooter()
 
@@ -34,6 +36,14 @@ wooter.route.GET(
 		resp(new Response(`hi ${params.param}`))
 	},
 )
+
+const skibidiMiddleware: StandaloneMiddlewareHandler<{ skibidi: number }> = async ({ up }) => {
+  await up({ skibidi: Math.random() })
+}
+
+wooter.route.GET(c.chemin("mddd"), use(skibidiMiddleware, async ({ resp, data: { skibidi } }) => {
+  resp(new Response("mddd: " + skibidi))
+}))
 
 // wooter.GET(c.chemin("after"), async ({ err, resp }) => {
 // 	resp(new Response("ok!"))
