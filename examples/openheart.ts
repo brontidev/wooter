@@ -69,7 +69,7 @@ const wooter = new Wooter().use(async ({ up }) => {
 	response.headers.set("Access-Control-Allow-Origin", "*")
 	response.headers.set("Access-Control-Allow-Methods", "GET,POST")
 	response.headers.set("Access-Control-Max-Age", "86400")
-}).useMethods()
+})
 
 function ensureEmoji(emoji: string) {
 	const segments = Array.from(
@@ -82,15 +82,14 @@ function ensureEmoji(emoji: string) {
 	if (/\p{Emoji}/u.test(parsedEmoji)) return parsedEmoji
 }
 
-wooter.GET(c.chemin(), async ({ resp }) => {
+wooter.route.GET(c.chemin(), async ({ resp }) => {
 	resp(new Response(doc))
 })
 
 wooter.namespace(
 	c.chemin(c.pString("_domain")),
-	(wooter) => wooter.useMethods(),
 	(wooter) => {
-		wooter.GET(
+		wooter.route.GET(
 			c.chemin(c.pMultiple(c.pString("uid"), false)),
 			async ({ resp, params: { _domain, uid } }) => {
 				const domain = encodeURI(_domain)
@@ -118,7 +117,7 @@ wooter.namespace(
 			},
 		)
 
-		wooter.POST(
+		wooter.route.POST(
 			c.chemin(c.pMultiple(c.pString("uid"), true)),
 			async ({ request, resp, params: { _domain, uid }, url }) => {
 				const domain = encodeURI(_domain)

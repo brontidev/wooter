@@ -34,9 +34,9 @@ router, as well as Oak and Hono.
 import { delay } from "jsr:@std/async"
 import { c, Wooter } from "jsr:@bronti/wooter"
 
-const wooter = Wooter.withMethods()
+const wooter = Wooter
 
-wooter.GET(c.chemin(), async ({ err, resp }) => {
+wooter.route.GET(c.chemin(), async ({ err, resp }) => {
 	resp(new Response("hi"))
 })
 
@@ -44,14 +44,14 @@ wooter.GET(c.chemin("error"), async ({ err, resp }) => {
 	err("An error occured!!")
 })
 
-wooter.GET(
+wooter.route.GET(
 	c.chemin("with", c.pNumber("param")),
 	async ({ err, resp, params }) => {
 		resp(new Response(`hi ${params.param}`))
 	},
 )
 
-wooter.GET(c.chemin("after"), async ({ err, resp }) => {
+wooter.route.GET(c.chemin("after"), async ({ err, resp }) => {
 	resp(new Response("ok!"))
 	await delay(400)
 	console.log("this ran after the response was sent.")
