@@ -13,7 +13,7 @@
 	"tasks": {
 		"doc": "deno doc --name='@bronti/wooter' --lint --json ./src/export/index.ts ./src/export/types.ts ./src/export/util.ts ./src/export/error.ts ./src/export/graph.ts ./src/export/chemin.ts > ./tsdoc.jsonc",
 		"test": "deno test",
-		"coverage": "rm -rf ./coverage && deno test --coverage && deno coverage --html",
+		"coverage": "rm -rf ./coverage && deno test --coverage",
 		"check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
 		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty"
 	},
@@ -26,12 +26,12 @@
 		"exclude": ["./src/*.test.ts"]
 	},
 	"lint": {
-		"exclude": ["./examples", "./docs", "./coverage"]
+		"exclude": ["./examples", "./docs", "./coverage", "./site"]
 	},
 	"fmt": {
 		"semiColons": false,
 		"useTabs": true,
 		"indentWidth": 4,
-		"exclude": ["./docs", "./coverage"]
+		"exclude": ["./docs", "./coverage", "./site"]
 	}
 }

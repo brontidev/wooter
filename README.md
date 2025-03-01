@@ -9,7 +9,7 @@
 > [!WARNING]
 > wooter is beta & WIP, the main features are implemented but there are some
 > bugs that may appear. I advise against using this for big influential projects
-> until v1.0.0\
+> until v100.0.0\
 > **woot around and find out**
 
 > [!NOTE]
@@ -61,13 +61,14 @@ const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch.bind(wooter))
 ```
 
-
 # Planned features
-- Get rid of `wooter.useMethods()` and `Wooter.withMethods()`
-- replace `wooter.addRoute()` and `wooter.route()` with a new multi-use function:
-  - `wooter.route\[METHOD]\(chemin, handler)`
-  - `wooter.route(METHOD, chemin, handler)`
-  - `wooter.route(chemin, { METHOD: handler })`
-- new function to apply middleware directly to a handler
-  - `apply([middleware1, middleware2, middlewareN], handler): handler`
-  - `apply(middleware, handler): handler`
+
+- [x] Get rid of `wooter.useMethods()` and `Wooter.withMethods()`
+- [x] replace `wooter.addRoute()` and `wooter.route()` with a new multi-use
+  function:
+  - [x] `wooter.route\[METHOD]\(chemin, handler)`
+  - [x] `wooter.route(METHOD, chemin, handler)`
+  - [x] `wooter.route(chemin, { METHOD: handler })`
+- [] new function to apply middleware directly to a handler
+  - [] `apply([middleware1, middleware2, middlewareN], handler): handler`
+  - [] `apply(middleware, handler): handler`
