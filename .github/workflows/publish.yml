@@ -22,5 +22,16 @@ jobs:
         run: deno task check
       - name: Test
         run: deno task test
+      - name: Create docs
+        run: deno task doc
       - name: Publish package
         run: deno publish
+      - name: Get version
+        id: version
+        run: echo "VERSION=$(deno run -A ./publish-cli.ts version)" >> "$GITHUB_OUTPUT"
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          files: |
+            tsdoc.jsonc
