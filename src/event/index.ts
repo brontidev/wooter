@@ -1,5 +1,6 @@
-import type { Data, Params } from "@/export/types.ts"
+import type { Data, Handler, Params } from "@/export/types.ts"
 import { createResolvers, type Resolvers } from "@/promise.ts"
+import { ExitWithoutResponse } from "@/export/error.ts"
 
 export const SymbolResolvers = Symbol("event_Resolvers")
 
@@ -64,4 +65,30 @@ export class RouteEvent<
 		this.resolvers = createResolvers()
 		this.url = new URL(request.url)
 	}
+}
+
+export function useHandler(
+	handler: Handler,
+	request: Request,
+	params: Params,
+	data: Data,
+) {
+	const event = new RouteEvent(
+		request,
+		params,
+		data,
+	)
+	queueMicrotask(async () => {
+		try {
+			await handler(event)
+			if (
+				event[SymbolResolvers].state === "pending"
+			) {
+				return event.err(new ExitWithoutResponse())
+			}
+		} catch (e) {
+			event.err(e)
+		}
+	})
+	return event.promise
 }

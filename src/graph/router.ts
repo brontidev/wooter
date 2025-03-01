@@ -6,9 +6,8 @@ import type {
 	MiddlewareHandler,
 	Params,
 } from "@/export/types.ts"
-import { RouteEvent, SymbolResolvers } from "@/event/index.ts"
-import { ExitWithoutResponse, MiddlewareDidntCallUp } from "@/export/error.ts"
-import { MiddlewareEvent } from "@/event/middleware.ts"
+import { useHandler } from "@/event/index.ts"
+import { useMiddleware } from "@/event/middleware.ts"
 
 type Node = { path: IChemin<Params>; method: string; handler: Handler }
 type FindData = { method: string }
@@ -35,50 +34,15 @@ export class RouteGraph
 					Object.assign(data, nextData)
 
 					if (idx >= middleware.length) {
-						const event = new RouteEvent(
-							baseEvent.request,
-							params,
-							data,
-						)
-						Promise.resolve().then(async () => {
-							try {
-								await handler(event)
-								if (
-									event[SymbolResolvers].state === "pending"
-								) {
-									return event.err(new ExitWithoutResponse())
-								}
-							} catch (e) {
-								event.err(e)
-							}
-						})
-						return event.promise
+						return useHandler(handler, request, params, data)
 					}
-
-					const middlewareHandler = middleware[idx]
-					const event = new MiddlewareEvent(
+					return useMiddleware(
+						middleware[idx],
 						request,
 						params,
 						data,
 						createNext(idx + 1),
 					)
-
-					Promise.resolve().then(async () => {
-						try {
-							await middlewareHandler(event)
-							if (event[SymbolResolvers].state === "pending") {
-								if (!event.storedResponse) {
-									return event.err(
-										new MiddlewareDidntCallUp(),
-									)
-								}
-								event.resp(event.storedResponse)
-							}
-						} catch (e) {
-							event.err(e)
-						}
-					})
-					return event.promise
 				}
 			}
 			return createNext(0)(data, baseEvent.request).then(

@@ -1,3 +1,13 @@
+import { useMiddleware } from "@/event/middleware.ts"
+import type {
+	Data,
+	Handler,
+	Merge,
+	MiddlewareHandler,
+	Params,
+} from "@/export/types.ts"
+import { useHandler } from "@/event/index.ts"
+
 /**
  * Returns a JSON `Response` given a stringifiable object
  * @param json - json data
@@ -75,6 +85,41 @@ export function fixLocation(
 			return result + str + (values[i] ?? "")
 		}, "")
 		return `${url.origin}${path}`
+	}
+}
+
+/**
+ * Applies a middleware directly to a handler, returning a new handler
+ * @param middleware - Middleware to apply
+ * @param handler - Handler to apply middleware to
+ * @returns Handler - Handler that wraps the handler in the middleware
+ */
+export function use<
+	TParams extends Params,
+	BaseData extends Data,
+	NewData extends Data | undefined = undefined,
+	TData extends Data = Merge<BaseData, NewData>,
+>(
+	middleware: MiddlewareHandler<Params, BaseData, NewData>,
+	handler: Handler<TParams, TData>,
+): Handler<TParams, TData> {
+	return (event) => {
+		event.resp(
+			useMiddleware(
+				middleware as MiddlewareHandler,
+				event.request,
+				event.params,
+				event.data,
+				(data, request) => {
+					return useHandler(
+						handler as Handler,
+						request,
+						event.params,
+						data,
+					)
+				},
+			),
+		)
 	}
 }
 

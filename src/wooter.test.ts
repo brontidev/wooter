@@ -13,8 +13,10 @@ class TestError {}
 
 Deno.test("Wooter - basic route handling", async () => {
 	const wooter = new Wooter()
-	wooter.route(chemin("test")).GET(({ resp }) => {
-		resp(new Response("Hello, world!"))
+	wooter.route(chemin("test"), {
+		GET({ resp }) {
+			resp(new Response("Hello, world!"))
+		},
 	})
 
 	const request = new Request("http://localhost/test", { method: "GET" })
@@ -41,7 +43,7 @@ Deno.test("Wooter - not found handler", async () => {
 
 Deno.test("Wooter - internal server error", async () => {
 	const wooter = new Wooter()
-	wooter.route(chemin("error")).GET(() => {
+	wooter.route.GET(chemin("error"), () => {
 		throw new Error("Test error")
 	})
 
@@ -56,7 +58,7 @@ Deno.test("Wooter - internal server error", async () => {
 Deno.test("Wooter - namespace handling", async () => {
 	const wooter = new Wooter()
 	wooter.namespace(chemin("api"), (subWooter) => {
-		subWooter.route(chemin("test")).GET(({ resp }) => {
+		subWooter.route.GET(chemin("test"), ({ resp }) => {
 			resp(new Response("Namespace Test"))
 		})
 	})
@@ -69,23 +71,8 @@ Deno.test("Wooter - namespace handling", async () => {
 	assertEquals(text, "Namespace Test")
 })
 
-Deno.test("Wooter - methods proxy", async () => {
-	const wooter = Wooter.withMethods()
-
-	wooter.GET(chemin("page"), ({ resp }) => {
-		resp(new Response("Methods!"))
-	})
-
-	const request = new Request("http://localhost/page", { method: "GET" })
-	const response = await wooter.fetch(request)
-	const text = await response.text()
-
-	assertEquals(response.status, 200)
-	assertEquals(text, "Methods!")
-})
-
 Deno.test("Wooter - middleware", async () => {
-	const wooter = Wooter.withMethods().use<
+	const wooter = new Wooter().use<
 		{ setTestHeader: (value: string) => void }
 	>(async ({ up, resp }) => {
 		let header: string | undefined
@@ -97,7 +84,7 @@ Deno.test("Wooter - middleware", async () => {
 		if (header) response.headers.set("X-Test", header)
 		resp(response)
 	})
-	wooter.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+	wooter.route.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
 		setTestHeader("HELLO")
 		resp(new Response("world"))
 	})
@@ -110,7 +97,7 @@ Deno.test("Wooter - middleware", async () => {
 })
 
 Deno.test("Wooter - middleware - call up twice", async () => {
-	const wooter = Wooter.withMethods({ catchErrors: false }).use<
+	const wooter = new Wooter({ catchErrors: false }).use<
 		{ setTestHeader: (value: string) => void }
 	>(async ({ up, resp }) => {
 		let header: string | undefined
@@ -127,7 +114,7 @@ Deno.test("Wooter - middleware - call up twice", async () => {
 		if (header) response.headers.set("X-Test", header)
 		resp(response)
 	})
-	wooter.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+	wooter.route.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
 		setTestHeader("HELLO")
 		resp(new Response("world"))
 	})
@@ -142,12 +129,12 @@ Deno.test("Wooter - middleware - call up twice", async () => {
 })
 
 Deno.test("Wooter - middleware - didn't call up", async () => {
-	const wooter = Wooter.withMethods({ catchErrors: false }).use<
+	const wooter = new Wooter({ catchErrors: false }).use<
 		{ setTestHeader: (value: string) => void }
 	>(async () => {
 	})
 
-	wooter.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+	wooter.route.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
 		setTestHeader("HELLO")
 		resp(new Response("world"))
 	})
@@ -162,11 +149,11 @@ Deno.test("Wooter - middleware - didn't call up", async () => {
 })
 
 Deno.test("Wooter - middleware - called up but not resp", async () => {
-	const wooter = Wooter.withMethods().use(async ({ up }) => {
+	const wooter = new Wooter().use(async ({ up }) => {
 		await up()
 	})
 
-	wooter.GET(chemin("page"), ({ resp }) => {
+	wooter.route.GET(chemin("page"), ({ resp }) => {
 		resp(new Response("world"))
 	})
 
@@ -203,7 +190,7 @@ Deno.test("Wooter - notFound has an error", async () => {
 
 Deno.test("Wooter - don't catch errors", async () => {
 	const wooter = new Wooter({ catchErrors: false })
-	wooter.addRoute("GET", chemin("page"), () => {
+	wooter.route.GET(chemin("page"), () => {
 		throw new TestError()
 	})
 	try {
@@ -217,7 +204,7 @@ Deno.test("Wooter - don't catch errors", async () => {
 
 Deno.test("No response", async () => {
 	const wooter = new Wooter({ catchErrors: false })
-	wooter.addRoute("GET", chemin("page"), () => {
+	wooter.route.GET(chemin("page"), () => {
 	})
 	try {
 		const request = new Request("http://localhost/page", { method: "GET" })
@@ -229,27 +216,25 @@ Deno.test("No response", async () => {
 })
 
 Deno.test("Namespace with another route after", async () => {
-	const wooter = new Wooter().useMethods()
+	const wooter = new Wooter()
 
 	wooter.namespace(
 		chemin("something"),
-		(wooter) => wooter.useMethods(),
 		(wooter) => {
-			wooter.GET(chemin("page"), ({ resp }) => {
+			wooter.route.GET(chemin("page"), ({ resp }) => {
 				resp(new Response("page"))
 			})
 		},
 	)
 	wooter.namespace(
 		chemin("api"),
-		(wooter) => wooter.useMethods(),
 		(wooter) => {
-			wooter.GET(chemin("page"), ({ resp }) => {
+			wooter.route.GET(chemin("page"), ({ resp }) => {
 				resp(new Response("page"))
 			})
 		},
 	)
-	wooter.GET(chemin("api"), ({ resp }) => {
+	wooter.route.GET(chemin("api"), ({ resp }) => {
 		resp(new Response(""))
 	})
 
@@ -264,13 +249,14 @@ Deno.test("Namespace with another route after", async () => {
 Deno.test("Multiple methods", async () => {
 	const wooter = new Wooter()
 
-	wooter.route(chemin("page"))
-		.POST(({ resp }) => {
+	wooter.route(chemin("page"), {
+		POST({ resp }) {
 			resp(new Response("ok"))
-		})
-		.GET(({ resp }) => {
+		},
+		GET({ resp }) {
 			resp(new Response("ok"))
-		})
+		},
+	})
 
 	const request = new Request("http://localhost/page", { method: "GET" })
 	const response = await wooter.fetch(request)
@@ -281,8 +267,8 @@ Deno.test("Multiple methods", async () => {
 })
 
 Deno.test("namespace with existing wooter", async () => {
-	const wooter1 = new Wooter().useMethods()
-	wooter1.GET(chemin("page"), ({ resp }) => {
+	const wooter1 = new Wooter()
+	wooter1.route.GET(chemin("page"), ({ resp }) => {
 		resp(new Response("ok"))
 	})
 

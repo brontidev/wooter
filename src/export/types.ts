@@ -1,6 +1,5 @@
 import type { RouteEvent } from "@/event/index.ts"
 import type { MiddlewareEvent } from "@/event/middleware.ts"
-import type { Wooter } from "@/wooter.ts"
 import type { IChemin } from "@/export/chemin.ts"
 
 /**
@@ -90,70 +89,65 @@ export type MiddlewareHandler<
 > = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void> | void
 
 /**
- * A Wooter with HTTP verb method functions
- */
-export type WooterWithMethods<
-	TData extends Data | undefined = undefined,
-	BaseParams extends Params = Params,
-> =
-	& {
-		use<
-			NewData extends Data | undefined = undefined,
-		>(
-			handler: MiddlewareHandler<
-				BaseParams,
-				TData extends undefined ? Data : TData,
-				NewData
-			>,
-		): WooterWithMethods<
-			TData extends undefined ? NewData
-				: (NewData extends undefined ? undefined
-					: Merge<TData, NewData>),
-			BaseParams
-		>
-	}
-	& Wooter<TData, BaseParams>
-	& Methods<TData extends undefined ? Data : TData, BaseParams>
-
-/**
  * Registers a route to the wooter
- * @param path chemin
- * @param handler route handler
  */
-export type WooterAddRoute<
-	TData extends Data = Data,
-	BaseParams extends Params = Params,
-> = <TParams extends Params = Params>(
-	path: IChemin<TParams>,
-	handler: Handler<TParams & BaseParams, TData>,
-) => WooterWithMethods<TData, BaseParams>
+export type RouteFunction<TData extends Data, BaseParams> =
+	& {
+		/**
+		 * Registers a route to the wooter with the method already known
+		 * @param path chemin
+		 * @param handler Handler
+		 */
+		[method in HttpMethod]: <TParams extends Params>(
+			path: IChemin<TParams>,
+			handler: Handler<Merge<BaseParams, TParams>, TData>,
+		) => void
+	}
+	& {
+		/**
+		 * Registers a route to the wooter with the method already known
+		 * @param path chemin
+		 * @param handler Handler
+		 */
+		[method in string]: <TParams extends Params>(
+			path: IChemin<TParams>,
+			handler: Handler<Merge<BaseParams, TParams>, TData>,
+		) => void
+	}
+	& {
+		/**
+		 * Registers a route to the wooter
+		 */
+		<TParams extends Params = Params>(
+			path: IChemin<TParams>,
+			methodOrMethods:
+				| string
+				| Record<string, Handler<Merge<BaseParams, TParams>, TData>>,
+			handler?: Handler<Merge<BaseParams, TParams>, TData>,
+		): void
+		/**
+		 * Registers a route to the wooter
+		 * @param path chemin
+		 * @param method HTTP method
+		 * @param handler route handler
+		 */
+		(path: IChemin, method: string, handler: Handler): void
+		/**
+		 * Registers a route to the wooter
+		 * @param path chemin
+		 * @param method HTTP method
+		 * @param handler route handler
+		 */
+		(path: IChemin, method: HttpMethod, handler: Handler): void
 
-/**
- * Object map of HTTP verb method functions
- */
-/**
- * Object map of HTTP verb method functions
- */
-export type Methods<
-	TData extends Data = Data,
-	BaseParams extends Params = Params,
-	AddRoute = WooterAddRoute<TData, BaseParams>,
-> = Record<HttpMethod, AddRoute> & Record<Uppercase<string>, AddRoute>
-/**
- * Registers a method to the route
- * @param handler route handler
- */
-export type RouteAddRoute<
-	TData extends Data = Data,
-	TParams extends Params = Params,
-> = (
-	handler: Handler<TParams, TData>,
-) => MethodsNoPath<TData, TParams>
-
-/**
- * Object map of HTTP verb method functions with no path
- */
-export type MethodsNoPath<
-	TData extends Data = Data,
-	TParams extends Params = Params,
-> = Record<HttpMethod, RouteAddRoute<TData, TParams>>
+		/**
+		 * Registers a route to the wooter
+		 * @param path chemin
+		 * @param methods Map of HTTP method to handler
+		 */
+		(
+			path: IChemin,
+			methods: Record<HttpMethod, Handler> & Record<string, Handler>,
+			__?: undefined,
+		): void
+	}

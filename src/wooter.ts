@@ -4,11 +4,9 @@ import type {
 	Data,
 	Handler,
 	Merge,
-	Methods,
-	MethodsNoPath,
 	MiddlewareHandler,
 	Params,
-	WooterWithMethods,
+	RouteFunction,
 } from "@/export/types.ts"
 import { RouteGraph } from "@/graph/router.ts"
 
@@ -51,74 +49,6 @@ export class Wooter<
 	}
 
 	/**
-	 * Create a new Wooter with HTTP verb methods
-	 * @param opts - Options
-	 * @returns Wooter With Methods
-	 */
-	static withMethods(opts?: Partial<WooterOptions>): WooterWithMethods {
-		return new Wooter(opts).useMethods()
-	}
-
-	/**
-	 * Converts a normal Wooter into a Wooter with HTTP verb methods
-	 *
-	 * Use this after applying middleware to a Wooter
-	 *
-	 * @returns Wooter With Methods
-	 */
-	useMethods(): WooterWithMethods<TData, BaseParams> {
-		const proxy = new Proxy(this, {
-			get(target, prop, receiver) {
-				if (/^[A-Z]+$/g.test(prop.toString())) {
-					return (path: IChemin, handler: Handler) => {
-						target.addRoute.call(
-							target,
-							prop.toString(),
-							path,
-							handler,
-						)
-						return proxy
-					}
-				}
-				const value = Reflect.get(target, prop, receiver)
-				if (typeof value === "function") {
-					return function functionValue() {
-						const result = value.apply(target, arguments)
-						return result === target ? receiver : result
-					}
-				}
-				return value
-			},
-		})
-		return proxy as unknown as WooterWithMethods<TData, BaseParams>
-	}
-
-	/**
-	 * Creates a route builder using a wooter and a path name
-	 * @param wooter Wooter
-	 * @param path Path
-	 * @returns Route Builder
-	 */
-	private static makeRouteBuilder(wooter: Wooter, path: IChemin): Methods {
-		const proxy = new Proxy({} as Methods, {
-			get(_a, prop, _b) {
-				if (/^[A-Z]+$/g.test(prop.toString())) {
-					return (handler: Handler) => {
-						wooter.addRoute.call(
-							wooter,
-							prop.toString(),
-							path,
-							handler,
-						)
-						return proxy
-					}
-				}
-			},
-		})
-		return proxy as unknown as Methods
-	}
-
-	/**
 	 * Apply some middleware to a wooter
 	 * @param handler Middleware Handler
 	 * @returns Wooter
@@ -142,23 +72,6 @@ export class Wooter<
 		return this
 	}
 
-	/**
-	 * Registers a route to the wooter
-	 * @param method HTTP verb
-	 * @param path chemin
-	 * @param handler route handler
-	 */
-	addRoute<TParams extends Params = Params>(
-		method: string,
-		path: IChemin<TParams & BaseParams>,
-		handler: Handler<
-			TParams & BaseParams,
-			TData extends undefined ? Data : TData
-		>,
-	) {
-		// @ts-expect-error: useless Generics
-		this.internalGraph.addRoute(method, path, handler)
-	}
 	/**
 	 * Registers another wooter as a namespace
 	 * @param path Path
@@ -327,20 +240,40 @@ export class Wooter<
 		}
 	}
 
+	// @ts-expect-error: It works for now
+	#route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
+		(
+			path: IChemin,
+			methodOrMethods: string | Record<string, Handler>,
+			handler?: Handler,
+		) => {
+			if (typeof methodOrMethods === "string" && !!handler) {
+				this.internalGraph.addRoute(methodOrMethods, path, handler)
+			} else if (typeof methodOrMethods === "object") {
+				Object.entries(methodOrMethods).forEach(([method, handler]) => {
+					this.internalGraph.addRoute(method, path, handler)
+				})
+			}
+		}
+
 	/**
-	 * Creates a route builder
-	 * @param path Path
-	 * @returns Route Builder
-	 */
-	route<TParams extends Params>(
-		path: IChemin<TParams>,
-	): MethodsNoPath<
-		TData extends undefined ? Data : TData,
-		BaseParams & TParams
-	> {
-		// @ts-expect-error: useless Generics
-		return Wooter.makeRouteBuilder(this, path)
-	}
+  	Create a new route
+	*/
+	route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
+		new Proxy(this.#route, {
+			apply(target, thisArg, args) {
+				// @ts-expect-error: This error is literally too annoying to fix
+				return target.apply(thisArg, args)
+			},
+			get(target, prop, receiver) {
+				const value = Reflect.get(target, prop, receiver)
+				return value ??
+					(typeof prop === "string"
+						? ((path: IChemin, handler: Handler) =>
+							target(path, prop, handler))
+						: undefined)
+			},
+		})
 
 	/**
 	 * Gets the internal graph from the wooter (used internally)
