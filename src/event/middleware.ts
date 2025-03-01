@@ -90,7 +90,7 @@ export function useMiddleware(
 		next,
 	)
 
-	Promise.resolve().then(async () => {
+	queueMicrotask(async () => {
 		try {
 			await middlewareHandler(event)
 			if (event[SymbolResolvers].state === "pending") {

@@ -78,7 +78,7 @@ export function useHandler(
 		params,
 		data,
 	)
-	Promise.resolve().then(async () => {
+	queueMicrotask(async () => {
 		try {
 			await handler(event)
 			if (
