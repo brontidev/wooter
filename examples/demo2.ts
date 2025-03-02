@@ -130,8 +130,8 @@ const wooter = new Wooter()
 	})
 
 wooter
-	.namespace(chemin("auth"), (wooter) => wooter.useMethods(), (wooter) => {
-		wooter.GET(
+	.namespace(chemin("auth"), (wooter) => {
+		wooter.route.GET(
 			chemin("login"),
 			async ({ request, resp, err, data: { cookies } }) => {
 				let json = await request.json()
@@ -161,9 +161,8 @@ wooter
 	})
 	.namespace(
 		chemin("api", pNumber("asd")),
-		(wooter) => wooter.useMethods(),
 		(wooter) => {
-			wooter.GET(
+			wooter.route.GET(
 				chemin("gateway"),
 				async ({ request, resp, err, data: { username } }) => {
 					resp(jsonResponse({ "ok": true }))

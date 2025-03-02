@@ -34,7 +34,7 @@ router, as well as Oak and Hono.
 import { delay } from "jsr:@std/async"
 import { c, Wooter } from "jsr:@bronti/wooter"
 
-const wooter = Wooter
+const wooter = new Wooter()
 
 wooter.route.GET(c.chemin(), async ({ err, resp }) => {
 	resp(new Response("hi"))
