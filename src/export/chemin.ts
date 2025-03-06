@@ -4,4 +4,6 @@
  * @module
  */
 
-export * from "@dldc/chemin"
+import * as c from "@dldc/chemin"
+export * fron "@dldc/chemin"
+export default c
