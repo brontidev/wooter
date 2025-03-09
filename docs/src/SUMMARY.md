@@ -14,4 +14,4 @@
   - [Bun](Platforms/Bun.md)
   - [Web](Platforms/Web.md)
 
-[Examples](Examples.md) [API References](rdr/reference.md)
+[Examples](Examples.md) [API Reference](rdr/reference.md)
