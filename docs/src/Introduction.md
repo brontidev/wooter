@@ -4,7 +4,8 @@
 [![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
 > [!WARNING]
-> These docs are a work in progress, and may not be fully accurate. You can also check the generated [API Reference](rdr/reference.md)
+> These docs are a work in progress, and may not be fully accurate. You can also
+> check the generated [API Reference](rdr/reference.md)
 
 > [!WARNING]
 > wooter is beta & WIP, the main features are implemented but there are some

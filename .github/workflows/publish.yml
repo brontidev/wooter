@@ -19,8 +19,6 @@ jobs:
               run: deno task check
             - name: Test
               run: deno task test
-            - name: Create docs
-              run: deno task doc
             - name: Publish package
               run: deno publish
             - name: Get version

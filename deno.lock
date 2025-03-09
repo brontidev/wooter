@@ -1,0 +1,39 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@dldc/chemin@^12.0.1": "12.0.1",
+    "jsr:@std/assert@*": "1.0.11",
+    "jsr:@std/assert@^1.0.10": "1.0.11",
+    "jsr:@std/internal@^1.0.5": "1.0.5",
+    "jsr:@std/jsonc@*": "1.0.1",
+    "jsr:@std/testing@*": "1.0.9"
+  },
+  "jsr": {
+    "@dldc/chemin@12.0.1": {
+      "integrity": "f1f97bab51732c825d89f7788e07e2b9875c41f95393809309def9b157034115"
+    },
+    "@std/assert@1.0.11": {
+      "integrity": "2461ef3c368fe88bc60e186e7744a93112f16fd110022e113a0849e94d1c83c1",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.5": {
+      "integrity": "54a546004f769c1ac9e025abd15a76b6671ddc9687e2313b67376125650dc7ba"
+    },
+    "@std/jsonc@1.0.1": {
+      "integrity": "6b36956e2a7cbb08ca5ad7fbec72e661e6217c202f348496ea88747636710dda"
+    },
+    "@std/testing@1.0.9": {
+      "integrity": "9bdd4ac07cb13e7594ac30e90f6ceef7254ac83a9aeaa089be0008f33aab5cd4",
+      "dependencies": [
+        "jsr:@std/assert@^1.0.10"
+      ]
+    }
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@dldc/chemin@^12.0.1"
+    ]
+  }
+}
