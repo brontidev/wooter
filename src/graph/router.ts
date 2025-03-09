@@ -21,7 +21,7 @@ export class RouteGraph
 	}
 
 	private composeMiddleware(node: Node, params: Params): Handler {
-		const middleware = this.middleware.values().toArray()
+		const middleware = Array.from(this.middleware.values())
 		const { handler } = node
 		return (baseEvent) => {
 			const data: Data = baseEvent.data
