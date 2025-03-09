@@ -12,6 +12,7 @@ import { useHandler } from "@/event/index.ts"
  * Returns a JSON `Response` given a stringifiable object
  * @param json - json data
  * @param init - Response init
+ * @deprecated use `Response.json()` instead
  * @returns response
  */
 export function jsonResponse(json: unknown, init?: ResponseInit): Response {
