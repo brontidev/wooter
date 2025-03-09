@@ -266,6 +266,8 @@ Deno.test("Multiple methods", async () => {
 	assertEquals(text, "ok")
 })
 
+// TODO: re-implement this function (#18)
+
 // Deno.test("namespace with existing wooter", async () => {
 // 	const wooter1 = new Wooter()
 // 	wooter1.route.GET(chemin("page"), ({ resp }) => {
