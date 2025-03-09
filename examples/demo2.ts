@@ -1,12 +1,7 @@
 // This is another example of wooter, which shows off the middleware functionality and namespaces.
 
 import { Wooter } from "../src/export/index.ts"
-import {
-	errorResponse,
-	fixLocation,
-	jsonResponse,
-	redirectResponse,
-} from "../src/export/util.ts"
+import { errorResponse, redirectResponse } from "../src/export/util.ts"
 import { chemin, pNumber } from "../src/export/chemin.ts"
 import {
 	parse,
@@ -165,7 +160,7 @@ wooter
 			wooter.route.GET(
 				chemin("gateway"),
 				async ({ request, resp, err, data: { username } }) => {
-					resp(jsonResponse({ "ok": true }))
+					resp(Response.json({ "ok": true }))
 				},
 			)
 		},

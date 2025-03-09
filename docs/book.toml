@@ -6,6 +6,6 @@ src = "src"
 title = "@bronti/wooter"
 
 [output.html.code.hidelines]
-ts = "#"
+ts = "$:"
 
 [preprocessor.alerts]

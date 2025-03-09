@@ -5,13 +5,13 @@ import { use } from "@/export/util.ts"
 
 const wooter = new Wooter()
 
-// wooter.GET(c.chemin(), async ({ err, resp }) => {
-// 	resp(new Response("hi"))
-// })
+wooter.route.GET(c.chemin(), async ({ err, resp }) => {
+	resp(new Response("hi"))
+})
 
-// wooter.GET(c.chemin("error"), async ({ err, resp }) => {
-// 	err("An error occured!!")
-// })
+wooter.route.GET(c.chemin("error"), async ({ err, resp }) => {
+	err("An error occured!!")
+})
 
 wooter.route.GET(c.chemin("gleem"), async ({ err, resp }) => {
 	resp(new Response("glirp"))
@@ -37,49 +37,37 @@ wooter.route.GET(
 	},
 )
 
-const skibidiMiddleware: StandaloneMiddlewareHandler<{ skibidi: number }> =
-	async ({ up }) => {
-		await up({ skibidi: Math.random() })
+wooter.route.GET(c.chemin("after"), async ({ err, resp }) => {
+	resp(new Response("ok!"))
+	await delay(1000)
+	console.log("this ran after the response was sent.")
+})
+
+wooter.route.GET(c.chemin("websocket"), async ({ request, err, resp }) => {
+	if (request.headers.get("upgrade") !== "websocket") {
+		return resp(new Response(null, { status: 501 }))
 	}
+	const { socket, response } = Deno.upgradeWebSocket(request)
+	resp(response)
 
-wooter.route.GET(
-	c.chemin("mddd"),
-	use(skibidiMiddleware, async ({ resp, data: { skibidi } }) => {
-		resp(new Response("mddd: " + skibidi))
-	}),
-)
+	socket.addEventListener("open", () => {
+		console.log("a client connected!")
+	})
 
-// wooter.GET(c.chemin("after"), async ({ err, resp }) => {
-// 	resp(new Response("ok!"))
-// 	await delay(1000)
-// 	console.log("this ran after the response was sent.")
-// })
+	socket.addEventListener("message", (event) => {
+		if (event.data === "ping") {
+			socket.send("pong")
+		}
+	})
+})
 
-// wooter.GET(c.chemin("websocket"), async ({ request, err, resp }) => {
-// 	if (request.headers.get("upgrade") !== "websocket") {
-// 		return resp(new Response(null, { status: 501 }))
-// 	}
-// 	const { socket, response } = Deno.upgradeWebSocket(request)
-// 	resp(response)
+wooter.route.GET(c.chemin("exits-without-response"), async ({}) => {
+})
 
-// 	socket.addEventListener("open", () => {
-// 		console.log("a client connected!")
-// 	})
-
-// 	socket.addEventListener("message", (event) => {
-// 		if (event.data === "ping") {
-// 			socket.send("pong")
-// 		}
-// 	})
-// })
-
-// wooter.GET(c.chemin("exits-without-response"), async ({}) => {
-// })
-
-// wooter.GET(c.chemin("takes-a-while"), async ({ resp }) => {
-// 	await delay(1000)
-// 	resp(new Response("I'm here! sorry I took so long"))
-// })
+wooter.route.GET(c.chemin("takes-a-while"), async ({ resp }) => {
+	await delay(1000)
+	resp(new Response("I'm here! sorry I took so long"))
+})
 
 const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch)

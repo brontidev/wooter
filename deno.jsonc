@@ -26,12 +26,12 @@
 		"exclude": ["./src/*.test.ts"]
 	},
 	"lint": {
-		"exclude": ["./examples", "./docs", "./coverage", "./site"]
+		"exclude": ["./examples", "./coverage", "./site", "./docs/book"]
 	},
 	"fmt": {
 		"semiColons": false,
 		"useTabs": true,
 		"indentWidth": 4,
-		"exclude": ["./docs", "./coverage", "./site"]
+		"exclude": ["./coverage", "./site", "./docs/book"]
 	}
 }

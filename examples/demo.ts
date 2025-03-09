@@ -4,7 +4,6 @@ import { Wooter } from "../src/export/index.ts"
 import {
 	errorResponse,
 	fixLocation,
-	jsonResponse,
 	redirectResponse,
 } from "../src/export/util.ts"
 import { chemin, pNumber } from "../src/export/chemin.ts" // "@ts-rex/wooter/chemin"
@@ -56,7 +55,7 @@ const wooter = new Wooter()
 			await up({ json })
 		} catch (e) {
 			if (e instanceof ZodError) {
-				return resp(jsonResponse(e.issues, {
+				return resp(Response.json(e.issues, {
 					status: 400,
 				}))
 			}
@@ -129,7 +128,7 @@ const wooter = new Wooter()
 wooter.route.GET(chemin(), async ({ resp, data: { cookies } }) => {
 	const count = parseInt(cookies.get("count") ?? "0") + 1
 	cookies.set("count", count.toString())
-	resp(jsonResponse({
+	resp(Response.json({
 		hello: "world",
 		count,
 	}))
@@ -145,7 +144,7 @@ wooter.route.GET(chemin("redirect"), async ({ resp }) => {
 })
 
 wooter.route(chemin("book"), {
- 	async GET({ resp }) {
+	async GET({ resp }) {
 		const books: Book[] = []
 		const bookEntries = db.list<Book>({ prefix: ["books"] })
 		for await (const { key, value } of bookEntries) {
@@ -155,7 +154,7 @@ wooter.route(chemin("book"), {
 			console.log(key, value)
 			books.push(value)
 		}
-		resp(jsonResponse(books))
+		resp(Response.json(books))
 	},
 	async POST({ request, resp, data: { json } }) {
 		const body = book.parse(await json())
@@ -169,7 +168,7 @@ wooter.route(chemin("book"), {
 		if (!result.ok) {
 			return resp(errorResponse(500, "Conflict updating the book id"))
 		}
-		resp(jsonResponse(
+		resp(Response.json(
 			body,
 			{
 				headers: {
@@ -177,16 +176,16 @@ wooter.route(chemin("book"), {
 				},
 			},
 		))
-	}
+	},
 })
 
 wooter.route(chemin("book", pNumber("id")), {
- 	async GET({ params: { id }, resp }) {
+	async GET({ params: { id }, resp }) {
 		const maybeBook = await db.get<Book>(["books", id])
 		if (!maybeBook.value) {
 			return resp(errorResponse(404, "Book not found"))
 		}
-		resp(jsonResponse(maybeBook.value))
+		resp(Response.json(maybeBook.value))
 	},
 	async PUT({ params: { id }, resp, data: { json } }) {
 		const body = book.parse(await json())
@@ -201,7 +200,7 @@ wooter.route(chemin("book", pNumber("id")), {
 		if (!result.ok) {
 			return resp(errorResponse(500, "Conflict updating the book"))
 		}
-		resp(jsonResponse(body))
+		resp(Response.json(body))
 	},
 	async PATCH({ params: { id }, resp, data: { json } }) {
 		const body = bookPatch.parse(await json())
@@ -217,12 +216,17 @@ wooter.route(chemin("book", pNumber("id")), {
 		if (!result.ok) {
 			return resp(errorResponse(500, "Conflict updating the book"))
 		}
-		resp(jsonResponse(book))
+		resp(Response.json(book))
 	},
 	async DELETE({ params: { id }, resp }) {
 		await db.delete(["books", id])
-		resp(jsonResponse("ok"))
+		resp(Response.json("ok"))
 	},
+})
+
+wooter.namespace(chemin(pNumber("a")), (wooter) => {
+	wooter.route.GET(chemin(), async ({}) => {
+	})
 })
 
 const { fetch } = wooter

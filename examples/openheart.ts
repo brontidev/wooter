@@ -23,8 +23,10 @@ Get all emoji counts for /example.com/uid:
 curl '${url}/example.com/uid'
 `
 
-import { c, Wooter } from "jsr:@bronti/wooter"
-import { errorResponse, jsonResponse } from "jsr:@bronti/wooter/util"
+import { c, Wooter } from "jsr:@bronti/wooter@1.3.6"
+import { errorResponse } from "jsr:@bronti/wooter@1.3.6/util"
+import { nerdIcons, rubiks, withDates } from "jsr:@rubiks/rubiks@1.2.9"
+const console = rubiks().use(withDates).use(nerdIcons())
 
 /**
  * [emojis, 'example.com', 'uid', '🩷'] -> number
@@ -51,8 +53,14 @@ db.listenQueue(
 			idempotency: string
 		},
 	) => {
+		console.info(`recieved queue from ${key.join(" ")} (${idempotency})`)
 		const idempotencyCheck = await db.get(["idempotency", idempotency])
-		if (idempotencyCheck.value == null) return
+		if (idempotencyCheck.value == null) {
+			console.warn(
+				`idempotency check failed for ${idempotency}, ignoring`,
+			)
+			return
+		}
 		const count = await db.get<number>(key)
 
 		const tx = db
@@ -61,7 +69,16 @@ db.listenQueue(
 			.delete(idempotencyCheck.key)
 			.set(count.key, (count.value ?? 0) + 1)
 
-		await tx.commit()
+		const res = await tx.commit()
+		if (!res.ok) {
+			console.warn(
+				`failed to increment: ${
+					key.join(" ")
+				} for the second time, quitting`,
+			)
+		} else {
+			console.info(`incremented ${key.join(" ")}`)
+		}
 	},
 )
 const wooter = new Wooter().use(async ({ up }) => {
@@ -100,7 +117,7 @@ wooter.namespace(
 				})
 
 				resp(
-					jsonResponse(
+					Response.json(
 						Object.fromEntries(
 							(await Array.fromAsync(kvList)).reduce(
 								(map, entry) => {
@@ -132,6 +149,7 @@ wooter.namespace(
 				}
 
 				const key = keys.emoji(domain, uid.join("/"), emoji)
+				console.info(`got request to increment ${key.join(" ")}`)
 				const count = await db.get<number>(key)
 
 				const tx = db
@@ -142,27 +160,28 @@ wooter.namespace(
 				const res = await tx.commit()
 				if (!res.ok) {
 					// fail safe!
-					console.warn("failed to add:", key.join(" "))
+					console.warn(
+						`failed to increment: ${key.join(" ")} (trying again)`,
+					)
 					const idempotency = crypto.randomUUID()
 					db.set(["idempotency", idempotency], 0)
 					await db.enqueue({
 						key,
 						idempotency,
-					}) // just try again and pretend everything was fine. advice from Tom Scott
+					}) // just try again and pretend everything was fine. advice from Tom Scott (i think)
+				} else {
+					console.info(`incremented ${key.join(" ")}`)
 				}
 				const doRedirect = url.searchParams.get("redirect") ??
 					request.headers.get("Referrer") ?? undefined
-				const redirectHeaders = doRedirect
-					? {
-						"Location": doRedirect,
-					}
-					: {}
 				resp(
 					new Response("recorded", {
 						status: doRedirect ? 303 : 201,
-						headers: {
-							...redirectHeaders,
-						},
+						headers: doRedirect
+							? {
+								"Location": doRedirect,
+							}
+							: {},
 					}),
 				)
 			},
