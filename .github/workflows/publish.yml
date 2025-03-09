@@ -33,5 +33,3 @@ jobs:
               uses: softprops/action-gh-release@v2
               with:
                   tag_name: ${{ steps.version.outputs.VERSION }}
-                  files: |
-                      tsdoc.jsonc
