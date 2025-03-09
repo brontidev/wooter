@@ -1,6 +1,5 @@
 import {
 	type IChemin,
-	match as matchChemin,
 	matchExact as matchCheminExact,
 	splitPathname,
 } from "@/export/chemin.ts"
@@ -12,13 +11,8 @@ import {
 export class InheritableCheminGraph<
 	Node,
 	FindData,
-	This = InheritableCheminGraph<Node, FindData, unknown>,
 > {
 	private nodes = new Set<{ path: IChemin; node: Node }>()
-
-	private subGraphs = new Set<
-		{ path: IChemin; match: () => This }
-	>()
 
 	/**
 	 * Construct a new graph
@@ -38,17 +32,6 @@ export class InheritableCheminGraph<
 	}
 
 	/**
-	 * Adds a subgraph to the graph
-	 * @param path Chemin to match
-	 * @param match Callback that returns a subgraph
-	 *
-	 * Refrain from creating the graph inside the callback, as it will be called multiple times
-	 */
-	protected pushSubgraph(path: IChemin, match: () => This) {
-		this.subGraphs.add({ path, match })
-	}
-
-	/**
 	 * Matches a node from a pathname
 	 * @param pathname Pathname or Path parts
 	 * @param data Extra check data
@@ -61,18 +44,6 @@ export class InheritableCheminGraph<
 		const pathParts = Array.isArray(pathname)
 			? pathname
 			: splitPathname(pathname)
-
-		for (const { path, match } of this.subGraphs) {
-			const matchValue = matchChemin(path, pathParts)
-			if (!matchValue) continue
-			const { params: parentParams } = matchValue
-			const graph = match() as unknown as this
-			const definition = graph.getNode(matchValue.rest as string[], data)
-			if (!definition) continue
-			const { params: childParams, node } = definition
-			const params = Object.assign(parentParams, childParams)
-			return { params, node }
-		}
 
 		for (const { node, path } of this.nodes) {
 			if (!this.dataMatcher(node, data)) continue
@@ -89,8 +60,7 @@ export class InheritableCheminGraph<
 export class CheminGraph<
 	Node,
 	FindData,
-	This = InheritableCheminGraph<Node, FindData, unknown>,
-> extends InheritableCheminGraph<Node, FindData, This> {
+> extends InheritableCheminGraph<Node, FindData> {
 	/**
 	 * Matches a node from a pathname
 	 * @param pathname Pathname or Path parts
@@ -110,15 +80,5 @@ export class CheminGraph<
 	 */
 	override pushNode(path: IChemin, node: Node): void {
 		super.pushNode(path, node)
-	}
-	/**
-	 * Adds a subgraph to the graph
-	 * @param path Chemin to match
-	 * @param match Callback that returns a subgraph
-	 *
-	 * Refrain from creating the graph inside the callback, as it will be called multiple times
-	 */
-	override pushSubgraph(path: IChemin, match: () => This): void {
-		super.pushSubgraph(path, match)
 	}
 }

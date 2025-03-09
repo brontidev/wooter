@@ -266,24 +266,26 @@ Deno.test("Multiple methods", async () => {
 	assertEquals(text, "ok")
 })
 
-Deno.test("namespace with existing wooter", async () => {
-	const wooter1 = new Wooter()
-	wooter1.route.GET(chemin("page"), ({ resp }) => {
-		resp(new Response("ok"))
-	})
+// TODO: re-implement this function (#18)
 
-	const wooter2 = new Wooter()
-	wooter2.namespace(chemin("namespace"), wooter1)
+// Deno.test("namespace with existing wooter", async () => {
+// 	const wooter1 = new Wooter()
+// 	wooter1.route.GET(chemin("page"), ({ resp }) => {
+// 		resp(new Response("ok"))
+// 	})
 
-	const request = new Request("http://localhost/namespace/page", {
-		method: "GET",
-	})
-	const response = await wooter2.fetch(request)
-	const text = await response.text()
+// 	const wooter2 = new Wooter()
+// 	wooter2.namespace(chemin("namespace"), wooter1)
 
-	assertEquals(response.status, 200)
-	assertEquals(text, "ok")
-})
+// 	const request = new Request("http://localhost/namespace/page", {
+// 		method: "GET",
+// 	})
+// 	const response = await wooter2.fetch(request)
+// 	const text = await response.text()
+
+// 	assertEquals(response.status, 200)
+// 	assertEquals(text, "ok")
+// })
 
 Deno.test("default 404", async () => {
 	const wooter = new Wooter()
