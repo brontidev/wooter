@@ -30,7 +30,7 @@ export class Wooter<
 	TData extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
 > {
-	private internalGraph: RouteGraph
+	private graph: RouteGraph
 
 	private notFoundHandler:
 		| Handler<
@@ -47,7 +47,7 @@ export class Wooter<
 	 */
 	constructor(opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
-		this.internalGraph = new RouteGraph()
+		this.graph = new RouteGraph()
 	}
 
 	/**
@@ -74,7 +74,7 @@ export class Wooter<
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
-		this.internalGraph.pushMiddleware(handler)
+		this.graph.pushMiddleware(handler)
 		// @ts-expect-error: useless Generics
 		return this
 	}
@@ -179,12 +179,14 @@ export class Wooter<
 			finalWooter = wooter
 		}
 
-		this.internalGraph.addNamespace(
-			path as IChemin<Params>,
-			() => {
-				return finalWooter.graph
-			},
-		)
+		// TODO: CREATE NAMESPACE
+
+		// this.graph.addNamespace(
+		// 	path as IChemin<Params>,
+		// 	() => {
+		// 		return finalWooter.graph
+		// 	},
+		// )
 		return this
 	}
 
@@ -233,7 +235,7 @@ export class Wooter<
 		const event = new RouteEvent(request, params ?? {}, data ?? {})
 		const pathname = new URL(request.url).pathname
 		try {
-			const handlerCheck = this.internalGraph.getHandler(
+			const handlerCheck = this.graph.getHandler(
 				pathname,
 				request.method,
 			)
@@ -281,10 +283,10 @@ export class Wooter<
 			handler?: Handler,
 		) => {
 			if (typeof methodOrMethods === "string" && !!handler) {
-				this.internalGraph.addRoute(methodOrMethods, path, handler)
+				this.graph.addRoute(methodOrMethods, path, handler)
 			} else if (typeof methodOrMethods === "object") {
 				Object.entries(methodOrMethods).forEach(([method, handler]) => {
-					this.internalGraph.addRoute(method, path, handler)
+					this.graph.addRoute(method, path, handler)
 				})
 			}
 		}
@@ -307,12 +309,4 @@ export class Wooter<
 						: undefined)
 			},
 		})
-
-	/**
-	 * Gets the internal graph from the wooter (used internally)
-	 * @internal
-	 */
-	private get graph() {
-		return this.internalGraph
-	}
 }
