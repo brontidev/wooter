@@ -12,7 +12,9 @@ extends the [`RouteEvent`](https://jsr.io/@bronti/wooter/doc/~/RouteEvent), they
 can use the basic `resp` and `err` functions, as well as the `up` function to
 call the next middleware or route.
 
-> [!NOTE] `.use` modifies the Wooter, you do not need to do all of your `.use`
+<!-- deno-fmt-ignore -->
+> [!NOTE]
+> `.use` modifies the Wooter, you do not need to do all of your `.use`
 > calls in one line, but it is recommended if you want to keep type-safety.
 
 ```ts

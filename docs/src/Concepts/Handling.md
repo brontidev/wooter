@@ -77,3 +77,20 @@ app.route(c.chemin(), {
 
 $: export default app;
 ```
+
+# Namespaces
+
+Namespaces are a way to group routes together. You can use `.namespace` to
+create a namespace.
+
+```ts
+$:import { Wooter, c } from "jsr:@bronti/wooter";
+$:const app = new Wooter();
+app.namespace(c.chemin("api"), (api) => {
+  api.route.GET(c.chemin(), async ({ resp, err }) => {
+    console.log("User doesn't have response yet.");
+    resp(new Response("HI"));
+    console.log("User now has the response.");
+  });
+});
+```
