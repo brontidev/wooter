@@ -1,9 +1,6 @@
-name: Publish
+name: Publish package
 on:
     workflow_dispatch:
-    # push:
-    #     branches:
-    #         - main
 
 jobs:
     publish:
