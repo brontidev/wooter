@@ -1,5 +1,5 @@
 import { RouteEvent } from "@/event/index.ts"
-import type { IChemin } from "@/export/chemin.ts"
+import type { IChemin, TEmptyObject } from "@/export/chemin.ts"
 import type {
 	Data,
 	Handler,
@@ -39,17 +39,23 @@ export class Wooter<
 		>
 		| undefined
 
+	private opts: WooterOptions
+
 	/**
 	 * Create a new Wooter
 	 * @param opts - Options
 	 */
-	constructor(private opts?: Partial<WooterOptions>) {
+	constructor(opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
 		this.internalGraph = new RouteGraph()
 	}
 
 	/**
 	 * Apply some middleware to a wooter
+	 * @example
+	 * ```
+	 * new Wooter.use(middleware1).use(middleware2)
+	 * ```
 	 * @param handler Middleware Handler
 	 * @returns Wooter
 	 */
@@ -63,7 +69,8 @@ export class Wooter<
 		>,
 	): Wooter<
 		TData extends undefined ? NewData
-			: (NewData extends undefined ? undefined : Merge<TData, NewData>),
+			: (NewData extends undefined ? TEmptyObject
+				: Merge<TData, NewData>),
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
@@ -74,6 +81,13 @@ export class Wooter<
 
 	/**
 	 * Registers another wooter as a namespace
+	 * @example
+	 * ```
+	 * const apiWooter = new Wooter().use(auth)
+	 *   .route.GET(chein("posts"), () => {...})
+	 * wooter.namespace(chemin("api"), apiWooter)
+	 * ```
+
 	 * @param path Path
 	 * @param wooter Wooter
 	 */
@@ -83,6 +97,17 @@ export class Wooter<
 	 * Registers a namespace using a function that adds routes to a wooter
 	 * @param path Path
 	 * @param routeModifier Route modifier
+	 * @example
+	 * ```
+	 * 	wooter.namespace(chemin("group"), (wooter) => {
+	 * 		wooter.route.GET(
+	 * 			chemin("subroute"),
+	 * 			async ({ request, resp, err }) => {
+	 * 				resp(jsonResponse({ "ok": true }))
+	 * 			}
+	 * 		)
+	 * 	})
+	 * ```
 	 */
 	namespace<TParams extends Params = Params>(
 		path: IChemin<TParams>,
@@ -93,13 +118,13 @@ export class Wooter<
 	 * Registers a namespace using a function that modifies the wooter, and a function that adds routes to a wooter
 	 *
 	 * @param path Path
-	 * @param wooterModifier Wooter modifier
-	 * @param routeModifier Route modifier
+	 * @param wooterModifier Wooter modifier (add Middleware)
+	 * @param routeModifier Route modifier (add Routes)
 	 *
 	 * @example
-	 * ```ts
-	 * 	wooter.namespace(chemin("group"), (wooter) => wooter.useMethods(), (wooter) => {
-	 * 		wooter.GET(
+	 * ```
+	 * 	wooter.namespace(chemin("group"), (wooter) => wooter.use(usernameOrUUID),(wooter) => {
+	 * 		wooter.route.GET(
 	 * 			chemin("subroute"),
 	 * 			async ({ request, resp, err, data: { username } }) => {
 	 * 				resp(jsonResponse({ "ok": true }))
@@ -164,15 +189,6 @@ export class Wooter<
 	}
 
 	/**
-	 * Passes a request through the wooter
-	 * @param request Request
-	 * @returns Response
-	 */
-	get fetch(): (request: Request) => Promise<Response> {
-		return this._fetch.bind(this)
-	}
-
-	/**
 	 * Creates a handler for when no route is found
 	 * @param handler Handler
 	 * @returns Wooter
@@ -187,6 +203,23 @@ export class Wooter<
 
 	/**
 	 * Passes a request through the wooter
+	 * @example
+	 * ```
+	 * server.onRequest(request => wooter.fetch(request))
+	 * ```
+
+	 * @param request Request
+	 * @returns Response
+	 */
+	fetch = (request: Request): Promise<Response> => this._fetch(request)
+
+	/**
+	 * Passes a request through the wooter
+	 * @example
+	 * ```
+	 * server.onRequest(request => wooter.fetch(request))
+	 * ```
+	 *
 	 * @param request Request
 	 * @returns Response
 	 */
@@ -215,8 +248,8 @@ export class Wooter<
 						this.notFoundHandler(event)
 						return await event.promise
 					} catch (e) {
+						if (!this.opts.catchErrors) throw e
 						console.error("Unresolved error in notFound handler", e)
-						// Do nothing, return normal not found
 					}
 				}
 				return new Response(
@@ -232,7 +265,7 @@ export class Wooter<
 			handler(event)
 			return await event.promise
 		} catch (e) {
-			if (!this.opts?.catchErrors) throw e
+			if (!this.opts.catchErrors) throw e
 			console.error(e)
 			return new Response("Internal Server Error", {
 				status: 500,
@@ -277,9 +310,6 @@ export class Wooter<
 
 	/**
 	 * Gets the internal graph from the wooter (used internally)
-	 * @param pathParts Path array
-	 * @param method HTTP verb
-	 * @returns Route Match Definition
 	 * @internal
 	 */
 	private get graph() {

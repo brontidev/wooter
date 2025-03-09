@@ -68,8 +68,14 @@ export type Handler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 > = (event: RouteEvent<TParams, TData>) => Promise<void> | void
+
 /**
  * Standalone Middleware Handler type
+ * @example
+ * ```
+ * type Cookies = {...}
+ * const cookies: StandaloneMiddlewareHandler<{ cookies: Cookies }> = ({ up }) => up({ cookies: {...} })
+ * ```
  */
 export type StandaloneMiddlewareHandler<
 	TNextData extends Data | undefined = undefined,
@@ -100,7 +106,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 */
 		[method in HttpMethod]: <TParams extends Params>(
 			path: IChemin<TParams>,
-			handler: Handler<Merge<BaseParams, TParams>, TData>,
+			handler: Handler<BaseParams & TParams, TData>,
 		) => void
 	}
 	& {
@@ -111,7 +117,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 */
 		[method in string]: <TParams extends Params>(
 			path: IChemin<TParams>,
-			handler: Handler<Merge<BaseParams, TParams>, TData>,
+			handler: Handler<BaseParams & TParams, TData>,
 		) => void
 	}
 	& {
@@ -122,8 +128,8 @@ export type RouteFunction<TData extends Data, BaseParams> =
 			path: IChemin<TParams>,
 			methodOrMethods:
 				| string
-				| Record<string, Handler<Merge<BaseParams, TParams>, TData>>,
-			handler?: Handler<Merge<BaseParams, TParams>, TData>,
+				| Record<string, Handler<BaseParams & TParams, TData>>,
+			handler?: Handler<BaseParams & TParams, TData>,
 		): void
 		/**
 		 * Registers a route to the wooter
@@ -131,23 +137,33 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * @param method HTTP method
 		 * @param handler route handler
 		 */
-		(path: IChemin, method: string, handler: Handler): void
+		<TParams extends Params = Params>(
+			path: IChemin<TParams>,
+			method: string,
+			handler: Handler<BaseParams & TParams, TData>,
+		): void
 		/**
 		 * Registers a route to the wooter
 		 * @param path chemin
 		 * @param method HTTP method
 		 * @param handler route handler
 		 */
-		(path: IChemin, method: HttpMethod, handler: Handler): void
+		<TParams extends Params = Params>(
+			path: IChemin<TParams>,
+			method: HttpMethod,
+			handler: Handler<BaseParams & TParams, TData>,
+		): void
 
 		/**
 		 * Registers a route to the wooter
 		 * @param path chemin
 		 * @param methods Map of HTTP method to handler
 		 */
-		(
-			path: IChemin,
-			methods: Record<HttpMethod, Handler> & Record<string, Handler>,
+		<TParams extends Params = Params>(
+			path: IChemin<TParams>,
+			methods:
+				& Record<HttpMethod, Handler<BaseParams & TParams, TData>>
+				& Record<string, Handler<BaseParams & TParams, TData>>,
 			__?: undefined,
 		): void
 	}
