@@ -9,7 +9,7 @@ export function defaultRouteFunction(
 	path: IChemin,
 	methodOrMethods: string | Record<string, Handler>,
 	handler?: Handler,
-	namespaceIndexes?: number[]
+	namespaceIndexes?: number[],
 ) {
 	if (typeof methodOrMethods === "string" && !!handler) {
 		graph.addRoute(methodOrMethods, path, handler, namespaceIndexes)

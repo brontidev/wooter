@@ -4,6 +4,12 @@
  * @module
  */
 
-import * as c from "@dldc/chemin"
-export * from "@dldc/chemin"
+import * as _c from "@dldc/chemin"
+
+/**
+ * All chemin exports
+ */
+const c: typeof import("@dldc/chemin") = _c
+
 export default c
+export * from "@dldc/chemin"

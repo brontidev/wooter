@@ -1,19 +1,35 @@
 import { assert, assertEquals, fail } from "jsr:@std/assert"
 import { Wooter } from "@/wooter.ts"
-import { chemin } from "@/export/chemin.ts"
+import c from "@/export/chemin.ts"
 import {
 	ExitWithoutResponse,
+	LockedNamespaceBuilder,
 	MiddlewareCalledUpTooManyTimes,
 	MiddlewareDidntCallUp,
 } from "@/export/error.ts"
 
 import { assertSpyCall, stub } from "jsr:@std/testing/mock"
+import { StandaloneMiddlewareHandler } from "@/export/types.ts"
+import { NamespaceBuilder } from "@/graph/router.ts"
 
 class TestError {}
 
+const testHeader: StandaloneMiddlewareHandler<
+	{ setTestHeader: (value: string) => void }
+> = async ({ up, resp }) => {
+	let header: string | undefined
+	const response = await up({
+		setTestHeader: (value) => {
+			header = value
+		},
+	})
+	if (header) response.headers.set("X-Test", header)
+	resp(response)
+}
+
 Deno.test("Wooter - basic route handling", async () => {
 	const wooter = new Wooter()
-	wooter.route(chemin("test"), {
+	wooter.route(c.chemin("test"), {
 		GET({ resp }) {
 			resp(new Response("Hello, world!"))
 		},
@@ -43,7 +59,7 @@ Deno.test("Wooter - not found handler", async () => {
 
 Deno.test("Wooter - internal server error", async () => {
 	const wooter = new Wooter()
-	wooter.route.GET(chemin("error"), () => {
+	wooter.route.GET(c.chemin("error"), () => {
 		throw new Error("Test error")
 	})
 
@@ -57,8 +73,8 @@ Deno.test("Wooter - internal server error", async () => {
 
 Deno.test("Wooter - namespace handling", async () => {
 	const wooter = new Wooter()
-	wooter.namespace(chemin("api"), (subWooter) => {
-		subWooter.route.GET(chemin("test"), ({ resp }) => {
+	wooter.namespace(c.chemin("api"), (subWooter) => {
+		subWooter.route.GET(c.chemin("test"), ({ resp }) => {
 			resp(new Response("Namespace Test"))
 		})
 	})
@@ -72,19 +88,8 @@ Deno.test("Wooter - namespace handling", async () => {
 })
 
 Deno.test("Wooter - middleware", async () => {
-	const wooter = new Wooter().use<
-		{ setTestHeader: (value: string) => void }
-	>(async ({ up, resp }) => {
-		let header: string | undefined
-		const response = await up({
-			setTestHeader: (value) => {
-				header = value
-			},
-		})
-		if (header) response.headers.set("X-Test", header)
-		resp(response)
-	})
-	wooter.route.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+	const wooter = new Wooter().use(testHeader)
+	wooter.route.GET(c.chemin("page"), ({ data: { setTestHeader }, resp }) => {
 		setTestHeader("HELLO")
 		resp(new Response("world"))
 	})
@@ -114,7 +119,7 @@ Deno.test("Wooter - middleware - call up twice", async () => {
 		if (header) response.headers.set("X-Test", header)
 		resp(response)
 	})
-	wooter.route.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+	wooter.route.GET(c.chemin("page"), ({ data: { setTestHeader }, resp }) => {
 		setTestHeader("HELLO")
 		resp(new Response("world"))
 	})
@@ -134,7 +139,7 @@ Deno.test("Wooter - middleware - didn't call up", async () => {
 	>(async () => {
 	})
 
-	wooter.route.GET(chemin("page"), ({ data: { setTestHeader }, resp }) => {
+	wooter.route.GET(c.chemin("page"), ({ data: { setTestHeader }, resp }) => {
 		setTestHeader("HELLO")
 		resp(new Response("world"))
 	})
@@ -153,7 +158,7 @@ Deno.test("Wooter - middleware - called up but not resp", async () => {
 		await up()
 	})
 
-	wooter.route.GET(chemin("page"), ({ resp }) => {
+	wooter.route.GET(c.chemin("page"), ({ resp }) => {
 		resp(new Response("world"))
 	})
 
@@ -190,7 +195,7 @@ Deno.test("Wooter - notFound has an error", async () => {
 
 Deno.test("Wooter - don't catch errors", async () => {
 	const wooter = new Wooter({ catchErrors: false })
-	wooter.route.GET(chemin("page"), () => {
+	wooter.route.GET(c.chemin("page"), () => {
 		throw new TestError()
 	})
 	try {
@@ -204,7 +209,7 @@ Deno.test("Wooter - don't catch errors", async () => {
 
 Deno.test("No response", async () => {
 	const wooter = new Wooter({ catchErrors: false })
-	wooter.route.GET(chemin("page"), () => {
+	wooter.route.GET(c.chemin("page"), () => {
 	})
 	try {
 		const request = new Request("http://localhost/page", { method: "GET" })
@@ -219,22 +224,22 @@ Deno.test("Namespace with another route after", async () => {
 	const wooter = new Wooter()
 
 	wooter.namespace(
-		chemin("something"),
+		c.chemin("something"),
 		(wooter) => {
-			wooter.route.GET(chemin("page"), ({ resp }) => {
+			wooter.route.GET(c.chemin("page"), ({ resp }) => {
 				resp(new Response("page"))
 			})
 		},
 	)
 	wooter.namespace(
-		chemin("api"),
+		c.chemin("api"),
 		(wooter) => {
-			wooter.route.GET(chemin("page"), ({ resp }) => {
+			wooter.route.GET(c.chemin("page"), ({ resp }) => {
 				resp(new Response("page"))
 			})
 		},
 	)
-	wooter.route.GET(chemin("api"), ({ resp }) => {
+	wooter.route.GET(c.chemin("api"), ({ resp }) => {
 		resp(new Response(""))
 	})
 
@@ -246,10 +251,84 @@ Deno.test("Namespace with another route after", async () => {
 	assertEquals(text, "")
 })
 
+Deno.test("Nested Namespaces", async () => {
+	const wooter = new Wooter()
+
+	wooter.namespace(
+		c.chemin("something"),
+		(wooter) => {
+			wooter.namespace(
+				c.chemin("else"),
+				(wooter) => {
+					wooter.route.GET(c.chemin("page"), ({ resp }) => {
+						resp(new Response("nested middleware!!"))
+					})
+				},
+			)
+			wooter.route.GET(c.chemin("page"), ({ resp }) => {
+				resp(new Response("page"))
+			})
+		},
+	)
+
+	wooter.route.GET(c.chemin("api"), ({ resp }) => {
+		resp(new Response(""))
+	})
+
+	const request = new Request("http://localhost/something/else/page", { method: "GET" })
+	const response = await wooter.fetch(request)
+	const text = await response.text()
+
+	assertEquals(response.status, 200)
+	assertEquals(text, "nested middleware!!")
+})
+
+Deno.test("Namespace Builder breaks after it is locked", async () => {
+  let builder: NamespaceBuilder;
+
+  const wooter = new Wooter()
+
+  wooter.namespace(c.chemin(), bldr => {
+    builder = bldr
+  })
+
+  try {
+    // @ts-expect-error: This isn't MEANT to work
+    builder.use()
+    fail("Builder should error out since it was already locekd")
+  } catch(e) {
+    assert(e instanceof LockedNamespaceBuilder)
+  }
+})
+
+Deno.test("Namespace with Middleware", async () => {
+	const wooter = new Wooter()
+
+	wooter.namespace(
+		c.chemin("api"),
+		(bldr) => bldr.use(testHeader),
+		(wooter) => {
+			wooter.route.GET(
+				c.chemin(),
+				({ resp, data: { setTestHeader } }) => {
+					setTestHeader("HELLO")
+					resp(new Response("world"))
+				},
+			)
+		},
+	)
+
+	const request = new Request("http://localhost/api", { method: "GET" })
+	const response = await wooter.fetch(request)
+
+	assertEquals(response.status, 200)
+	assertEquals(response.headers.get("X-Test"), "HELLO")
+})
+
 Deno.test("Multiple methods", async () => {
 	const wooter = new Wooter()
 
-	wooter.route(chemin("page"), {
+	wooter.route(c.chemin("page"), {
 		POST({ resp }) {
 			resp(new Response("ok"))
 		},
@@ -270,12 +349,12 @@ Deno.test("Multiple methods", async () => {
 
 // Deno.test("namespace with existing wooter", async () => {
 // 	const wooter1 = new Wooter()
-// 	wooter1.route.GET(chemin("page"), ({ resp }) => {
+// 	wooter1.route.GET(c.chemin("page"), ({ resp }) => {
 // 		resp(new Response("ok"))
 // 	})
 
 // 	const wooter2 = new Wooter()
-// 	wooter2.namespace(chemin("namespace"), wooter1)
+// 	wooter2.namespace(c.chemin("namespace"), wooter1)
 
 // 	const request = new Request("http://localhost/namespace/page", {
 // 		method: "GET",
