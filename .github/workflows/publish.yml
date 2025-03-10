@@ -23,7 +23,7 @@ jobs:
               run: deno publish
             - name: Get version
               id: version
-              run: echo "VERSION=$(deno run -A ./publish-cli.ts version)" >> "$GITHUB_OUTPUT"
+              run: echo "VERSION=$(cat ./deno.jsonc | jq -r .version)" >> "$GITHUB_OUTPUT"
             - name: Create release
               uses: softprops/action-gh-release@v2
               with:

@@ -10,7 +10,7 @@ import {
 
 import { assertSpyCall, stub } from "jsr:@std/testing/mock"
 import type { StandaloneMiddlewareHandler } from "@/export/types.ts"
-import type { NamespaceBuilder } from "@/graph/router.ts"
+import type { NamespaceBuilder } from "@/export/index.ts"
 
 class TestError {}
 
@@ -295,7 +295,7 @@ Deno.test("Namespace Builder breaks after it is locked", () => {
 	})
 
 	try {
-		// @ts-expect-error: This isn't MEANT to work
+		// @ts-expect-error: You aren't supposed to do this in the first place, this error is intended.
 		builder.use()
 		fail("Builder should error out since it was already locekd")
 	} catch (e) {
