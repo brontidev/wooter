@@ -35,8 +35,10 @@ const optsDefaults: WooterOptions = {
  * Wooter's main class
  */
 export class Wooter<
-	TData extends Data | undefined = undefined,
+	INFER_Data extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
+	TData extends Data = INFER_Data extends undefined ? TEmptyObject
+		: INFER_Data,
 > {
 	private graph: RouteGraph
 
@@ -111,22 +113,21 @@ export class Wooter<
 	 */
 	namespace<
 		TParams extends Params = Params,
-		X extends NamespaceBuilder<TData, BaseParams & TParams> =
-			NamespaceBuilder<
-				TData,
-				BaseParams & TParams
-			>,
+		NData extends TData = TData,
 	>(
 		path: IChemin<BaseParams & TParams>,
 		modifier: (
-				bldr: NamespaceBuilder<TData, BaseParams & TParams>,
-			) => X,
-		secondModifier?: (bldr: X) => void,
+			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
+		) => NamespaceBuilder<NData, BaseParams & TParams> | void,
+		secondModifier?: (
+			bldr: NamespaceBuilder<NData, BaseParams & TParams>,
+		) => void,
 	): this {
 		this.graph.addNamespace(path as IChemin<Params>, [], (bldr) => {
-  		// @ts-expect-error: The type of ISerialize is technically not different
-			const newBldr = modifier(bldr)
-			secondModifier?.(newBldr ?? bldr)
+			// @ts-expect-error: The type of ISerialize is technically not different
+			const mod = modifier(bldr)
+			// @ts-expect-error: The types don't actually matter here, the builder is modified when middleware or routes are added.
+			secondModifier?.(mod ?? bldr)
 		})
 		return this
 	}
@@ -248,19 +249,21 @@ export class Wooter<
 	 * 	});
 	 * ```
 	 */
-	readonly route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
-		new Proxy(this.#route, {
-			apply(target, thisArg, args) {
-				// @ts-expect-error: This error is literally too annoying to fix
-				return target.apply(thisArg, args)
-			},
-			get(target, prop, receiver) {
-				const value = Reflect.get(target, prop, receiver)
-				return value ??
-					(typeof prop === "string"
-						? ((path: IChemin, handler: Handler) =>
-							target(path, prop, handler))
-						: undefined)
-			},
-		})
+	readonly route: RouteFunction<
+		TData extends undefined ? Data : TData,
+		BaseParams
+	> = new Proxy(this.#route, {
+		apply(target, thisArg, args) {
+			// @ts-expect-error: This error is literally too annoying to fix
+			return target.apply(thisArg, args)
+		},
+		get(target, prop, receiver) {
+			const value = Reflect.get(target, prop, receiver)
+			return value ??
+				(typeof prop === "string"
+					? ((path: IChemin, handler: Handler) =>
+						target(path, prop, handler))
+					: undefined)
+		},
+	})
 }

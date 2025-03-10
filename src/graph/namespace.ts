@@ -1,4 +1,11 @@
-import type { Data, Handler, Merge, MiddlewareHandler, Params, RouteFunction } from "@/export/types.ts"
+import type {
+	Data,
+	Handler,
+	Merge,
+	MiddlewareHandler,
+	Params,
+	RouteFunction,
+} from "@/export/types.ts"
 import type { RouteGraph } from "@/graph/router.ts"
 import type { IChemin, TEmptyObject } from "@/export/chemin.ts"
 import { LockedNamespaceBuilder } from "@/export/error.ts"
@@ -9,14 +16,15 @@ export const LOCK = Symbol("LOCK")
 
 export type Namespace = Set<MiddlewareHandler>
 
-
 /**
  * Used to create namespaces
  */
 export class NamespaceBuilder<
-	TData extends Data | undefined = undefined,
+	INFER_Data extends Data | undefined = undefined,
 	TParams extends Params = Params,
 	BaseParams extends Params = Params,
+	TData extends Data = INFER_Data extends undefined ? TEmptyObject
+		: INFER_Data,
 > {
 	private _locked = false
 
@@ -35,7 +43,6 @@ export class NamespaceBuilder<
 	constructor(
 		private graph: RouteGraph,
 		private path: IChemin<TParams>,
-
 		private index: number,
 		baseIndexes: number[],
 	) {
@@ -74,24 +81,27 @@ export class NamespaceBuilder<
 	 */
 	namespace<
 		TParams extends Params = Params,
-		X extends NamespaceBuilder<TData, BaseParams & TParams> =
-		NamespaceBuilder<
-			TData,
-			BaseParams & TParams
-		>,
+		NData extends TData = TData,
 	>(
 		path: IChemin<BaseParams & TParams>,
 		modifier: (
 			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
-		) => X,
-		secondModifier?: (bldr: X) => void,
+		) => NamespaceBuilder<NData, BaseParams & TParams> | void,
+		secondModifier?: (
+			bldr: NamespaceBuilder<NData, BaseParams & TParams>,
+		) => void,
 	): this {
 		if (this.locked) throw new LockedNamespaceBuilder()
-		this.graph.addNamespace(path as IChemin<Params>, [], (bldr) => {
-  		// @ts-expect-error: The type of ISerialize is technically not different
-			const newBldr = modifier(bldr)
-			secondModifier?.(newBldr ?? bldr)
-		})
+		this.graph.addNamespace(
+			c.chemin(this.path, path) as IChemin<Params>,
+			this.indexes,
+			(bldr) => {
+				// @ts-expect-error: The type of ISerialize is technically not different
+				const mod = modifier(bldr)
+				// @ts-expect-error: The types don't actually matter here, the builder is modified when middleware or routes are added.
+				secondModifier?.(mod ?? bldr)
+			},
+		)
 		return this
 	}
 
@@ -115,8 +125,8 @@ export class NamespaceBuilder<
 		>,
 	): NamespaceBuilder<
 		TData extends undefined ? NewData
-		: (NewData extends undefined ? TEmptyObject
-			: Merge<TData, NewData>),
+			: (NewData extends undefined ? TEmptyObject
+				: Merge<TData, NewData>),
 		TParams,
 		BaseParams
 	> {
@@ -136,16 +146,16 @@ export class NamespaceBuilder<
 		methodOrMethods: string | Record<string, Handler>,
 		handler?: Handler,
 	) => {
-			if (this.locked) throw new LockedNamespaceBuilder()
-			const fullPath = c.chemin(this.path, path)
-			defaultRouteFunction(
-				this.graph,
-				fullPath,
-				methodOrMethods,
-				handler,
-				this.indexes,
-			)
-		}
+		if (this.locked) throw new LockedNamespaceBuilder()
+		const fullPath = c.chemin(this.path, path)
+		defaultRouteFunction(
+			this.graph,
+			fullPath,
+			methodOrMethods,
+			handler,
+			this.indexes,
+		)
+	}
 
 	/**
 	 * Object used to create new routes
