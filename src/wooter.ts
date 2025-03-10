@@ -8,7 +8,8 @@ import type {
 	Params,
 	RouteFunction,
 } from "@/export/types.ts"
-import { type NamespaceBuilder, RouteGraph } from "@/graph/router.ts"
+import type { NamespaceBuilder } from "@/graph/namespace.ts"
+import { RouteGraph } from "@/graph/router.ts"
 import { defaultRouteFunction } from "@/common.ts"
 
 class NotFound {}
@@ -17,6 +18,12 @@ class NotFound {}
  * Options for creating a new Wooter
  */
 export type WooterOptions = {
+	/**
+	 * Boolean: if `true`: when the wooter catches errors it will console.error, and respond with a 500 Error. if `false` wooter will throw errors it catches.
+	 * To catch errors before wooter does, create a middleware
+	 *
+	 * @default true
+	 */
 	catchErrors: boolean
 }
 
@@ -25,7 +32,7 @@ const optsDefaults: WooterOptions = {
 }
 
 /**
- * The main class for Wooter
+ * Wooter's main class
  */
 export class Wooter<
 	TData extends Data | undefined = undefined,
@@ -43,8 +50,8 @@ export class Wooter<
 	private opts: WooterOptions
 
 	/**
-	 * Create a new Wooter
-	 * @param opts - Options
+	 * Create a new wooter
+	 * @param opts Options
 	 */
 	constructor(opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
@@ -52,13 +59,14 @@ export class Wooter<
 	}
 
 	/**
-	 * Apply some middleware to a wooter
+	 * Applies a middleware to the namespace
 	 * @example
 	 * ```
-	 * new Wooter.use(middleware1).use(middleware2)
+	 * builder.use(useMiddleware)
 	 * ```
-	 * @param handler Middleware Handler
-	 * @returns Wooter
+	 *
+	 * @param handler Middleware handler
+	 * @returns self
 	 */
 	use<
 		NewData extends Data | undefined = undefined,
@@ -81,63 +89,26 @@ export class Wooter<
 	}
 
 	/**
-	 * Registers a namespace using a function that adds routes to a wooter
-	 * @param path Path
-	 * @param routeModifier Route modifier
-	 * @example
-	 * ```
-	 * 	wooter.namespace(chemin("group"), (wooter) => {
-	 * 		wooter.route.GET(
-	 * 			chemin("subroute"),
-	 * 			async ({ request, resp, err }) => {
-	 * 				resp(jsonResponse({ "ok": true }))
-	 * 			}
-	 * 		)
-	 * 	})
-	 * ```
-	 */
-	namespace<TParams extends Params = Params>(
-		path: IChemin<TParams>,
-		routeModifier: (
-			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
-		) => void,
-	): this
-
-	/**
-	 * Registers a namespace using a function that modifies the wooter, and a function that adds routes to a wooter
+	 * Registers a namespace using a builder function
 	 *
-	 * @param path Path
-	 * @param wooterModifier Wooter modifier (add Middleware)
-	 * @param routeModifier Route modifier (add Routes)
+	 * @example no new middleware
+	 * ```
+	 * wooter.namespace(chemin("group"), builder => {
+	 * 		// ...
+	 * })
+	 * ```
+	 * 	 * @example applying middleware
+	 * ```
+	 * wooter.namespace(chemin("group"), builder => builder.use(useMiddleware), builder => {
+	 * 		// ...
+	 * })
+	 * ```
 	 *
-	 * @example
-	 * ```
-	 * 	wooter.namespace(chemin("group"), (wooter) => wooter.use(usernameOrUUID),(wooter) => {
-	 * 		wooter.route.GET(
-	 * 			chemin("subroute"),
-	 * 			async ({ request, resp, err, data: { username } }) => {
-	 * 				resp(jsonResponse({ "ok": true }))
-	 * 			}
-	 * 		)
-	 * 	})
-	 * ```
+	 * @param path Path to apply to any child paths
+	 * @param modifier A function that adds routes to the namespace, or if secondModifier is present, applies middleware to the namespace and returns it
+	 * @param secondModifier A function that adds routes to the namespace
+	 * @returns self
 	 */
-	namespace<
-		TParams extends Params = Params,
-		X = NamespaceBuilder<
-			TData,
-			BaseParams & TParams
-		>,
-	>(
-		path: IChemin<BaseParams & TParams>,
-		wooterModifier: (
-			wooter: NamespaceBuilder<TData, BaseParams & TParams>,
-		) => X,
-		routeModifier: (
-			bldr: X extends void ? NamespaceBuilder<TData, BaseParams & TParams>
-				: X,
-		) => void,
-	): this
 	namespace<
 		TParams extends Params = Params,
 		X extends NamespaceBuilder<TData, BaseParams & TParams> =
@@ -147,26 +118,23 @@ export class Wooter<
 			>,
 	>(
 		path: IChemin<BaseParams & TParams>,
-		modifier:
-			| ((bldr: NamespaceBuilder<TData, BaseParams & TParams>) => void)
-			| ((
+		modifier: (
 				bldr: NamespaceBuilder<TData, BaseParams & TParams>,
-			) => X),
-		secondModifier?: (wooter: X) => void,
+			) => X,
+		secondModifier?: (bldr: X) => void,
 	): this {
 		this.graph.addNamespace(path as IChemin<Params>, [], (bldr) => {
-			// @ts-expect-error: useless Generics
+  		// @ts-expect-error: The type of ISerialize is technically not different
 			const newBldr = modifier(bldr)
-			// @ts-expect-error: useless Generics
 			secondModifier?.(newBldr ?? bldr)
 		})
 		return this
 	}
 
 	/**
-	 * Creates a handler for when no route is found
-	 * @param handler Handler
-	 * @returns Wooter
+	 * Creates a new handler that is run when no route is found
+	 * @param handler handler function
+	 * @returns self
 	 */
 	notFound(handler: Handler): this {
 		if (this.notFoundHandler) {
@@ -177,33 +145,18 @@ export class Wooter<
 	}
 
 	/**
-	 * Passes a request through the wooter
-	 * @example
-	 * ```
-	 * server.onRequest(request => wooter.fetch(request))
-	 * ```
-
-	 * @param request Request
-	 * @returns Response
-	 */
-	fetch = (request: Request): Promise<Response> => this._fetch(request)
-
-	/**
-	 * Passes a request through the wooter
-	 * @example
-	 * ```
-	 * server.onRequest(request => wooter.fetch(request))
-	 * ```
+	 * Passes a request into the wooter and returns a Promise resolving to a response
 	 *
 	 * @param request Request
-	 * @returns Response
+	 * @param data (optional) data that will be passed into the wooter
+	 * @param params (optional) parameter data
+	 * @returns
 	 */
-	private async _fetch(request: Request): Promise<Response>
-	private async _fetch(
+	readonly fetch = async (
 		request: Request,
-		data?: TData,
+		data?: Partial<TData>,
 		params?: BaseParams,
-	): Promise<Response> {
+	): Promise<Response> => {
 		let handler: Handler
 		const event = new RouteEvent(request, params ?? {}, data ?? {})
 		const pathname = new URL(request.url).pathname
@@ -259,9 +212,43 @@ export class Wooter<
 		}
 
 	/**
-  	Create a new route
-	*/
-	route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
+	 * Object used to create new routes
+	 *
+	 * @example (Legacy)
+	 * ```
+	 * 	app.route(c.chemin(), "GET", async ({ resp, err }) => {
+	 * 		console.log("User doesn't have response yet.");
+	 * 		resp(new Response("HI"));
+	 * 		console.log("User now has the response.");
+	 * 	});
+	 * ```
+	 *
+	 * @example `.route[METHOD](...)`
+	 * ```
+	 * 	app.route.GET(c.chemin(), async ({ resp, err }) => {
+	 * 		console.log("User doesn't have response yet.");
+	 * 		resp(new Response("HI"));
+	 * 		console.log("User now has the response.")
+	 * 	});
+	 * ```
+	 *
+	 * @example Multiple methods
+	 * ```
+	 * 	app.route(c.chemin(), {
+	 * 		GET: async ({ resp, err }) => {
+	 * 			console.log("User doesn't have response yet.");
+	 * 			resp(new Response("HI"));
+	 * 			console.log("User now has the response.");
+	 * 		},
+	 * 		POST: async ({ resp, err }) => {
+	 * 			console.log("User doesn't have response yet.");
+	 * 			resp(new Response("HI"));
+	 * 			console.log("User now has the response.");
+	 * 		}
+	 * 	});
+	 * ```
+	 */
+	readonly route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
 		new Proxy(this.#route, {
 			apply(target, thisArg, args) {
 				// @ts-expect-error: This error is literally too annoying to fix
