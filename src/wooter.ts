@@ -8,7 +8,7 @@ import type {
 	Params,
 	RouteFunction,
 } from "@/export/types.ts"
-import { NamespaceBuilder, RouteGraph } from "@/graph/router.ts"
+import { type NamespaceBuilder, RouteGraph } from "@/graph/router.ts"
 import { defaultRouteFunction } from "@/common.ts"
 
 class NotFound {}
@@ -98,7 +98,9 @@ export class Wooter<
 	 */
 	namespace<TParams extends Params = Params>(
 		path: IChemin<TParams>,
-		routeModifier: (bldr: NamespaceBuilder<TData, BaseParams & TParams>) => void,
+		routeModifier: (
+			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
+		) => void,
 	): this
 
 	/**
@@ -122,7 +124,7 @@ export class Wooter<
 	 */
 	namespace<
 		TParams extends Params = Params,
-		X extends unknown = NamespaceBuilder<
+		X = NamespaceBuilder<
 			TData,
 			BaseParams & TParams
 		>,
@@ -132,15 +134,17 @@ export class Wooter<
 			wooter: NamespaceBuilder<TData, BaseParams & TParams>,
 		) => X,
 		routeModifier: (
-			bldr: X,
+			bldr: X extends void ? NamespaceBuilder<TData, BaseParams & TParams>
+				: X,
 		) => void,
 	): this
 	namespace<
 		TParams extends Params = Params,
-		X extends NamespaceBuilder<TData, BaseParams & TParams> = NamespaceBuilder<
-			TData,
-			BaseParams & TParams
-		>,
+		X extends NamespaceBuilder<TData, BaseParams & TParams> =
+			NamespaceBuilder<
+				TData,
+				BaseParams & TParams
+			>,
 	>(
 		path: IChemin<BaseParams & TParams>,
 		modifier:
@@ -151,11 +155,11 @@ export class Wooter<
 		secondModifier?: (wooter: X) => void,
 	): this {
 		this.graph.addNamespace(path as IChemin<Params>, [], (bldr) => {
-  		// @ts-expect-error: useless Generics
-		  modifier(bldr)
 			// @ts-expect-error: useless Generics
-			secondModifier?.(bldr)
-    })
+			const newBldr = modifier(bldr)
+			// @ts-expect-error: useless Generics
+			secondModifier?.(newBldr ?? bldr)
+		})
 		return this
 	}
 
@@ -251,7 +255,7 @@ export class Wooter<
 			methodOrMethods: string | Record<string, Handler>,
 			handler?: Handler,
 		) => {
-  		defaultRouteFunction(this.graph, path, methodOrMethods, handler)
+			defaultRouteFunction(this.graph, path, methodOrMethods, handler)
 		}
 
 	/**

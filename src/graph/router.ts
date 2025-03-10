@@ -12,12 +12,13 @@ import type {
 import { useHandler } from "@/event/index.ts"
 import { useMiddleware } from "@/event/middleware.ts"
 import { defaultRouteFunction } from "@/common.ts"
+import { LockedNamespaceBuilder } from "@/export/error.ts"
 
 type Node = {
 	path: IChemin<Params>
 	method: string
 	handler: Handler
-	namespaceIndexes?: number[]
+	namespaceIndexes: number[]
 }
 type FindData = { method: string }
 type Namespace = Set<MiddlewareHandler>
@@ -33,6 +34,9 @@ function* concatIterators(...iterators: Iterable<any, any, any>[]) {
 
 const LOCK = Symbol("LOCK")
 
+/**
+ * @internal
+ */
 export class NamespaceBuilder<
 	TData extends Data | undefined = undefined,
 	TParams extends Params = Params,
@@ -48,7 +52,7 @@ export class NamespaceBuilder<
 		private index: number,
 		baseIndexes: number[],
 	) {
-  	this.indexes = [this.index, ...baseIndexes]
+		this.indexes = [this.index, ...baseIndexes]
 	}
 
 	[LOCK](): Namespace {
@@ -74,7 +78,9 @@ export class NamespaceBuilder<
 	 */
 	namespace<TParams extends Params = Params>(
 		path: IChemin<TParams>,
-		routeModifier: (bldr: NamespaceBuilder<TData, BaseParams & TParams>) => void,
+		routeModifier: (
+			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
+		) => void,
 	): this
 
 	/**
@@ -113,10 +119,11 @@ export class NamespaceBuilder<
 	): this
 	namespace<
 		TParams extends Params = Params,
-		X extends NamespaceBuilder<TData, BaseParams & TParams> = NamespaceBuilder<
-			TData,
-			BaseParams & TParams
-		>,
+		X extends NamespaceBuilder<TData, BaseParams & TParams> =
+			NamespaceBuilder<
+				TData,
+				BaseParams & TParams
+			>,
 	>(
 		path: IChemin<BaseParams & TParams>,
 		modifier:
@@ -126,12 +133,17 @@ export class NamespaceBuilder<
 			) => X),
 		secondModifier?: (wooter: X) => void,
 	): this {
-		this.graph.addNamespace(path as IChemin<Params>, this.indexes, (bldr) => {
-  		// @ts-expect-error: useless Generics
-		  modifier(bldr)
-			// @ts-expect-error: useless Generics
-			secondModifier?.(bldr)
-    })
+		if (this.locked) throw new LockedNamespaceBuilder()
+		this.graph.addNamespace(
+			c.chemin(this.path, path) as IChemin<Params>,
+			this.indexes,
+			(bldr) => {
+				// @ts-expect-error: useless Generics
+				modifier(bldr)
+				// @ts-expect-error: useless Generics
+				secondModifier?.(bldr)
+			},
+		)
 		return this
 	}
 
@@ -150,6 +162,7 @@ export class NamespaceBuilder<
 		TParams,
 		BaseParams
 	> {
+		if (this.locked) throw new LockedNamespaceBuilder()
 		// @ts-expect-error: useless Generics
 		this.middleware.add(handler)
 		// @ts-expect-error: useless Generics
@@ -165,9 +178,15 @@ export class NamespaceBuilder<
 		methodOrMethods: string | Record<string, Handler>,
 		handler?: Handler,
 	) => {
-		if (this.locked) return
+		if (this.locked) throw new LockedNamespaceBuilder()
 		const fullPath = c.chemin(this.path, path)
-		defaultRouteFunction(this.graph, fullPath, methodOrMethods, handler, this.indexes)
+		defaultRouteFunction(
+			this.graph,
+			fullPath,
+			methodOrMethods,
+			handler,
+			this.indexes,
+		)
 	}
 
 	route: RouteFunction<
@@ -179,12 +198,11 @@ export class NamespaceBuilder<
 			const builder = this
 			return {
 				apply(target, thisArg, args) {
-					if (builder.locked) return
+					if (builder.locked) throw new LockedNamespaceBuilder()
 					// @ts-expect-error: it looks like `Proxy` doesn't provide types here
 					return target.apply(thisArg, args)
 				},
 				get(target, prop, receiver) {
-					if (builder.locked) return
 					const value = Reflect.get(target, prop, receiver)
 					return value ??
 						(typeof prop === "string"
@@ -200,7 +218,7 @@ export class NamespaceBuilder<
 export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 	private middleware = new Set<MiddlewareHandler>()
 	private namespaces = new Array<Namespace>()
-	private namespace_index = 0;
+	private namespace_index = 0
 
 	constructor() {
 		super((node, data) => node.method === data.method)
@@ -208,14 +226,12 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 
 	private composeMiddleware(node: Node, params: Params): Handler {
 		const { handler, namespaceIndexes } = node
-		const namespaceIterators = namespaceIndexes
-			? namespaceIndexes.map((index) =>
-				this.namespaces[index].values()
-			)
-			: []
+		const namespaceMiddlewareIterators = namespaceIndexes.map((index) =>
+			this.namespaces[index].values()
+		)
 		const middlewares = concatIterators(
 			this.middleware.values(),
-			...namespaceIterators,
+			...namespaceMiddlewareIterators,
 		)
 		return (baseEvent) => {
 			const data: Data = baseEvent.data
@@ -267,11 +283,11 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 		baseIndexes: number[],
 		builderFn: (bldr: NamespaceBuilder) => void,
 	): void {
-  	const index = this.namespace_index
-	  const bldr = new NamespaceBuilder(this, path, index, baseIndexes)
+		const index = this.namespace_index
+		const bldr = new NamespaceBuilder(this, path, index, baseIndexes)
 		builderFn(bldr)
 		this.namespaces[index] = bldr[LOCK]()
-		this.namespace_index++;
+		this.namespace_index++
 	}
 
 	pushMiddleware(middleware: MiddlewareHandler): void {
