@@ -20,7 +20,9 @@ export function defaultRouteFunction(
 	}
 }
 
-export function* concatIterators<T>(...iterators: Iterable<T, unknown, undefined>[]): Generator<T, void, undefined> {
+export function* concatIterators<T>(
+	...iterators: Iterable<T, unknown, undefined>[]
+): Generator<T, void, undefined> {
 	for (const iterator of iterators) {
 		for (const element of iterator) {
 			yield element
