@@ -41,17 +41,17 @@ import { c, Wooter } from "jsr:@bronti/wooter"
 
 const wooter = new Wooter()
 
-wooter.route.GET(c.chemin(), async ({ err, resp }) => {
+wooter.route.GET(c.chemin(), ({ err, resp }) => {
 	resp(new Response("hi"))
 })
 
-wooter.GET(c.chemin("error"), async ({ err, resp }) => {
+wooter.GET(c.chemin("error"), ({ err, resp }) => {
 	err("An error occured!!")
 })
 
 wooter.route.GET(
 	c.chemin("with", c.pNumber("param")),
-	async ({ err, resp, params }) => {
+	({ err, resp, params }) => {
 		resp(new Response(`hi ${params.param}`))
 	},
 )

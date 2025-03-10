@@ -86,11 +86,47 @@ create a namespace.
 ```ts
 $:import { Wooter, c } from "jsr:@bronti/wooter";
 $:const app = new Wooter();
+$:
 app.namespace(c.chemin("api"), (api) => {
   api.route.GET(c.chemin(), async ({ resp, err }) => {
     console.log("User doesn't have response yet.");
     resp(new Response("HI"));
     console.log("User now has the response.");
   });
+});
+```
+
+You can also apply middleware to a namespace by providing 2 functions, like so:
+
+```ts
+$:import { Wooter, c } from "jsr:@bronti/wooter";
+$:const app = new Wooter();
+$:
+app.namespace(c.chemin("api"), api => api.use(useAuth), (api) => {
+  api.route.GET(c.chemin(), async ({ resp, err }) => {
+    console.log("User doesn't have response yet.");
+    resp(new Response("HI"));
+    console.log("User now has the response.");
+  });
+});
+```
+
+Namespaces can also be nested:
+
+```ts
+$:import { Wooter, c } from "jsr:@bronti/wooter";
+$:const app = new Wooter();
+$:
+app.namespace(c.chemin("api"), api => api.use(useAuth), (api) => {
+  api.route.GET(c.chemin(), async ({ resp, err }) => {
+    console.log("User doesn't have response yet.");
+    resp(new Response("HI"));
+    console.log("User now has the response.");
+  });
+  api.namespace(c.chemin("users"), api => api.use(ensureAuth), users => {
+    users.route.GET(c.chemin(c.pOptionalConst("me")), async ({ data: { user } }) => {
+      return Response.json(user.public())
+    })
+  })
 });
 ```
