@@ -1,5 +1,5 @@
 {
-	"$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+	"$schema": "https://github.com/denoland/deno/raw/bc71eb9541567bd7aa8629ea0b83e45ddb1ad807/cli/schemas/config-file.v1.json",
 	"name": "@bronti/wooter",
 	"version": "2.4.6",
 	"license": "MIT",
@@ -14,8 +14,23 @@
 	"tasks": {
 		"test": "deno test",
 		"coverage": "rm -rf ./coverage && deno test --coverage",
-		"check": "deno fmt --check && deno lint && deno publish --dry-run --allow-dirty",
-		"fix": "deno fmt && deno lint --fix && deno publish --dry-run --allow-dirty"
+		"check": {
+			"dependencies": ["check:format", "check:lint", "lint_jsdoc"]
+		},
+		"check:format": "deno fmt --check",
+		"check:lint": "deno lint",
+		"fix": {
+			"dependencies": [
+				"fix:format",
+				"fix:lint",
+				"lint_jsdoc",
+				"dry_publish"
+			]
+		},
+		"dry_publish": "deno publish --dry-run --allow-dirty",
+		"fix:format": "deno fmt",
+		"fix:lint": "deno lint --fix",
+		"lint_jsdoc": "deno doc --lint $(cat ./deno.jsonc | jq -r '[.exports[]] | join(\" \")')"
 	},
 	"imports": {
 		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1",
