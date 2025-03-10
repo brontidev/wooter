@@ -94,6 +94,8 @@ export type MiddlewareHandler<
 	TNextData extends Data | undefined = Data,
 > = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void> | void
 
+
+// TODO: Get jsdoc for the indexes to work...
 /**
  * Registers a route to the wooter
  */
@@ -103,6 +105,15 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * Registers a route to the wooter with the method already known
 		 * @param path chemin
 		 * @param handler Handler
+		 *
+		 * @example `.route[METHOD](...)`
+		 * ```
+		 * 	app.route.GET(c.chemin(), async ({ resp, err }) => {
+		 * 		console.log("User doesn't have response yet.");
+		 * 		resp(new Response("HI"));
+		 * 		console.log("User now has the response.")
+		 * 	});
+		 * ```
 		 */
 		[method in HttpMethod]: <TParams extends Params>(
 			path: IChemin<TParams>,
@@ -114,6 +125,15 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * Registers a route to the wooter with the method already known
 		 * @param path chemin
 		 * @param handler Handler
+		 *
+		 * @example `.route[METHOD](...)`
+		 * ```
+		 * 	app.route.GET(c.chemin(), async ({ resp, err }) => {
+		 * 		console.log("User doesn't have response yet.");
+		 * 		resp(new Response("HI"));
+		 * 		console.log("User now has the response.")
+		 * 	});
+		 * ```
 		 */
 		[method in string]: <TParams extends Params>(
 			path: IChemin<TParams>,
@@ -122,17 +142,15 @@ export type RouteFunction<TData extends Data, BaseParams> =
 	}
 	& {
 		/**
-		 * Registers a route to the wooter
-		 */
-		<TParams extends Params = Params>(
-			path: IChemin<TParams>,
-			methodOrMethods:
-				| string
-				| Record<string, Handler<BaseParams & TParams, TData>>,
-			handler?: Handler<BaseParams & TParams, TData>,
-		): void
-		/**
-		 * Registers a route to the wooter
+		 * Registers a route with a method (Legacy)
+		 * @example
+		 * ```
+		 * 	app.route(c.chemin(), "GET", async ({ resp, err }) => {
+		 * 		console.log("User doesn't have response yet.");
+		 * 		resp(new Response("HI"));
+		 * 		console.log("User now has the response.");
+		 * 	});
+		 * ```
 		 * @param path chemin
 		 * @param method HTTP method
 		 * @param handler route handler
@@ -143,27 +161,78 @@ export type RouteFunction<TData extends Data, BaseParams> =
 			handler: Handler<BaseParams & TParams, TData>,
 		): void
 		/**
-		 * Registers a route to the wooter
+		 * Registers a route with a method (Legacy)
+		 * @example
+		 * ```
+		 * 	app.route(c.chemin(), "GET", async ({ resp, err }) => {
+		 * 		console.log("User doesn't have response yet.");
+		 * 		resp(new Response("HI"));
+		 * 		console.log("User now has the response.");
+		 * 	});
+		 * ```
 		 * @param path chemin
 		 * @param method HTTP method
 		 * @param handler route handler
 		 */
 		<TParams extends Params = Params>(
 			path: IChemin<TParams>,
-			method: HttpMethod,
+			method: HttpMethod | string,
 			handler: Handler<BaseParams & TParams, TData>,
 		): void
 
 		/**
-		 * Registers a route to the wooter
+		 * Registers a route with a map of methods
+		 * @example
+		 * ```
+		 * 	app.route(c.chemin(), {
+		 * 		GET: async ({ resp, err }) => {
+		 * 			console.log("User doesn't have response yet.");
+		 * 			resp(new Response("HI"));
+		 * 			console.log("User now has the response.");
+		 * 		},
+		 * 		POST: async ({ resp, err }) => {
+		 * 			console.log("User doesn't have response yet.");
+		 * 			resp(new Response("HI"));
+		 * 			console.log("User now has the response.");
+		 * 		}
+		 * 	});
+		 * ```
 		 * @param path chemin
 		 * @param methods Map of HTTP method to handler
 		 */
 		<TParams extends Params = Params>(
 			path: IChemin<TParams>,
-			methods:
+			methods: Partial<
 				& Record<HttpMethod, Handler<BaseParams & TParams, TData>>
-				& Record<string, Handler<BaseParams & TParams, TData>>,
+				& Record<string, Handler<BaseParams & TParams, TData>>
+			>,
 			__?: undefined,
 		): void
+		/**
+		 * Registers a route
+		 *
+		 *
+		 * @example Multiple methods
+		 * ```
+		 * 	app.route(c.chemin(), {
+		 * 		GET: async ({ resp, err }) => {
+		 * 			console.log("User doesn't have response yet.");
+		 * 			resp(new Response("HI"));
+		 * 			console.log("User now has the response.");
+		 * 		},
+		 * 		POST: async ({ resp, err }) => {
+		 * 			console.log("User doesn't have response yet.");
+		 * 			resp(new Response("HI"));
+		 * 			console.log("User now has the response.");
+		 * 		}
+		 * 	});
+		 * ```
+		 */
+		/* <TParams extends Params = Params>(
+			path: IChemin<TParams>,
+			methodOrMethods:
+				| string
+				| Record<string, Handler<BaseParams & TParams, TData>>,
+			handler?: Handler<BaseParams & TParams, TData>,
+		): void */
 	}
