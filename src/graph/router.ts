@@ -35,14 +35,17 @@ function* concatIterators(...iterators: Iterable<any, any, any>[]) {
 const LOCK = Symbol("LOCK")
 
 /**
- * @internal
+ * Used to create namespaces
  */
 export class NamespaceBuilder<
 	TData extends Data | undefined = undefined,
 	TParams extends Params = Params,
 	BaseParams extends Params = Params,
 > {
-	private locked = false
+	private _locked = false
+	get locked() {
+		return this._locked
+	}
 	private middleware: Set<MiddlewareHandler> = new Set()
 	private indexes: number[]
 
@@ -56,23 +59,25 @@ export class NamespaceBuilder<
 	}
 
 	[LOCK](): Namespace {
-		this.locked = true
+		this._locked = true
 		return this.middleware
 	}
 
 	/**
-	 * Registers a namespace using a function that adds routes to a wooter
+	 * Registers a sub-namespace using a function that adds routes
 	 * @param path Path
 	 * @param routeModifier Route modifier
 	 * @example
 	 * ```
-	 * 	wooter.namespace(chemin("group"), (wooter) => {
-	 * 		wooter.route.GET(
-	 * 			chemin("subroute"),
-	 * 			async ({ request, resp, err }) => {
-	 * 				resp(jsonResponse({ "ok": true }))
-	 * 			}
-	 * 		)
+	 * 	wooter.namespace(chemin("group"), (nsp) => {
+	 *    nsp.namespace(chemin("group"), (nsp) => {
+	 * 		  wooter.route.GET(
+	 * 			 chemin("subroute"),
+	 * 			 async ({ request, resp, err }) => {
+	 * 				  resp(jsonResponse({ "ok": true }))
+	 * 			 }
+	 * 	 )
+	 * 	  })
 	 * 	})
 	 * ```
 	 */
@@ -84,7 +89,7 @@ export class NamespaceBuilder<
 	): this
 
 	/**
-	 * Registers a namespace using a function that modifies the wooter, and a function that adds routes to a wooter
+	 * Registers a namespace using a function that modifies the namespace, and a function that adds routes to it
 	 *
 	 * @param path Path
 	 * @param wooterModifier Wooter modifier (add Middleware)
