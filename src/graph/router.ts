@@ -283,11 +283,10 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 		baseIndexes: number[],
 		builderFn: (bldr: NamespaceBuilder) => void,
 	): void {
-		const index = this.namespace_index
+		const index = this.namespace_index++
 		const bldr = new NamespaceBuilder(this, path, index, baseIndexes)
 		builderFn(bldr)
 		this.namespaces[index] = bldr[LOCK]()
-		this.namespace_index++
 	}
 
 	pushMiddleware(middleware: MiddlewareHandler): void {
