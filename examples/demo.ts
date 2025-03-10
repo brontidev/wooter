@@ -229,4 +229,4 @@ wooter.namespace(chemin(pNumber("a")), (wooter) => {
 	})
 })
 
-Deno.serve({ port: 3000 }, request => wooter.fetch(request))
+Deno.serve({ port: 3000 }, (request) => wooter.fetch(request))

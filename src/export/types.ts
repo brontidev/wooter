@@ -94,7 +94,6 @@ export type MiddlewareHandler<
 	TNextData extends Data | undefined = Data,
 > = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void> | void
 
-
 // TODO: Get jsdoc for the indexes to work...
 /**
  * Registers a route to the wooter
@@ -210,7 +209,6 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		): void
 		/**
 		 * Registers a route
-		 *
 		 *
 		 * @example Multiple methods
 		 * ```
