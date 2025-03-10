@@ -44,9 +44,7 @@ $:export default app;
 By default, if `up` is called, and `resp` isn't, the router will assume that
 whatever `up` returned, is the response.
 
-## Examples
-
-### Catching Errors
+# Catching Errors
 
 By default, errors are caught by the router and will result in a `500` response.
 Since the `up` doesn't catch errors from the respective handler, Middleware can
@@ -88,4 +86,56 @@ app.notFound(({ resp }) => {
 	resp(new Response("Custom Not Found", { status: 404 }))
 })
 $:export default app;
+```
+
+# Standalone Middleware
+
+The `StandaloneMiddleware` type allows for creating typed middleware without the
+context of the `.use` function. This is useful for creating middleware
+libraries.
+
+```ts
+// Real Example: https://github.com/is-a-thing/.github/blob/main/api/util/middleware/auth.ts
+import { StandaloneMiddlewareHandler } from '@bronti/wooter/types'
+$:import {
+$:	createSessionCookie,
+$:	deleteSessionCookie,
+$:	validateSessionToken,
+$:} from '$auth/index.ts'
+$:import { AuthPair } from '$auth/index.ts'
+$:import { Cookies } from '$util/middleware/cookies.ts'
+$:import { None, Option } from '@oxi/option'
+$:import { errorResponse } from '@bronti/wooter/util'
+
+export const useAuth: StandaloneMiddlewareHandler<
+// ⬇️ The data that this middleware adds
+	{ auth: Option<AuthPair>; ensureAuth: () => AuthPair },
+// ⬇️ The data that this middleware needs (this middleware depends on a `useCookies` middleware)
+	{ cookies: Cookies }
+> = async ({ data: { cookies }, up, resp }) => {
+$:	const token = cookies.get('session') ?? null
+$:	let auth: Option<AuthPair> = None
+$:	if (token) {
+$:		const pairOption = await validateSessionToken(token)
+$:
+$:		if (pairOption.isSome()) {
+$:			// Token exists and is valid; update cookie and set auth
+$:			createSessionCookie(token, cookies)
+$:			auth = pairOption
+$:		} else {
+$:			// Token exists but is not valid; remove it
+$:			deleteSessionCookie(cookies)
+$:		}
+$:	}
+$:
+	await up({
+		auth,
+		ensureAuth: () => {
+			if (auth.isNone()) {
+				throw resp(errorResponse(401, 'Unauthorized'))
+			}
+			return auth.unwrap()
+		},
+	})
+}
 ```
