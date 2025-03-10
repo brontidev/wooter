@@ -9,8 +9,8 @@ import {
 } from "@/export/error.ts"
 
 import { assertSpyCall, stub } from "jsr:@std/testing/mock"
-import { StandaloneMiddlewareHandler } from "@/export/types.ts"
-import { NamespaceBuilder } from "@/graph/router.ts"
+import type { StandaloneMiddlewareHandler } from "@/export/types.ts"
+import type { NamespaceBuilder } from "@/graph/router.ts"
 
 class TestError {}
 
@@ -275,7 +275,9 @@ Deno.test("Nested Namespaces", async () => {
 		resp(new Response(""))
 	})
 
-	const request = new Request("http://localhost/something/else/page", { method: "GET" })
+	const request = new Request("http://localhost/something/else/page", {
+		method: "GET",
+	})
 	const response = await wooter.fetch(request)
 	const text = await response.text()
 
@@ -283,22 +285,22 @@ Deno.test("Nested Namespaces", async () => {
 	assertEquals(text, "nested middleware!!")
 })
 
-Deno.test("Namespace Builder breaks after it is locked", async () => {
-  let builder: NamespaceBuilder;
+Deno.test("Namespace Builder breaks after it is locked", () => {
+	let builder: NamespaceBuilder
 
-  const wooter = new Wooter()
+	const wooter = new Wooter()
 
-  wooter.namespace(c.chemin(), bldr => {
-    builder = bldr
-  })
+	wooter.namespace(c.chemin(), (bldr) => {
+		builder = bldr
+	})
 
-  try {
-    // @ts-expect-error: This isn't MEANT to work
-    builder.use()
-    fail("Builder should error out since it was already locekd")
-  } catch(e) {
-    assert(e instanceof LockedNamespaceBuilder)
-  }
+	try {
+		// @ts-expect-error: This isn't MEANT to work
+		builder.use()
+		fail("Builder should error out since it was already locekd")
+	} catch (e) {
+		assert(e instanceof LockedNamespaceBuilder)
+	}
 })
 
 Deno.test("Namespace with Middleware", async () => {
