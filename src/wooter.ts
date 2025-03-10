@@ -8,7 +8,8 @@ import type {
 	Params,
 	RouteFunction,
 } from "@/export/types.ts"
-import { RouteGraph } from "@/graph/router.ts"
+import { type NamespaceBuilder, RouteGraph } from "@/graph/router.ts"
+import { defaultRouteFunction } from "@/common.ts"
 
 class NotFound {}
 
@@ -30,7 +31,7 @@ export class Wooter<
 	TData extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
 > {
-	private internalGraph: RouteGraph
+	private graph: RouteGraph
 
 	private notFoundHandler:
 		| Handler<
@@ -47,7 +48,7 @@ export class Wooter<
 	 */
 	constructor(opts?: Partial<WooterOptions>) {
 		this.opts = { ...optsDefaults, ...opts }
-		this.internalGraph = new RouteGraph()
+		this.graph = new RouteGraph()
 	}
 
 	/**
@@ -74,24 +75,10 @@ export class Wooter<
 		BaseParams
 	> {
 		// @ts-expect-error: useless Generics
-		this.internalGraph.pushMiddleware(handler)
+		this.graph.pushMiddleware(handler)
 		// @ts-expect-error: useless Generics
 		return this
 	}
-
-	/**
-	 * Registers another wooter as a namespace
-	 * @example
-	 * ```
-	 * const apiWooter = new Wooter().use(auth)
-	 *   .route.GET(chein("posts"), () => {...})
-	 * wooter.namespace(chemin("api"), apiWooter)
-	 * ```
-
-	 * @param path Path
-	 * @param wooter Wooter
-	 */
-	namespace(path: IChemin, wooter: Wooter): this
 
 	/**
 	 * Registers a namespace using a function that adds routes to a wooter
@@ -111,7 +98,9 @@ export class Wooter<
 	 */
 	namespace<TParams extends Params = Params>(
 		path: IChemin<TParams>,
-		routeModifier: (wooter: Wooter<TData, BaseParams & TParams>) => void,
+		routeModifier: (
+			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
+		) => void,
 	): this
 
 	/**
@@ -135,56 +124,42 @@ export class Wooter<
 	 */
 	namespace<
 		TParams extends Params = Params,
-		NWooter extends unknown = Wooter<
+		X = NamespaceBuilder<
 			TData,
 			BaseParams & TParams
 		>,
 	>(
 		path: IChemin<BaseParams & TParams>,
 		wooterModifier: (
-			wooter: Wooter<TData, BaseParams & TParams>,
-		) => NWooter,
+			wooter: NamespaceBuilder<TData, BaseParams & TParams>,
+		) => X,
 		routeModifier: (
-			wooter: NWooter,
+			bldr: X extends void ? NamespaceBuilder<TData, BaseParams & TParams>
+				: X,
 		) => void,
 	): this
 	namespace<
 		TParams extends Params = Params,
-		NWooter extends Wooter<TData, BaseParams & TParams> = Wooter<
-			TData,
-			BaseParams & TParams
-		>,
+		X extends NamespaceBuilder<TData, BaseParams & TParams> =
+			NamespaceBuilder<
+				TData,
+				BaseParams & TParams
+			>,
 	>(
 		path: IChemin<BaseParams & TParams>,
-		wooter:
-			| Wooter
-			| ((wooter: Wooter<TData, BaseParams & TParams>) => void)
+		modifier:
+			| ((bldr: NamespaceBuilder<TData, BaseParams & TParams>) => void)
 			| ((
-				wooter: Wooter<TData, BaseParams & TParams>,
-			) => NWooter),
-		secondModifier?: (wooter: NWooter) => void,
+				bldr: NamespaceBuilder<TData, BaseParams & TParams>,
+			) => X),
+		secondModifier?: (wooter: X) => void,
 	): this {
-		let finalWooter: Wooter
-		if (wooter instanceof Function) {
-			const _wooter = new Wooter(this.opts)
-			if (secondModifier instanceof Function) {
-				// @ts-expect-error: useless Generics
-				secondModifier(wooter(_wooter))
-			} else {
-				// @ts-expect-error: useless Generics
-				wooter(_wooter)
-			}
-			finalWooter = _wooter
-		} else {
-			finalWooter = wooter
-		}
-
-		this.internalGraph.addNamespace(
-			path as IChemin<Params>,
-			() => {
-				return finalWooter.graph
-			},
-		)
+		this.graph.addNamespace(path as IChemin<Params>, [], (bldr) => {
+			// @ts-expect-error: useless Generics
+			const newBldr = modifier(bldr)
+			// @ts-expect-error: useless Generics
+			secondModifier?.(newBldr ?? bldr)
+		})
 		return this
 	}
 
@@ -233,7 +208,7 @@ export class Wooter<
 		const event = new RouteEvent(request, params ?? {}, data ?? {})
 		const pathname = new URL(request.url).pathname
 		try {
-			const handlerCheck = this.internalGraph.getHandler(
+			const handlerCheck = this.graph.getHandler(
 				pathname,
 				request.method,
 			)
@@ -280,13 +255,7 @@ export class Wooter<
 			methodOrMethods: string | Record<string, Handler>,
 			handler?: Handler,
 		) => {
-			if (typeof methodOrMethods === "string" && !!handler) {
-				this.internalGraph.addRoute(methodOrMethods, path, handler)
-			} else if (typeof methodOrMethods === "object") {
-				Object.entries(methodOrMethods).forEach(([method, handler]) => {
-					this.internalGraph.addRoute(method, path, handler)
-				})
-			}
+			defaultRouteFunction(this.graph, path, methodOrMethods, handler)
 		}
 
 	/**
@@ -307,12 +276,4 @@ export class Wooter<
 						: undefined)
 			},
 		})
-
-	/**
-	 * Gets the internal graph from the wooter (used internally)
-	 * @internal
-	 */
-	private get graph() {
-		return this.internalGraph
-	}
 }

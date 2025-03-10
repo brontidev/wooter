@@ -1,4 +1,5 @@
 {
+	"$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
 	"name": "@bronti/wooter",
 	"version": "1.4.6",
 	"license": "MIT",
@@ -25,7 +26,10 @@
 		"exclude": ["./src/*.test.ts"]
 	},
 	"lint": {
-		"exclude": ["./examples", "./coverage", "./site", "./docs/book"]
+		"exclude": ["./examples", "./coverage", "./site", "./docs/book"],
+		"rules": {
+			"exclude": ["no-this-alias"]
+		}
 	},
 	"fmt": {
 		"semiColons": false,

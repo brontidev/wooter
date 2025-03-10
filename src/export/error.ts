@@ -40,3 +40,18 @@ export class MiddlewareDidntCallUp extends Error {
 	override message: string =
 		"Middleware didn't call up() or resp(), causing the app to return null"
 }
+
+/**
+ * Error thrown when a namespace builder is modified after it has already been locked
+ */
+export class LockedNamespaceBuilder extends Error {
+	/**
+	 * Error name
+	 */
+	override name: string = "LockedNamespaceBuilder"
+	/**
+	 * Error message
+	 */
+	override message: string =
+		"A Namespace was edited after it was already locked"
+}
