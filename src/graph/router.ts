@@ -1,5 +1,5 @@
 import { InheritableCheminGraph } from "@/graph/basic.ts"
-import type { IChemin } from "@/export/chemin.ts"
+import type { TChemin } from "@/export/chemin.ts"
 import type {
 	Data,
 	Handler,
@@ -12,7 +12,7 @@ import { LOCK, type Namespace, NamespaceBuilder } from "@/graph/namespace.ts"
 import { concatIterators } from "@/common.ts"
 
 type Node = {
-	path: IChemin<Params>
+	path: TChemin<Params>
 	method: string
 	handler: Handler
 	namespaceIndexes: number[]
@@ -70,7 +70,7 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 
 	addRoute(
 		method: string,
-		path: IChemin,
+		path: TChemin,
 		handler: Handler,
 		namespaceIndexes?: number[],
 	): void {
@@ -83,7 +83,7 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 	}
 
 	addNamespace(
-		path: IChemin<Params>,
+		path: TChemin<Params>,
 		baseIndexes: number[],
 		builderFn: (bldr: NamespaceBuilder) => void,
 	): void {

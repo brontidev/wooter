@@ -1,7 +1,7 @@
 import {
-	type IChemin,
 	matchExact as matchCheminExact,
 	splitPathname,
+	type TChemin,
 } from "@/export/chemin.ts"
 
 /**
@@ -12,7 +12,7 @@ export class InheritableCheminGraph<
 	Node,
 	FindData,
 > {
-	private nodes = new Set<{ path: IChemin; node: Node }>()
+	private nodes = new Set<{ path: TChemin; node: Node }>()
 
 	/**
 	 * Construct a new graph
@@ -27,7 +27,7 @@ export class InheritableCheminGraph<
 	 * @param path Chemin to match
 	 * @param node Node
 	 */
-	protected pushNode(path: IChemin, node: Node) {
+	protected pushNode(path: TChemin, node: Node) {
 		this.nodes.add({ path, node })
 	}
 
@@ -78,7 +78,7 @@ export class CheminGraph<
 	 * @param path Chemin to match
 	 * @param node Node
 	 */
-	override pushNode(path: IChemin, node: Node): void {
+	override pushNode(path: TChemin, node: Node): void {
 		super.pushNode(path, node)
 	}
 }

@@ -15,7 +15,14 @@
 		"test": "deno test",
 		"coverage": "rm -rf ./coverage && deno test --coverage",
 		"check": {
-			"dependencies": ["check:format", "check:lint", "lint_jsdoc"]
+			"dependencies": [
+				"check:format",
+				"check:lint",
+				"check:library_health"
+			]
+		},
+		"check:library_health": {
+			"dependencies": ["lint_jsdoc", "dry_publish"]
 		},
 		"check:format": "deno fmt --check",
 		"check:lint": "deno lint",
@@ -23,8 +30,7 @@
 			"dependencies": [
 				"fix:format",
 				"fix:lint",
-				"lint_jsdoc",
-				"dry_publish"
+				"check:library_health"
 			]
 		},
 		"dry_publish": "deno publish --dry-run --allow-dirty",
@@ -33,7 +39,7 @@
 		"lint_jsdoc": "deno doc --lint $(cat ./deno.jsonc | jq -r '[.exports[]] | join(\" \")')"
 	},
 	"imports": {
-		"@dldc/chemin": "jsr:@dldc/chemin@^12.0.1",
+		"@dldc/chemin": "jsr:@dldc/chemin@^13.0.0",
 		"@/": "./src/"
 	},
 	"publish": {

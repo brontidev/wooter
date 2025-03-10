@@ -1,6 +1,6 @@
 import type { RouteEvent } from "@/event/index.ts"
 import type { MiddlewareEvent } from "@/event/middleware.ts"
-import type { IChemin } from "@/export/chemin.ts"
+import type { TChemin } from "@/export/chemin.ts"
 
 /**
  * @internal
@@ -115,7 +115,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * ```
 		 */
 		[method in HttpMethod]: <TParams extends Params>(
-			path: IChemin<TParams>,
+			path: TChemin<TParams>,
 			handler: Handler<BaseParams & TParams, TData>,
 		) => void
 	}
@@ -135,7 +135,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * ```
 		 */
 		[method in string]: <TParams extends Params>(
-			path: IChemin<TParams>,
+			path: TChemin<TParams>,
 			handler: Handler<BaseParams & TParams, TData>,
 		) => void
 	}
@@ -155,7 +155,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * @param handler route handler
 		 */
 		<TParams extends Params = Params>(
-			path: IChemin<TParams>,
+			path: TChemin<TParams>,
 			method: string,
 			handler: Handler<BaseParams & TParams, TData>,
 		): void
@@ -174,7 +174,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * @param handler route handler
 		 */
 		<TParams extends Params = Params>(
-			path: IChemin<TParams>,
+			path: TChemin<TParams>,
 			method: HttpMethod | string,
 			handler: Handler<BaseParams & TParams, TData>,
 		): void
@@ -200,7 +200,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		 * @param methods Map of HTTP method to handler
 		 */
 		<TParams extends Params = Params>(
-			path: IChemin<TParams>,
+			path: TChemin<TParams>,
 			methods: Partial<
 				& Record<HttpMethod, Handler<BaseParams & TParams, TData>>
 				& Record<string, Handler<BaseParams & TParams, TData>>

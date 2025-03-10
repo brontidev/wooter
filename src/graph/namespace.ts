@@ -7,7 +7,7 @@ import type {
 	RouteFunction,
 } from "@/export/types.ts"
 import type { RouteGraph } from "@/graph/router.ts"
-import type { IChemin, TEmptyObject } from "@/export/chemin.ts"
+import type { TChemin, TEmptyObject } from "@/export/chemin.ts"
 import { LockedNamespaceBuilder } from "@/export/error.ts"
 import { defaultRouteFunction } from "@/common.ts"
 import c from "@/export/chemin.ts"
@@ -42,7 +42,7 @@ export class NamespaceBuilder<
 	 */
 	constructor(
 		private graph: RouteGraph,
-		private path: IChemin<TParams>,
+		private path: TChemin<TParams>,
 		private index: number,
 		baseIndexes: number[],
 	) {
@@ -83,7 +83,7 @@ export class NamespaceBuilder<
 		TParams extends Params = Params,
 		NData extends TData = TData,
 	>(
-		path: IChemin<BaseParams & TParams>,
+		path: TChemin<BaseParams & TParams>,
 		modifier: (
 			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
 		) => NamespaceBuilder<NData, BaseParams & TParams> | void,
@@ -93,7 +93,7 @@ export class NamespaceBuilder<
 	): this {
 		if (this.locked) throw new LockedNamespaceBuilder()
 		this.graph.addNamespace(
-			c.chemin(this.path, path) as IChemin<Params>,
+			c.chemin(this.path, path) as TChemin<Params>,
 			this.indexes,
 			(bldr) => {
 				// @ts-expect-error: The type of ISerialize is technically not different
@@ -142,7 +142,7 @@ export class NamespaceBuilder<
 		TData extends undefined ? Data : TData,
 		Merge<BaseParams, TData>
 	> = (
-		path: IChemin,
+		path: TChemin,
 		methodOrMethods: string | Record<string, Handler>,
 		handler?: Handler,
 	) => {
@@ -211,7 +211,7 @@ export class NamespaceBuilder<
 					const value = Reflect.get(target, prop, receiver)
 					return value ??
 						(typeof prop === "string"
-							? ((path: IChemin, handler: Handler) =>
+							? ((path: TChemin, handler: Handler) =>
 								target(path, prop, handler))
 							: undefined)
 				},

@@ -1,5 +1,5 @@
 import { RouteEvent } from "@/event/index.ts"
-import type { IChemin, TEmptyObject } from "@/export/chemin.ts"
+import type { TChemin, TEmptyObject } from "@/export/chemin.ts"
 import type {
 	Data,
 	Handler,
@@ -115,7 +115,7 @@ export class Wooter<
 		TParams extends Params = Params,
 		NData extends TData = TData,
 	>(
-		path: IChemin<BaseParams & TParams>,
+		path: TChemin<BaseParams & TParams>,
 		modifier: (
 			bldr: NamespaceBuilder<TData, BaseParams & TParams>,
 		) => NamespaceBuilder<NData, BaseParams & TParams> | void,
@@ -123,7 +123,7 @@ export class Wooter<
 			bldr: NamespaceBuilder<NData, BaseParams & TParams>,
 		) => void,
 	): this {
-		this.graph.addNamespace(path as IChemin<Params>, [], (bldr) => {
+		this.graph.addNamespace(path as TChemin<Params>, [], (bldr) => {
 			// @ts-expect-error: The type of ISerialize is technically not different
 			const mod = modifier(bldr)
 			// @ts-expect-error: The types don't actually matter here, the builder is modified when middleware or routes are added.
@@ -205,7 +205,7 @@ export class Wooter<
 	// @ts-expect-error: It works for now
 	#route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
 		(
-			path: IChemin,
+			path: TChemin,
 			methodOrMethods: string | Record<string, Handler>,
 			handler?: Handler,
 		) => {
@@ -261,7 +261,7 @@ export class Wooter<
 			const value = Reflect.get(target, prop, receiver)
 			return value ??
 				(typeof prop === "string"
-					? ((path: IChemin, handler: Handler) =>
+					? ((path: TChemin, handler: Handler) =>
 						target(path, prop, handler))
 					: undefined)
 		},

@@ -1,12 +1,12 @@
 // Functions common to the Wooter and the NamespaceBuilder
 
-import type { IChemin } from "@/export/chemin.ts"
+import type { TChemin } from "@/export/chemin.ts"
 import type { Handler } from "@/export/types.ts"
 import type { RouteGraph } from "@/graph/router.ts"
 
 export function defaultRouteFunction(
 	graph: RouteGraph,
-	path: IChemin,
+	path: TChemin,
 	methodOrMethods: string | Record<string, Handler>,
 	handler?: Handler,
 	namespaceIndexes?: number[],
