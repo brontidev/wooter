@@ -42,10 +42,10 @@ export class MiddlewareDidntCallUp extends Error {
 }
 
 /**
-* Error thrown when a namespace builder is modified after it has already been locked
-*/
+ * Error thrown when a namespace builder is modified after it has already been locked
+ */
 export class LockedNamespaceBuilder extends Error {
- 	/**
+	/**
 	 * Error name
 	 */
 	override name: string = "LockedNamespaceBuilder"
