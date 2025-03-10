@@ -12,7 +12,8 @@ export function createResolvers<T>(): Resolvers<T> {
 	const { promise, reject, resolve } = Promise.withResolvers<T>()
 
 	const updateState = (newState: PromiseState) => {
-		if (state !== "pending") return // if the promise had already been resolved, the state won't end up internally changing anyway
+		// if the promise had already been resolved, the state won't end up internally changing anyway
+		if (state !== "pending") return
 		state = newState
 	}
 
