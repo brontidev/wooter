@@ -20,11 +20,11 @@ export type Namespace = Set<MiddlewareHandler>
  * Used to create namespaces
  */
 export class NamespaceBuilder<
-	INFER_Data extends Data | undefined = undefined,
+	INPUT_Data extends Data | undefined = undefined,
 	TParams extends Params = Params,
 	BaseParams extends Params = Params,
-	TData extends Data = INFER_Data extends undefined ? TEmptyObject
-		: INFER_Data,
+	TData extends Data = INPUT_Data extends undefined ? TEmptyObject
+		: INPUT_Data,
 > {
 	private _locked = false
 

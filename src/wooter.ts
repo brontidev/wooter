@@ -35,10 +35,10 @@ const optsDefaults: WooterOptions = {
  * Wooter's main class
  */
 export class Wooter<
-	INFER_Data extends Data | undefined = undefined,
+	INPUT_Data extends Data | undefined = undefined,
 	BaseParams extends Params = Params,
-	TData extends Data = INFER_Data extends undefined ? TEmptyObject
-		: INFER_Data,
+	TData extends Data = INPUT_Data extends undefined ? TEmptyObject
+		: INPUT_Data,
 > {
 	private graph: RouteGraph
 
