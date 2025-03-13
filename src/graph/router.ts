@@ -76,7 +76,7 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 	): void {
 		super.pushNode(path, {
 			path,
-			method,
+			method: method.toUpperCase(),
 			handler,
 			namespaceIndexes: namespaceIndexes ?? [],
 		})
