@@ -25,7 +25,7 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 	private namespace_index = 0
 
 	constructor() {
-		super((node, data) => node.method === data.method)
+		super((node, data) => node.method === data.method.toUpperCase())
 	}
 
 	private composeMiddleware(node: Node, params: Params): Handler {
