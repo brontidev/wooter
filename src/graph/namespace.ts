@@ -196,7 +196,7 @@ export class NamespaceBuilder<
 	 */
 	readonly route: RouteFunction<
 		TData extends undefined ? Data : TData,
-		Merge<BaseParams, TData>
+		Merge<BaseParams, TParams>
 	> = new Proxy(
 		this.#route,
 		(() => {
