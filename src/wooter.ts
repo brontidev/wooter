@@ -202,16 +202,19 @@ export class Wooter<
 		}
 	}
 
-  // @ts-expect-error: The route function doesn't have it's indexes yet, but when it does once it's proxied.
-	#route: RouteFunction<TData extends undefined ? Data : TData, BaseParams, typeof this> =
-		(
-			path: TChemin,
-			methodOrMethods: string | Record<string, Handler>,
-			handler?: Handler,
-		) => {
-			defaultRouteFunction(this.graph, path, methodOrMethods, handler)
-			return this;
-		}
+	// @ts-expect-error: The route function doesn't have it's indexes yet, but when it does once it's proxied.
+	#route: RouteFunction<
+		TData extends undefined ? Data : TData,
+		BaseParams,
+		typeof this
+	> = (
+		path: TChemin,
+		methodOrMethods: string | Record<string, Handler>,
+		handler?: Handler,
+	) => {
+		defaultRouteFunction(this.graph, path, methodOrMethods, handler)
+		return this
+	}
 
 	/**
 	 * Object used to create new routes

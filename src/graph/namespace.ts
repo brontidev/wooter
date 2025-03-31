@@ -156,7 +156,7 @@ export class NamespaceBuilder<
 			handler,
 			this.indexes,
 		)
-		return this;
+		return this
 	}
 
 	/**
