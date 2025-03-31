@@ -98,7 +98,7 @@ export type MiddlewareHandler<
 /**
  * Registers a route to the wooter
  */
-export type RouteFunction<TData extends Data, BaseParams> =
+export type RouteFunction<TData extends Data, BaseParams, This> =
 	& {
 		/**
 		 * Registers a route to the wooter with the method already known
@@ -117,7 +117,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		[method in HttpMethod]: <TParams extends Params>(
 			path: TChemin<TParams>,
 			handler: Handler<BaseParams & TParams, TData>,
-		) => void
+		) => This
 	}
 	& {
 		/**
@@ -137,7 +137,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 		[method in string]: <TParams extends Params>(
 			path: TChemin<TParams>,
 			handler: Handler<BaseParams & TParams, TData>,
-		) => void
+		) => This
 	}
 	& {
 		/**
@@ -158,7 +158,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 			path: TChemin<TParams>,
 			method: string,
 			handler: Handler<BaseParams & TParams, TData>,
-		): void
+		): This
 		/**
 		 * Registers a route with a method (Legacy)
 		 * @example
@@ -177,7 +177,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 			path: TChemin<TParams>,
 			method: HttpMethod | string,
 			handler: Handler<BaseParams & TParams, TData>,
-		): void
+		): This
 
 		/**
 		 * Registers a route with a map of methods
@@ -206,7 +206,7 @@ export type RouteFunction<TData extends Data, BaseParams> =
 				& Record<string, Handler<BaseParams & TParams, TData>>
 			>,
 			__?: undefined,
-		): void
+		): This
 		/**
 		 * Registers a route
 		 *

@@ -202,14 +202,15 @@ export class Wooter<
 		}
 	}
 
-	// @ts-expect-error: It works for now
-	#route: RouteFunction<TData extends undefined ? Data : TData, BaseParams> =
+  // @ts-expect-error: The route function doesn't have it's indexes yet, but when it does once it's proxied.
+	#route: RouteFunction<TData extends undefined ? Data : TData, BaseParams, typeof this> =
 		(
 			path: TChemin,
 			methodOrMethods: string | Record<string, Handler>,
 			handler?: Handler,
 		) => {
 			defaultRouteFunction(this.graph, path, methodOrMethods, handler)
+			return this;
 		}
 
 	/**
@@ -251,7 +252,8 @@ export class Wooter<
 	 */
 	readonly route: RouteFunction<
 		TData extends undefined ? Data : TData,
-		BaseParams
+		BaseParams,
+		typeof this
 	> = new Proxy(this.#route, {
 		apply(target, thisArg, args) {
 			// @ts-expect-error: This error is literally too annoying to fix

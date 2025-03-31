@@ -140,7 +140,8 @@ export class NamespaceBuilder<
 	// @ts-expect-error: The route function doesn't have it's indexes yet, but when it does once it's proxied.
 	#route: RouteFunction<
 		TData extends undefined ? Data : TData,
-		Merge<BaseParams, TData>
+		Merge<BaseParams, TData>,
+		typeof this
 	> = (
 		path: TChemin,
 		methodOrMethods: string | Record<string, Handler>,
@@ -155,6 +156,7 @@ export class NamespaceBuilder<
 			handler,
 			this.indexes,
 		)
+		return this;
 	}
 
 	/**
@@ -196,7 +198,8 @@ export class NamespaceBuilder<
 	 */
 	readonly route: RouteFunction<
 		TData extends undefined ? Data : TData,
-		Merge<BaseParams, TParams>
+		Merge<BaseParams, TParams>,
+		typeof this
 	> = new Proxy(
 		this.#route,
 		(() => {
