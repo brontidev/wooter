@@ -63,6 +63,11 @@ wooter.route.GET(c.chemin("websocket"), async ({ request, err, resp }) => {
 wooter.route.GET(c.chemin("exits-without-response"), async ({}) => {
 })
 
+wooter.route.GET(c.chemin("crash"), ({ resp }) => {
+    resp(new Response("OK"));
+    throw new Error()
+})
+
 wooter.route.GET(c.chemin("takes-a-while"), async ({ resp }) => {
 	await delay(1000)
 	resp(new Response("I'm here! sorry I took so long"))
