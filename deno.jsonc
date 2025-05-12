@@ -40,7 +40,8 @@
 	},
 	"imports": {
 		"@dldc/chemin": "jsr:@dldc/chemin@^13.0.0",
-		"@/": "./src/"
+		"@/": "./src/",
+		"@oxi/result": "jsr:@oxi/result@^0.3.1"
 	},
 	"publish": {
 		"include": ["./src", "./README.md"],
