@@ -1,9 +1,12 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
     "jsr:@dldc/chemin@13": "13.0.0",
+    "jsr:@oxi/core@~0.2.1": "0.2.1",
+    "jsr:@oxi/result@~0.3.1": "0.3.1",
     "jsr:@std/assert@*": "1.0.11",
     "jsr:@std/assert@^1.0.10": "1.0.11",
+    "jsr:@std/async@*": "1.0.10",
     "jsr:@std/internal@^1.0.5": "1.0.5",
     "jsr:@std/jsonc@*": "1.0.1",
     "jsr:@std/testing@*": "1.0.9"
@@ -12,11 +15,23 @@
     "@dldc/chemin@13.0.0": {
       "integrity": "fc0f15be726afd6daeea1e0d4be60086cca693a15f95bc612bfbf3b9839b7d2f"
     },
+    "@oxi/core@0.2.1": {
+      "integrity": "36e340fb6d9fd29013c23cfd867645390e39f7b9b253c28514c2b5cb97638b5e"
+    },
+    "@oxi/result@0.3.1": {
+      "integrity": "8e92ccdca9364e1f8974dcd47472c23e3cdcea4f0bb568726d0fab8d60f3e437",
+      "dependencies": [
+        "jsr:@oxi/core"
+      ]
+    },
     "@std/assert@1.0.11": {
       "integrity": "2461ef3c368fe88bc60e186e7744a93112f16fd110022e113a0849e94d1c83c1",
       "dependencies": [
         "jsr:@std/internal"
       ]
+    },
+    "@std/async@1.0.10": {
+      "integrity": "2ff1b1c7d33d1416159989b0f69e59ec7ee8cb58510df01e454def2108b3dbec"
     },
     "@std/internal@1.0.5": {
       "integrity": "54a546004f769c1ac9e025abd15a76b6671ddc9687e2313b67376125650dc7ba"
@@ -33,7 +48,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@dldc/chemin@13"
+      "jsr:@dldc/chemin@13",
+      "jsr:@oxi/result@~0.3.1"
     ]
   }
 }
