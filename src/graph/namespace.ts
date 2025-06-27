@@ -1,6 +1,6 @@
 import type {
 	Data,
-	Handler,
+	RouteHandler,
 	Merge,
 	MiddlewareHandler,
 	Params,
@@ -144,8 +144,8 @@ export class NamespaceBuilder<
 		typeof this
 	> = (
 		path: TChemin,
-		methodOrMethods: string | Record<string, Handler>,
-		handler?: Handler,
+		methodOrMethods: string | Record<string, RouteHandler>,
+		handler?: RouteHandler,
 	) => {
 		if (this.locked) throw new LockedNamespaceBuilder()
 		const fullPath = c.chemin(this.path, path)
@@ -214,7 +214,7 @@ export class NamespaceBuilder<
 					const value = Reflect.get(target, prop, receiver)
 					return value ??
 						(typeof prop === "string"
-							? ((path: TChemin, handler: Handler) =>
+							? ((path: TChemin, handler: RouteHandler) =>
 								target(path, prop, handler))
 							: undefined)
 				},

@@ -1,5 +1,5 @@
-import type { RouteEvent } from "@/event/index.ts"
-import type { MiddlewareEvent } from "@/event/middleware.ts"
+import type { RouteContext } from "@/context/index.ts"
+import type { MiddlewareContext } from "@/context/middleware.ts"
 import type { TChemin } from "@/export/chemin.ts"
 
 /**
@@ -61,13 +61,13 @@ export type Data = Record<keyof any, unknown>
 /**
  * Handler for routes
  *
- * @param event Event
+ * @param context: Context
  * @returns Empty promise
  */
-export type Handler<
+export type RouteHandler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
-> = (event: RouteEvent<TParams, TData>) => Promise<void> | void
+> = (context: RouteContext<TParams, TData>) => Promise<void> | void
 
 /**
  * Standalone Middleware Handler type
@@ -85,14 +85,14 @@ export type StandaloneMiddlewareHandler<
 /**
  * Handler for middleware
  *
- * @param event Event
+ * @param context Context
  * @returns Empty promise
  */
 export type MiddlewareHandler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 	TNextData extends Data | undefined = Data,
-> = (event: MiddlewareEvent<TParams, TData, TNextData>) => Promise<void> | void
+> = (context: MiddlewareContext<TParams, TData, TNextData>) => Promise<void> | void
 
 // TODO: Get jsdoc for the indexes to work...
 /**
@@ -116,7 +116,7 @@ export type RouteFunction<TData extends Data, BaseParams, This> =
 		 */
 		[method in HttpMethod]: <TParams extends Params>(
 			path: TChemin<TParams>,
-			handler: Handler<BaseParams & TParams, TData>,
+			handler: RouteHandler<BaseParams & TParams, TData>,
 		) => This
 	}
 	& {
@@ -136,7 +136,7 @@ export type RouteFunction<TData extends Data, BaseParams, This> =
 		 */
 		[method in string]: <TParams extends Params>(
 			path: TChemin<TParams>,
-			handler: Handler<BaseParams & TParams, TData>,
+			handler: RouteHandler<BaseParams & TParams, TData>,
 		) => This
 	}
 	& {
@@ -157,7 +157,7 @@ export type RouteFunction<TData extends Data, BaseParams, This> =
 		<TParams extends Params = Params>(
 			path: TChemin<TParams>,
 			method: string,
-			handler: Handler<BaseParams & TParams, TData>,
+			handler: RouteHandler<BaseParams & TParams, TData>,
 		): This
 		/**
 		 * Registers a route with a method (Legacy)
@@ -176,7 +176,7 @@ export type RouteFunction<TData extends Data, BaseParams, This> =
 		<TParams extends Params = Params>(
 			path: TChemin<TParams>,
 			method: HttpMethod | string,
-			handler: Handler<BaseParams & TParams, TData>,
+			handler: RouteHandler<BaseParams & TParams, TData>,
 		): This
 
 		/**
@@ -202,8 +202,8 @@ export type RouteFunction<TData extends Data, BaseParams, This> =
 		<TParams extends Params = Params>(
 			path: TChemin<TParams>,
 			methods: Partial<
-				& Record<HttpMethod, Handler<BaseParams & TParams, TData>>
-				& Record<string, Handler<BaseParams & TParams, TData>>
+				& Record<HttpMethod, RouteHandler<BaseParams & TParams, TData>>
+				& Record<string, RouteHandler<BaseParams & TParams, TData>>
 			>,
 			__?: undefined,
 		): This
