@@ -1,5 +1,5 @@
 export * as c from "@/export/chemin.ts"
 export * from "@/wooter.ts"
 export { NamespaceBuilder } from "@/graph/namespace.ts"
-export type { RouteEvent } from "@/event/index.ts"
-export type { MiddlewareEvent } from "@/event/middleware.ts"
+export type { RouteContext } from "@/context/index.ts"
+export type { MiddlewareContext } from "@/context/middleware.ts"

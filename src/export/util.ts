@@ -1,12 +1,12 @@
-import { useMiddleware } from "@/event/middleware.ts"
+import { useMiddleware } from "@/context/middleware.ts"
 import type {
 	Data,
-	Handler,
+	RouteHandler,
 	Merge,
 	MiddlewareHandler,
 	Params,
 } from "@/export/types.ts"
-import { useHandler } from "@/event/index.ts"
+import { Context__chain, useHandler } from "@/context/index.ts"
 
 /**
  * Returns a JSON `Response` given a stringifiable object
@@ -102,25 +102,23 @@ export function use<
 	TData extends Data = Merge<BaseData, NewData>,
 >(
 	middleware: MiddlewareHandler<Params, BaseData, NewData>,
-	handler: Handler<TParams, TData>,
-): Handler<TParams, TData> {
-	return (event) => {
-		event.resp(
-			useMiddleware(
-				middleware as MiddlewareHandler,
-				event.request,
-				event.params,
-				event.data,
-				(data, request) => {
-					return useHandler(
-						handler as Handler,
-						request,
-						event.params,
-						data,
-					)
-				},
-			),
-		)
+	handler: RouteHandler<TParams, TData>,
+): RouteHandler<TParams, TData> {
+	return (context) => {
+		useMiddleware(
+			middleware as MiddlewareHandler,
+			context.request,
+			context.params,
+			context.data,
+			(data, request) => {
+				return useHandler(
+					handler as RouteHandler,
+					request,
+					context.params,
+					data,
+				)
+			},
+		)[Context__chain](context)
 	}
 }
 
