@@ -1,3 +1,5 @@
+import { Result } from "@oxi/result"
+
 export type PromiseState = "pending" | "fulfilled" | "rejected"
 
 export interface Resolvers<T> {
@@ -29,4 +31,11 @@ export function createResolvers<T>(): Resolvers<T> {
 			resolve(...args)
 		},
 	}
+}
+
+export function promiseResult<T>(fn: () => Promise<T>): Promise<Result<T, unknown>> {
+    return fn().then(
+        (value) => Result.Ok(value),
+        (error) => Result.Err(error)
+    );
 }

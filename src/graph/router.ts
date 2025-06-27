@@ -1,23 +1,41 @@
 import { InheritableCheminGraph } from "@/graph/basic.ts"
-import type { TChemin } from "@/export/chemin.ts"
+import type { TChemin, TEmptyObject } from "@/export/chemin.ts"
 import type {
 	Data,
-	Handler,
 	MiddlewareHandler,
 	Params,
+	RouteHandler,
 } from "@/export/types.ts"
-import { useHandler } from "@/event/index.ts"
-import { useMiddleware } from "@/event/middleware.ts"
+import { RouteContext, runHandler /*useHandler*/ } from "@/context/index.ts"
+import {
+	MiddlewareContext,
+	runMiddleware, /*useMiddleware*/
+} from "@/context/middleware.ts"
 import { LOCK, type Namespace, NamespaceBuilder } from "@/graph/namespace.ts"
 import { concatIterators } from "@/common.ts"
+import { Result } from "@oxi/result"
+import { promiseResult } from "../promise.ts"
 
 type Node = {
 	path: TChemin<Params>
 	method: string
-	handler: Handler
+	handler: RouteHandler
 	namespaceIndexes: number[]
 }
 type FindData = { method: string }
+
+export type Run = (
+	request: Request,
+	data: Data,
+	params: Params,
+) => ReturnType<Up>
+export type Up<TData extends Data | undefined = undefined> = (
+	nextData: Data,
+	request: Request,
+) => readonly [
+	RouteContext<Params, TData extends undefined ? TEmptyObject : TData>,
+	Promise<Result<void, unknown>>,
+]
 
 export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 	private middleware = new Set<MiddlewareHandler>()
@@ -28,7 +46,7 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 		super((node, data) => node.method === data.method.toUpperCase())
 	}
 
-	private composeMiddleware(node: Node, params: Params): Handler {
+	private composeMiddleware(node: Node, params: Params): Run {
 		const { handler, namespaceIndexes } = node
 		const namespaceMiddlewareIterators = namespaceIndexes.map((index) =>
 			this.namespaces[index].values()
@@ -37,41 +55,63 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 			this.middleware.values(),
 			...namespaceMiddlewareIterators,
 		)
-		return (baseEvent) => {
-			const data: Data = baseEvent.data
-			Object.assign(params, baseEvent.params)
-			const createNext = () => {
-				return (
-					nextData: Record<string, unknown>,
-					request: Request,
-				) => {
+
+		return (request, data, new_params) => {
+			Object.assign(params, new_params)
+			// const createNext = () => {
+			// 	return (
+			// 		nextData: Record<string, unknown>,
+			// 		request: Request,
+			// 	) => {
+			// 		Object.assign(data, nextData)
+			// 		const { done, value: currentMiddleware } = middlewares
+			// 			.next()
+			// 		if (done) {
+			// 			return useHandler(handler, request, params, data)
+			// 		}
+
+			// 		return useMiddleware(
+			// 			currentMiddleware,
+			// 			request,
+			// 			params,
+			// 			data,
+			// 			createNext(),
+			// 		)
+			// 	}
+			// }
+			// return createNext()(data, request)
+
+			const createUp = (): Up<Data> => {
+				return (nextData: Data, request: Request) => {
 					Object.assign(data, nextData)
 					const { done, value: currentMiddleware } = middlewares
 						.next()
 					if (done) {
-						return useHandler(handler, request, params, data)
+						const context = new RouteContext(request, params, data)
+						return [context, runHandler(context, handler)] as const
 					}
 
-					return useMiddleware(
-						currentMiddleware,
+					const context = new MiddlewareContext(
 						request,
 						params,
 						data,
-						createNext(),
+						createUp(),
 					)
+
+					return [
+						context,
+						promiseResult(() => runMiddleware(context, currentMiddleware)),
+					] as const
 				}
 			}
-			return createNext()(data, baseEvent.request).then(
-				baseEvent.resp,
-				baseEvent.err,
-			)
+			return createUp()(data, request)
 		}
 	}
 
 	addRoute(
 		method: string,
 		path: TChemin,
-		handler: Handler,
+		handler: RouteHandler,
 		namespaceIndexes?: number[],
 	): void {
 		super.pushNode(path, {
@@ -100,7 +140,7 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 	getHandler(
 		pathname: string | string[],
 		method: string,
-	): Handler | undefined {
+	): Run | undefined {
 		const definition = super.getNode(pathname, { method })
 		if (definition) {
 			return this.composeMiddleware(

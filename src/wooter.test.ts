@@ -18,11 +18,11 @@ const testHeader: StandaloneMiddlewareHandler<
 	{ setTestHeader: (value: string) => void }
 > = async ({ up, resp }) => {
 	let header: string | undefined
-	const response = await up({
+	const response = (await up({
 		setTestHeader: (value) => {
 			header = value
 		},
-	})
+	})).unwrap()
 	if (header) response.headers.set("X-Test", header)
 	resp(response)
 }
@@ -57,14 +57,25 @@ Deno.test("Wooter - not found handler", async () => {
 	assertEquals(text, "Custom Not Found")
 })
 
-Deno.test("Wooter - internal server error", async () => {
+Deno.test("Wooter - error handling", async () => {
 	const wooter = new Wooter()
-	wooter.route.GET(c.chemin("error"), () => {
+	wooter.route.GET(c.chemin("error"), async () => {
 		throw new Error("Test error")
+	})
+
+	wooter.use(async ({ up, resp, block }) => {
+	    try {
+    	    (await up()).unwrap()
+            await block
+		} catch (error) {
+		    resp(new Response("Internal Server Error", { status: 500 }))
+    		console.error(error)
+		}
 	})
 
 	const request = new Request("http://localhost/error", { method: "GET" })
 	const response = await wooter.fetch(request)
+
 	const text = await response.text()
 
 	assertEquals(response.status, 500)
@@ -106,11 +117,11 @@ Deno.test("Wooter - middleware - call up twice", async () => {
 		{ setTestHeader: (value: string) => void }
 	>(async ({ up, resp }) => {
 		let header: string | undefined
-		const response = await up({
+		const response = (await up({
 			setTestHeader: (value) => {
 				header = value
 			},
-		})
+		})).unwrap();
 		await up({
 			setTestHeader: (value) => {
 				header = value
