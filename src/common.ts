@@ -1,14 +1,14 @@
 // Functions common to the Wooter and the NamespaceBuilder
 
 import type { TChemin } from "@/export/chemin.ts"
-import type { Handler } from "@/export/types.ts"
+import type { RouteHandler } from "@/export/types.ts"
 import type { RouteGraph } from "@/graph/router.ts"
 
 export function defaultRouteFunction(
 	graph: RouteGraph,
 	path: TChemin,
-	methodOrMethods: string | Record<string, Handler>,
-	handler?: Handler,
+	methodOrMethods: string | Record<string, RouteHandler>,
+	handler?: RouteHandler,
 	namespaceIndexes?: number[],
 ) {
 	if (typeof methodOrMethods === "string" && !!handler) {

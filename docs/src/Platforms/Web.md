@@ -7,29 +7,29 @@ without polluting the global scope.
 
 ```ts
 // service-worker.js
-import { c, Wooter } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter";
 
-const wooter = new Wooter()
+const wooter = new Wooter();
 
 wooter.route.GET(
-	c.chemin("add", c.pNumber("a"), c.pNumber("b")),
-	async ({ resp, params: { a, b } }) => {
-		resp(new Response(a + b))
-	},
-)
+    c.chemin("add", c.pNumber("a"), c.pNumber("b")),
+    async ({ resp, params: { a, b } }) => {
+        resp(new Response(a + b));
+    },
+);
 
 self.addEventListener("fetch", (event) => {
-	const url = new URL(event.request.url)
-	// Every url that looks like http(s)://app/<route>
-	if (url.host !== "app") return
+    const url = new URL(event.request.url);
+    // Every url that looks like http(s)://app/<route>
+    if (url.host !== "app") return;
 
-	event.respondWith(wooter.fetch(event.request))
-})
+    event.respondWith(wooter.fetch(event.request));
+});
 ```
 
 And you can run this with:
 
 ```ts
-const response = await fetch("//app/add/1/2")
-const text = await response.text() // 3
+const response = await fetch("//app/add/1/2");
+const text = await response.text(); // 3
 ```

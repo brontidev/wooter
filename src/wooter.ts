@@ -1,8 +1,8 @@
-import { RouteEvent } from "@/event/index.ts"
+import { Context__resolve, RouteContext } from "@/context/index.ts"
 import type { TChemin, TEmptyObject } from "@/export/chemin.ts"
 import type {
 	Data,
-	Handler,
+	RouteHandler,
 	Merge,
 	MiddlewareHandler,
 	Params,
@@ -12,7 +12,7 @@ import type { NamespaceBuilder } from "@/graph/namespace.ts"
 import { RouteGraph } from "@/graph/router.ts"
 import { defaultRouteFunction } from "@/common.ts"
 
-class NotFound {}
+class EarlyReturn {}
 
 /**
  * Options for creating a new Wooter
@@ -43,7 +43,7 @@ export class Wooter<
 	private graph: RouteGraph
 
 	private notFoundHandler:
-		| Handler<
+		| RouteHandler<
 			Record<string | number | symbol, never>,
 			Record<string | number | symbol, never>
 		>
@@ -137,7 +137,7 @@ export class Wooter<
 	 * @param handler handler function
 	 * @returns self
 	 */
-	notFound(handler: Handler): this {
+	notFound(handler: RouteHandler): this {
 		if (this.notFoundHandler) {
 			console.warn("notFound handler set twice")
 		}
@@ -158,48 +158,76 @@ export class Wooter<
 		data?: Partial<TData>,
 		params?: BaseParams,
 	): Promise<Response> => {
-		let handler: Handler
-		const event = new RouteEvent(request, params ?? {}, data ?? {})
+		// 1. Find handler
+		//  a. If not found, run notFoundHandler
+
 		const pathname = new URL(request.url).pathname
-		try {
-			const handlerCheck = this.graph.getHandler(
-				pathname,
-				request.method,
-			)
-			if (!handlerCheck) {
-				throw new NotFound()
-			}
-			handler = handlerCheck
-		} catch (e) {
-			if (e instanceof NotFound) {
-				if (this.notFoundHandler) {
-					try {
-						this.notFoundHandler(event)
-						return await event.promise
-					} catch (e) {
-						if (!this.opts.catchErrors) throw e
-						console.error("Unresolved error in notFound handler", e)
-					}
-				}
-				return new Response(
-					`Not found ${request.method} ${pathname}`,
-					{
-						status: 404,
-					},
+		const run = this.graph.getHandler(
+			pathname,
+			request.method,
+		)
+		const { promise, resolve } = Promise.withResolvers<Response>()
+
+		if (run === undefined) {
+			if (this.notFoundHandler) {
+				const context = new RouteContext(
+					request,
+					params ?? {},
+					data ?? {},
 				)
+				try {
+					context[Context__resolve]((result) => {
+						result.match((ok) => {
+							resolve(ok)
+						}, (err) => {
+							if (this.opts.catchErrors) throw err
+							console.warn("Error propagated from handlers", err)
+							resolve(
+								new Response("Internal Server Error", {
+									status: 500,
+								}),
+							)
+						})
+						throw new EarlyReturn()
+					})
+					await this.notFoundHandler(context)
+				} catch (e) {
+					if (e instanceof EarlyReturn) return promise
+					// Any error from the handler is critical
+					throw e
+				}
 			}
+			return new Response(
+				`Not found ${request.method} ${pathname}`,
+				{
+					status: 404,
+				},
+			)
+		}
+
+		try {
+			const [context, promise] = run(request, data ?? {}, params ?? {})
+			context[Context__resolve]((result) => {
+				result.match((ok) => {
+					resolve(ok)
+				}, (err) => {
+					if (this.opts.catchErrors) throw err
+					console.warn("Error propagated from ", err)
+					resolve(
+						new Response("Internal Server Error", {
+							status: 500,
+						}),
+					)
+					throw new EarlyReturn()
+				})
+			})
+			await promise
+		} catch (e) {
+			if (e instanceof EarlyReturn) return promise
+			// Any error from the handler is critical
 			throw e
 		}
-		try {
-			handler(event)
-			return await event.promise
-		} catch (e) {
-			if (!this.opts.catchErrors) throw e
-			console.error(e)
-			return new Response("Internal Server Error", {
-				status: 500,
-			})
-		}
+		return promise
 	}
 
 	// @ts-expect-error: The route function doesn't have it's indexes yet, but when it does once it's proxied.
@@ -209,8 +237,8 @@ export class Wooter<
 		typeof this
 	> = (
 		path: TChemin,
-		methodOrMethods: string | Record<string, Handler>,
-		handler?: Handler,
+		methodOrMethods: string | Record<string, RouteHandler>,
+		handler?: RouteHandler,
 	) => {
 		defaultRouteFunction(this.graph, path, methodOrMethods, handler)
 		return this
@@ -266,7 +294,7 @@ export class Wooter<
 			const value = Reflect.get(target, prop, receiver)
 			return value ??
 				(typeof prop === "string"
-					? ((path: TChemin, handler: Handler) =>
+					? ((path: TChemin, handler: RouteHandler) =>
 						target(path, prop, handler))
 					: undefined)
 		},
