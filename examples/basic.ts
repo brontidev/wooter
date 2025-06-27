@@ -64,8 +64,8 @@ wooter.route.GET(c.chemin("exits-without-response"), async ({}) => {
 })
 
 wooter.route.GET(c.chemin("crash"), ({ resp }) => {
-    resp(new Response("OK"));
-    throw new Error()
+	resp(new Response("OK"))
+	throw new Error()
 })
 
 wooter.route.GET(c.chemin("takes-a-while"), async ({ resp }) => {
