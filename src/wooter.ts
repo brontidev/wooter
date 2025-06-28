@@ -212,7 +212,7 @@ export class Wooter<
 					resolve(ok)
 				}, (err) => {
 					if (this.opts.catchErrors) throw err
-					console.warn("Error propagated from ", err)
+					console.warn("Error propagated from handler: ", err)
 					resolve(
 						new Response("Internal Server Error", {
 							status: 500,

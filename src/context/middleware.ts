@@ -73,7 +73,12 @@ export class MiddlewareContext<
 		)
 		promise.then(this.resolvers.resolve)
 		return new Promise((res) => {
-			context[Context__resolve](res)
+			context[Context__resolve](result => {
+			    if(result.isOk())   {
+			        this._storedResponse = result.unwrap()
+			    }
+			    res(result)
+			})
 		})
 	}
 
