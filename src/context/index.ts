@@ -79,7 +79,11 @@ export class RouteContext<
 		readonly params: TParams,
 		readonly data: TData,
 	) {
-		this.url = new URL(request.url)
+	    try {
+    		this.url = new URL(request.url)
+		} catch {
+		    throw new Error(`Invalid request URL: ${request.url}`)
+		}
 	}
 }
 
