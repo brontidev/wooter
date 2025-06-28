@@ -11,7 +11,6 @@ import {
 } from "@/export/error.ts"
 import type { Result } from "@oxi/result"
 import type { Up } from "../graph/router.ts"
-import { createResolvers, type Resolvers } from "../promise.ts"
 
 /**
  * Context class passed into middleware handlers
@@ -23,7 +22,7 @@ export class MiddlewareContext<
 > extends RouteContext<TParams, TData> {
 	private hasCalledUp = false
 	private _storedResponse: Response | undefined
-	private readonly resolvers: Resolvers<Result<void, unknown>> = createResolvers();
+	private readonly resolvers: PromiseWithResolvers<Result<void, unknown>> = Promise.withResolvers()
 
 	/**
 	 * Stored response from the next handler
