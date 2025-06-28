@@ -13,7 +13,7 @@ import {
 } from "@/context/middleware.ts"
 import { LOCK, type Namespace, NamespaceBuilder } from "@/graph/namespace.ts"
 import { concatIterators } from "@/common.ts"
-import { Result } from "@oxi/result"
+import type { Result } from "@oxi/result"
 import { promiseResult } from "../promise.ts"
 
 type Node = {
