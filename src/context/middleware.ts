@@ -11,6 +11,7 @@ import {
 } from "@/export/error.ts"
 import type { Result } from "@oxi/result"
 import type { Up } from "../graph/router.ts"
+import { promiseResult } from "../promise.ts"
 
 /**
  * Context class passed into middleware handlers
@@ -22,7 +23,8 @@ export class MiddlewareContext<
 > extends RouteContext<TParams, TData> {
 	private hasCalledUp = false
 	private _storedResponse: Response | undefined
-	private readonly resolvers: PromiseWithResolvers<Result<void, unknown>> = Promise.withResolvers()
+	private readonly resolvers: PromiseWithResolvers<Result<void, unknown>> =
+		Promise.withResolvers()
 
 	/**
 	 * Stored response from the next handler
@@ -73,11 +75,11 @@ export class MiddlewareContext<
 		)
 		promise.then(this.resolvers.resolve)
 		return new Promise((res) => {
-			context[Context__resolve](result => {
-			    if(result.isOk())   {
-			        this._storedResponse = result.unwrap()
-			    }
-			    res(result)
+			context[Context__resolve]((result) => {
+				if (result.isOk()) {
+					this._storedResponse = result.unwrap()
+				}
+				res(result)
 			})
 		})
 	}
@@ -92,23 +94,25 @@ export class MiddlewareContext<
 	}
 
 	get block() {
-	    return this.resolvers.promise;
+		return this.resolvers.promise
 	}
 }
 
-export async function runMiddleware(
-    context: MiddlewareContext,
-    middlewareHandler: MiddlewareHandler,
+export function runMiddleware(
+	context: MiddlewareContext,
+	middlewareHandler: MiddlewareHandler,
 ) {
-	await middlewareHandler(context)
-	if (!context[Context__hasValue]) {
-		if (!context.storedResponse) {
-			return context.err(
-				new MiddlewareDidntCallUp(),
-			)
+	return promiseResult(async () => {
+		await middlewareHandler(context)
+		if (!context[Context__hasValue]) {
+			if (!context.storedResponse) {
+				return context.err(
+					new MiddlewareDidntCallUp(),
+				)
+			}
+			context.resp(context.storedResponse)
 		}
-		context.resp(context.storedResponse)
-	}
+	})
 }
 
 // export function useMiddleware(

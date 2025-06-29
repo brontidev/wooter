@@ -100,7 +100,7 @@ export class RouteGraph extends InheritableCheminGraph<Node, FindData> {
 
 					return [
 						context,
-						promiseResult(() => runMiddleware(context, currentMiddleware)),
+						runMiddleware(context, currentMiddleware),
 					] as const
 				}
 			}
