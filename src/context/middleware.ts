@@ -9,9 +9,8 @@ import {
 	MiddlewareCalledUpTooManyTimes,
 	MiddlewareDidntCallUp,
 } from "@/export/error.ts"
-import type { Result } from "@oxi/result"
+import { Result } from "@oxi/result"
 import type { Up } from "../graph/router.ts"
-import { promiseResult } from "../promise.ts"
 
 /**
  * Context class passed into middleware handlers
@@ -101,18 +100,21 @@ export class MiddlewareContext<
 export function runMiddleware(
 	context: MiddlewareContext,
 	middlewareHandler: MiddlewareHandler,
-) {
-	return promiseResult(async () => {
-		await middlewareHandler(context)
-		if (!context[Context__hasValue]) {
-			if (!context.storedResponse) {
-				return context.err(
-					new MiddlewareDidntCallUp(),
-				)
+): Promise<Result<void, unknown>> {
+	return middlewareHandler(context).then(() => {
+			if (!context[Context__hasValue]) {
+				if (!context.storedResponse) {
+					context.err(
+						new MiddlewareDidntCallUp(),
+					)
+					return Result.Err(new MiddlewareDidntCallUp())
+				}
+				// Middleware didn't call `resp`, but it called `up`, so we can send the response back still
+				context.resp(context.storedResponse)
 			}
-			context.resp(context.storedResponse)
-		}
-	})
+			return Result.Ok(undefined)
+		},
+		e => Result.Err(e))
 }
 
 // export function useMiddleware(

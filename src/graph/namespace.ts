@@ -1,10 +1,10 @@
 import type {
 	Data,
-	RouteHandler,
 	Merge,
 	MiddlewareHandler,
 	Params,
 	RouteFunction,
+	RouteHandler,
 } from "@/export/types.ts"
 import type { RouteGraph } from "@/graph/router.ts"
 import type { TChemin, TEmptyObject } from "@/export/chemin.ts"

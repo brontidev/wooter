@@ -12,6 +12,14 @@
 > [!NOTE]
 > wooter uses [epoch semver](https://antfu.me/posts/epoch-semver).
 
+## Experimental v3 API
+
+### Changes
+
+#### `event` -> `context`
+
+Events are now called Context, and there
+
 **wooter** is a simple typescript router library, it's inspired by Sveltekit's
 router, as well as Oak and Hono.
 
