@@ -96,7 +96,7 @@ export function runHandler(
 		if (
 			!context[Context__hasValue]
 		) {
-			throw new ExitWithoutResponse()
+			context.err(new ExitWithoutResponse())
 		}
 	})
 }
