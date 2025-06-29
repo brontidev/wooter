@@ -1,10 +1,10 @@
 import { useMiddleware } from "@/context/middleware.ts"
 import type {
 	Data,
-	RouteHandler,
 	Merge,
 	MiddlewareHandler,
 	Params,
+	RouteHandler,
 } from "@/export/types.ts"
 import { Context__chain, useHandler } from "@/context/index.ts"
 
@@ -89,6 +89,7 @@ export function fixLocation(
 	}
 }
 
+// TODO: fix this after the rest of v3 is finished
 /**
  * Applies a middleware directly to a handler, returning a new handler
  * @param middleware - Middleware to apply
