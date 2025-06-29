@@ -2,11 +2,11 @@ import { Context__resolve, RouteContext } from "@/context/index.ts"
 import type { TChemin, TEmptyObject } from "@/export/chemin.ts"
 import type {
 	Data,
-	RouteHandler,
 	Merge,
 	MiddlewareHandler,
 	Params,
 	RouteFunction,
+	RouteHandler,
 } from "@/export/types.ts"
 import type { NamespaceBuilder } from "@/graph/namespace.ts"
 import { RouteGraph } from "@/graph/router.ts"
