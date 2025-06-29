@@ -67,7 +67,7 @@ export type Data = Record<keyof any, unknown>
 export type RouteHandler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
-> = (context: RouteContext<TParams, TData>) => Promise<void> | void
+> = (context: RouteContext<TParams, TData>) => Promise<void>
 
 /**
  * Standalone Middleware Handler type
@@ -92,7 +92,7 @@ export type MiddlewareHandler<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 	TNextData extends Data | undefined = Data,
-> = (context: MiddlewareContext<TParams, TData, TNextData>) => Promise<void> | void
+> = (context: MiddlewareContext<TParams, TData, TNextData>) => Promise<void>
 
 // TODO: Get jsdoc for the indexes to work...
 /**

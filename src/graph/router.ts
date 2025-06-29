@@ -14,7 +14,6 @@ import {
 import { LOCK, type Namespace, NamespaceBuilder } from "@/graph/namespace.ts"
 import { concatIterators } from "@/common.ts"
 import type { Result } from "@oxi/result"
-import { promiseResult } from "../promise.ts"
 
 type Node = {
 	path: TChemin<Params>

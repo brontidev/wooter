@@ -64,12 +64,12 @@ Deno.test("Wooter - error handling", async () => {
 	})
 
 	wooter.use(async ({ up, resp, block }) => {
-	    try {
-    	    (await up()).unwrap()
-            await block
+		try {
+			;(await up()).unwrap()
+			await block
 		} catch (error) {
-		    resp(new Response("Internal Server Error", { status: 500 }))
-    		console.error(error)
+			resp(new Response("Internal Server Error", { status: 500 }))
+			console.error(error)
 		}
 	})
 
@@ -121,7 +121,7 @@ Deno.test("Wooter - middleware - call up twice", async () => {
 			setTestHeader: (value) => {
 				header = value
 			},
-		})).unwrap();
+		})).unwrap()
 		await up({
 			setTestHeader: (value) => {
 				header = value

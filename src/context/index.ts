@@ -2,7 +2,6 @@ import type { Data, Params, RouteHandler } from "@/export/types.ts"
 
 import { ExitWithoutResponse } from "@/export/error.ts"
 import { Result } from "@oxi/result"
-import { promiseResult } from "../promise.ts"
 
 export const Context__hasValue = Symbol("ctx.hasValue")
 export const Context__resolve = Symbol("ctx.resolve")
@@ -79,10 +78,10 @@ export class RouteContext<
 		readonly params: TParams,
 		readonly data: TData,
 	) {
-	    try {
-    		this.url = new URL(request.url)
+		try {
+			this.url = new URL(request.url)
 		} catch {
-		    throw new Error(`Invalid request URL: ${request.url}`)
+			throw new Error(`Invalid request URL: ${request.url}`)
 		}
 	}
 }
@@ -91,14 +90,15 @@ export function runHandler(
 	context: RouteContext,
 	handler: RouteHandler,
 ): Promise<Result<void, unknown>> {
-	return promiseResult(async () => {
-		await handler(context)
-		if (
-			!context[Context__hasValue]
-		) {
-			context.err(new ExitWithoutResponse())
-		}
-	})
+	return handler(context)
+		.then(() => {
+    		if (
+    			!context[Context__hasValue]
+    		) {
+    			context.err(new ExitWithoutResponse())
+    		}
+		    return Result.Ok(undefined)
+		}, e => Result.Err(e))
 }
 
 // export function useHandler(
