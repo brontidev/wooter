@@ -102,18 +102,12 @@ const wooter = new Wooter()
 
 		// Add cookies to response headers
 		if (newCookies.length > 0) {
-			const existingHeaders = new Headers(response.headers)
+			const newResponse: Response = response.clone()
 			newCookies.forEach((cookie) => {
-				existingHeaders.append("Set-Cookie", cookie)
+				newResponse.headers.append("Set-Cookie", cookie)
 			})
 
-			return resp(
-				new Response(response.body, {
-					status: response.status,
-					statusText: response.statusText,
-					headers: existingHeaders,
-				}),
-			)
+			return resp(newResponse)
 		}
 
 		resp(response)
