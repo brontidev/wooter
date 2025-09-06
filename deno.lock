@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@dldc/chemin@13": "13.0.0",
     "jsr:@oxi/core@~0.2.1": "0.2.1",
+    "jsr:@oxi/option@0.2": "0.2.0",
     "jsr:@oxi/result@~0.3.1": "0.3.1",
     "jsr:@std/assert@*": "1.0.11",
     "jsr:@std/assert@^1.0.10": "1.0.11",
@@ -17,6 +18,12 @@
     },
     "@oxi/core@0.2.1": {
       "integrity": "36e340fb6d9fd29013c23cfd867645390e39f7b9b253c28514c2b5cb97638b5e"
+    },
+    "@oxi/option@0.2.0": {
+      "integrity": "31eb26fe703146a827c446589784918633f6d2250a8b6a00cab10f37f1feeb69",
+      "dependencies": [
+        "jsr:@oxi/core"
+      ]
     },
     "@oxi/result@0.3.1": {
       "integrity": "8e92ccdca9364e1f8974dcd47472c23e3cdcea4f0bb568726d0fab8d60f3e437",
@@ -49,6 +56,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@dldc/chemin@13",
+      "jsr:@oxi/option@0.2",
       "jsr:@oxi/result@~0.3.1"
     ]
   }
