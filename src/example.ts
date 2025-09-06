@@ -86,7 +86,7 @@ const middleware = async ({ request, resp, next, pass, block }) => {
 		{ value: string; opts?: Partial<SerializeOptions> }
 	> = {}
 
-	const cookies: Cookies = {
+	const cookies = {
 		get: (name: string) => cookieMap[name].value ?? parsedCookies[name],
 		getAll: () =>
 			Object.fromEntries(
@@ -110,22 +110,15 @@ const middleware = async ({ request, resp, next, pass, block }) => {
 
 	const response = await unwrap({ cookies })
 
-	// Get all cookies that were set during request handling
 	const newCookies = Object.entries(cookieMap)
-		.filter(([_, value]) => typeof value === "object" && "name" in value)
-		.filter(([_, cookie]) =>
-			cookie && typeof cookie === "object" && "name" in cookie &&
-			"value" in cookie
-		)
 		.map(([name, cookie]) =>
 			serialize(name, cookie.value || "", {
 				...cookie.opts,
-				httpOnly: true, // Ensure cookies are httpOnly by default for security
-				secure: true, // Ensure cookies are secure by default
+				httpOnly: true,
+				secure: true,
 			})
 		)
 
-	// Add cookies to response headers
 	if (newCookies.length > 0) {
 		const newResponse: Response = response.clone()
 		newCookies.forEach((cookie) => {
@@ -141,9 +134,9 @@ const middleware = async ({ request, resp, next, pass, block }) => {
 /*
 # RouteContext
 
+.params: Params -> params from routing
 .data: any -> data passed from middleware
 .request: Request
-
 
 .resp(response: Response): Response
 
@@ -155,19 +148,19 @@ const handler = (ctx) => {
 	// This handler errors out before returning a response
 
 	throw new Error("oh something weird happened")
-	// handle event: None
+	// respond event: None
 	// block event: Err(Error("oh something weird happened"))
 }
 
 const handler = (ctx) => {
 	ctx.resp(new Response("yay!"))
-	// handle event: Some(Resonse("yay!"))
+	// respond event: Some(Resonse("yay!"))
 	// block event: Ok
 }
 
 const handler = (ctx) => {
 	ctx.resp(new Response("yay!"))
-	// handle event: Some(Resonse("yay!"))
+	// respond event: Some(Resonse("yay!"))
 	// middlewarectx.next() promise resolves here
 	throw new Error("Happens after response production")
 	// block event: Err(Error("Happens after response production"))
@@ -178,24 +171,24 @@ const handler = (ctx) => {
 }
 
 const handler = (ctx) => {
-	// handle event: None
-	// block event: Ok
+	// respond event: None
+	// block event: Err(HandlerDidntRespond)
 
 	// handle this case however you want,
-	// if handle event is passed to the router with `None`
+	// if respond event is passed to the router with `None`
 	// the app responds with a 500 error and prints a warning
 }
 
 const handler = (ctx) => {
 	setTimeout(() => {
 		ctx.resp(new Response("yay!"))
-		// 4. (cancelled) handle event: Response("yay!")
+		// 4. (cancelled) respond event: Response("yay!")
 	}, 300)
 	// 1. (cancelled) block event: Ok
-	// 2. handle event: None
+	// 2. respond event: None
 	// 3. block event: Err(HandlerNotResponding)
 
-	// if block event is Ok before handle event (handler exits BEFORE responding),
+	// if block event is fired before respond event (handler exits BEFORE responding),
 	// the event is cancelled and replaced with a HandlerNotResponding Error
 
 	// the next handler is the intended way to do something like this
@@ -207,16 +200,31 @@ const wait = async (ms: number) => {
 	return promise
 }
 
-const handler = (ctx) => {
+const handler = async (ctx) => {
 	await wait(300)
 	ctx.resp(new Response("yay!"))
-	// handle event: Some(Resonse("yay!"))
+	// respond event: Some(Resonse("yay!"))
 	// block event: Ok
+
+	// the intended way to do delayed responses is with aysnc code
+	// so that the block event doesn't fire before the respond event
+}
+
+const handler = async (ctx) => {
+    const { resolve, promise } = Promise.withResolvers()
+    someFunctionWithACallback("some data", (...args) => resolve(args))
+    const dataFromCallback = await promise
+	ctx.resp(new Response("yay!"))
+	// respond event: Some(Resonse("yay!"))
+	// block event: Ok
+
+	// the intended way to do delayed responses is with aysnc code
+	// so that the block event doesn't fire before the respond event
 }
 
 const handler = (ctx) => {
 	ctx.resp(new Response("yay!"))
-	// handle event: Some(Resonse("yay!"))
+	// respond event: Some(Resonse("yay!"))
 	// middlewarectx.next() promise resolves here
 	ctx.ok()
 	// block event: Ok
@@ -224,7 +232,8 @@ const handler = (ctx) => {
 	throw new Error("Happens after block event")
 
 	// this error is caught and warned but otherwise ignored
-	// as .ok() basically tells wooter to leave the handler alone
+	// as .ok() basically tells wooter that the handler is done
+	// and anything that happens afterward should be ignored
 }
 
 const app = wooter.build()
