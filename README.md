@@ -4,8 +4,8 @@
 [![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
 > [!WARNING]
-> This is the WIP version 3 branch of an already WIP library.
-> This code is very unstable and should not be used in production.
+> This is the WIP version 3 branch of an already WIP library. This code is very
+> unstable and should not be used in production.
 
 > [!WARNING]
 > wooter is beta & WIP, the main features are implemented but there are some
@@ -64,11 +64,3 @@ wooter.route.GET(c.chemin("after"), async ({ err, resp }) => {
 
 export default wooter
 ```
-
-## Experimental v3 API
-
-### Changes
-
-#### `event` -> `context`
-
-Events are now called Context, and there are a few changes being made to the way that

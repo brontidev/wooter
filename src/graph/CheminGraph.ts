@@ -1,4 +1,4 @@
-import { TChemin } from "../export/chemin.ts"
+import type { TChemin } from "@/export/chemin.ts"
 import { InheritableCheminGraph } from "./InheritableCheminGraph.ts"
 
 /**
