@@ -1,18 +1,32 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@bronti/wooter@1.3.6": "1.3.6",
     "jsr:@dldc/chemin@13": "13.0.0",
+    "jsr:@dldc/chemin@^12.0.1": "12.0.1",
     "jsr:@oxi/core@~0.2.1": "0.2.1",
     "jsr:@oxi/option@0.2": "0.2.0",
     "jsr:@oxi/result@~0.3.1": "0.3.1",
+    "jsr:@rubiks/rubiks@1.2.9": "1.2.9",
     "jsr:@std/assert@*": "1.0.11",
     "jsr:@std/assert@^1.0.10": "1.0.11",
     "jsr:@std/async@*": "1.0.10",
     "jsr:@std/internal@^1.0.5": "1.0.5",
     "jsr:@std/jsonc@*": "1.0.1",
-    "jsr:@std/testing@*": "1.0.9"
+    "jsr:@std/testing@*": "1.0.9",
+    "npm:cookie@*": "1.0.2",
+    "npm:zod@*": "4.0.17"
   },
   "jsr": {
+    "@bronti/wooter@1.3.6": {
+      "integrity": "d9c3af9889d7b89d5765c61931ff041380ff941acd8e9570c6365beb31d71697",
+      "dependencies": [
+        "jsr:@dldc/chemin@^12.0.1"
+      ]
+    },
+    "@dldc/chemin@12.0.1": {
+      "integrity": "f1f97bab51732c825d89f7788e07e2b9875c41f95393809309def9b157034115"
+    },
     "@dldc/chemin@13.0.0": {
       "integrity": "fc0f15be726afd6daeea1e0d4be60086cca693a15f95bc612bfbf3b9839b7d2f"
     },
@@ -30,6 +44,9 @@
       "dependencies": [
         "jsr:@oxi/core"
       ]
+    },
+    "@rubiks/rubiks@1.2.9": {
+      "integrity": "da3d1a4d5108406c70bbaab010971a6715cbbd63866a5fb062d1ffb942e1117b"
     },
     "@std/assert@1.0.11": {
       "integrity": "2461ef3c368fe88bc60e186e7744a93112f16fd110022e113a0849e94d1c83c1",
@@ -51,6 +68,14 @@
       "dependencies": [
         "jsr:@std/assert@^1.0.10"
       ]
+    }
+  },
+  "npm": {
+    "cookie@1.0.2": {
+      "integrity": "sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA=="
+    },
+    "zod@4.0.17": {
+      "integrity": "sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ=="
     }
   },
   "workspace": {
