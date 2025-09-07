@@ -1,7 +1,7 @@
 # Deno
 
-Wooter was originally designed to be deno-first, and it's the platform where
-it's most tested, and all examples assume deno, unless specified otherwise.
+Wooter was originally designed to be deno-first, and it's the platform where it's most tested, and all examples assume deno,
+unless specified otherwise.
 
 Since wooter is on JSR, you can import it using the `jsr:` specifier:
 

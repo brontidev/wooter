@@ -1,5 +1,5 @@
-import { WooterError } from "./types.ts"
-
+import { WooterError } from "./error.ts"
+export * from "./error.ts"
 /**
  * Checks if a value is an internal wooter error
  * @param v - Value to check

@@ -4,7 +4,11 @@
  * but more of a simplified version of a promise
  */
 export class Channel<T> {
-	protected promise: Promise<T>
+	#promise: Promise<T>
+
+	get promise(): Promise<T> {
+		return this.#promise
+	}
 
 	private resolve: (value: T) => void
 	private _resolved: boolean = false
@@ -15,14 +19,11 @@ export class Channel<T> {
 
 	constructor() {
 		const { promise, resolve } = Promise.withResolvers<T>()
-		this.promise = promise
+		this.#promise = promise
 		this.resolve = resolve
 	}
 
-	push(value: T, _throw?: boolean) {
-		if (this.resolved && _throw) {
-			throw new ChannelAlreadPushedError()
-		}
+	push(value: T) {
 		this.resolve(value)
 		this._resolved = true
 	}
@@ -31,5 +32,3 @@ export class Channel<T> {
 		return this.promise
 	}
 }
-
-export class ChannelAlreadPushedError {}

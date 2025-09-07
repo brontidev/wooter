@@ -1,8 +1,7 @@
 # Routing
 
-wooter uses the [`@dldc/chemin`](https://jsr.io/@dldc/chemin) library to parse
-paths. Chemins are slightly more complex than a string like `/:id`. A chemin is
-constructed using the `chemin` function, provided with the parameters
+wooter uses the [`@dldc/chemin`](https://jsr.io/@dldc/chemin) library to parse paths. Chemins are slightly more complex than a
+string like `/:id`. A chemin is constructed using the `chemin` function, provided with the parameters
 
 wooter exports everything from the supported version of chemin as `c`
 
@@ -24,8 +23,7 @@ $:wooter.get(path, async ({ err }) => err("not implemented"))
 
 Parameters are provided to the route handler via the `params` property
 
-This example uses a middleware that has provides a utility function to process a
-database response, and a route with parameters.
+This example uses a middleware that has provides a utility function to process a database response, and a route with parameters.
 
 ```ts
 import { c, Wooter } from "jsr:@bronti/wooter"
