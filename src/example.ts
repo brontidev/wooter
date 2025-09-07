@@ -211,9 +211,9 @@ const handler = async (ctx) => {
 }
 
 const handler = async (ctx) => {
-    const { resolve, promise } = Promise.withResolvers()
-    someFunctionWithACallback("some data", (...args) => resolve(args))
-    const dataFromCallback = await promise
+	const { resolve, promise } = Promise.withResolvers()
+	someFunctionWithACallback("some data", (...args) => resolve(args))
+	const dataFromCallback = await promise
 	ctx.resp(new Response("yay!"))
 	// respond event: Some(Resonse("yay!"))
 	// block event: Ok

@@ -1,15 +1,14 @@
 {
 	"$schema": "https://github.com/denoland/deno/raw/bc71eb9541567bd7aa8629ea0b83e45ddb1ad807/cli/schemas/config-file.v1.json",
 	"name": "@bronti/wooter",
-	"version": "2.5.8",
+	"version": "3.0.0",
 	"license": "MIT",
 	"exports": {
 		"./chemin": "./src/export/chemin.ts",
-		"./error": "./src/export/error.ts",
-		"./graph": "./src/export/graph.ts",
+		"./option": "./src/export/option.ts",
+		"./result": "./src/export/result.ts",
 		".": "./src/export/index.ts",
-		"./types": "./src/export/types.ts",
-		"./util": "./src/export/util.ts"
+		"./types": "./src/export/types.ts"
 	},
 	"tasks": {
 		"test": "deno test",
@@ -49,7 +48,13 @@
 		"exclude": ["./src/*.test.ts"]
 	},
 	"lint": {
-		"exclude": ["./examples", "./coverage", "./site", "./docs/book"],
+		"exclude": [
+			"./examples",
+			"./coverage",
+			"./site",
+			"./docs/book",
+			"./src/*example.ts"
+		],
 		"rules": {
 			"exclude": ["no-this-alias"]
 		}
@@ -58,6 +63,12 @@
 		"semiColons": false,
 		"useTabs": true,
 		"indentWidth": 4,
-		"exclude": ["./coverage", "./site", "./docs/book"]
+		"exclude": [
+			"./coverage",
+			"./site",
+			"./docs/book",
+			"./src/example.ts",
+			"./src/*example.ts"
+		]
 	}
 }

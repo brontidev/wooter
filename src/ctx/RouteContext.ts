@@ -1,8 +1,9 @@
-import { Err, Ok, Result } from "@oxi/result"
+import { Err, Ok, type Result } from "@oxi/result"
 import { None, type Option, Some } from "@oxi/option"
-import type { Data, Params } from "../export/types.ts"
+import { type Data, type Params, WooterError } from "../export/types.ts"
+import { Channel, ChannelAlreadPushedError } from "./Channel.ts"
 
-export class HandlerDidntRespondERR extends Error {
+export class HandlerDidntRespondERR extends WooterError {
 	constructor() {
 		super("The handler must respond before exiting.")
 	}
@@ -11,67 +12,116 @@ export class HandlerDidntRespondERR extends Error {
 export const RouteContext__block = Symbol("RouteContext__block")
 export const RouteContext__respond = Symbol("RouteContext__respond")
 
-export class RouteContext<TParams extends Params, TData extends Data> {
-	protected block = new Channel<Result<null, unknown>>()
-	protected respond = new Channel<Option<Response>>()
+/**
+ * Context class passed into route handlers
+ */
+export default class RouteContext<
+	TParams extends Params = Params,
+	TData extends Data = Data,
+> {
+	/**
+	 * @internal
+	 */
+	protected blockChannel: Channel<Result<null, unknown>> = new Channel()
+	/**
+	 * @internal
+	 */
+	protected respondChannel: Channel<Option<Response>> = new Channel()
 
-	get [RouteContext__block]() {
-		return this.block.wait()
+	/**
+	 * @internal
+	 */
+	get [RouteContext__block](): RouteContext["blockChannel"]["promise"] {
+		return this.blockChannel.wait()
 	}
 
-	get [RouteContext__respond]() {
-		return this.respond.wait()
+	/**
+	 * @internal
+	 */
+	get [RouteContext__respond](): RouteContext["respondChannel"]["promise"] {
+		return this.respondChannel.wait()
 	}
 
+	/**
+	 * Request URL
+	 */
 	readonly url: URL
 
+	/**
+	 * @internal
+	 */
 	constructor(
+		/**
+		 * Request object
+		 */
 		readonly request: Request,
+		/**
+		 * Middleware data
+		 */
 		readonly data: TData,
+		/**
+		 * Route parameters
+		 */
 		readonly params: TParams,
 	) {
 		this.url = new URL(request.url)
 	}
 
+	/**
+	 * @internal
+	 */
 	protected err(err: unknown) {
 		try {
-			this.respond.push(None, true)
+			this.respondChannel.push(None, true)
 		} catch (e) {
-			if (e instanceof EventAlreadyPushedError) {
+			if (e instanceof ChannelAlreadPushedError) {
 				console.warn(err)
 			}
 		}
-		this.block.push(Err(err), false)
+		this.blockChannel.push(Err(err), false)
 	}
 
-	ok() {
-		this.block.push(Ok(null), false)
+	/**
+	 * [advanced]
+	 *
+	 * Ends the handler (stops error catching)
+	 * This is the equivalent of resolving the handler promise
+	 */
+	readonly ok = (): void => {
+		this.blockChannel.push(Ok(null), false)
 	}
 
-	resp(response: Response): Response {
+	/**
+	 * Responds to the request
+	 * @returns Response
+	 */
+	readonly resp = (response: Response): Response => {
 		try {
-			this.respond.push(Some(response))
+			this.respondChannel.push(Some(response))
 		} catch (e) {
-			if (e instanceof EventAlreadyPushedError) {
+			if (e instanceof ChannelAlreadPushedError) {
 				console.warn("resp() called multiple times")
 			}
 		}
 		return response
 	}
 
+	/**
+	 * @internal
+	 */
 	static useRouteHandler(
 		handler: RouteHandler,
 		params: Params,
-	): (data: Data, request: Request) => RouteContext<Params, Data> {
+	): InternalHandler {
 		return (data, req) => {
 			const ctx = new RouteContext(req, data, params)
 			console.log("[useRouteHandler] handler started")
-			ctx[RouteContext__respond].then(r => {
-			    console.log("[useRouteHandler] handler responded", r.toString())
+			ctx[RouteContext__respond].then((r) => {
+				console.log("[useRouteHandler] handler responded", r.toString())
 			})
 			handler(ctx).then(() => {
 				console.log("[useRouteHandler] handler resolved")
-				if (ctx.respond.resolved) {
+				if (ctx.respondChannel.resolved) {
 					console.log(
 						"[useRouteHandler] handler has resolved AND responded, sending `ok`",
 					)
@@ -86,50 +136,19 @@ export class RouteContext<TParams extends Params, TData extends Data> {
 				console.log("[useRouteHandler] handler errored", err)
 				ctx.err(err)
 			})
-			return ctx;
+			return ctx
 		}
 	}
 }
 
-type RouteHandler<TParams extends Params = Params, TData extends Data = Data> =
-	(ctx: RouteContext<TParams, TData>) => Promise<void>
+export type InternalHandler = (data: Data, request: Request) => RouteContext
 
 /**
- * For the purposes of wooter,
- * This is not much of a channel
- * but more of a simplified version of a promise
+ * Route handler
+ *
+ * @param ctx - Route context
  */
-class Channel<T> {
-	protected promise: Promise<T>
-
-	private resolve: (value: T) => void
-	#resolved: boolean = false
-
-	get resolved() {
-		return this.#resolved
-	}
-
-	private set resolved(value: boolean) {
-		this.#resolved = value
-	}
-
-	constructor() {
-		const { promise, resolve } = Promise.withResolvers<T>()
-		this.promise = promise
-		this.resolve = resolve
-	}
-
-	push(value: T, _throw?: boolean) {
-		if (this.resolved && _throw) {
-			throw new EventAlreadyPushedError()
-		}
-		this.resolve(value)
-		this.resolved = true
-	}
-
-	wait(): Promise<T> {
-		return this.promise
-	}
-}
-
-class EventAlreadyPushedError {}
+export type RouteHandler<
+	TParams extends Params = Params,
+	TData extends Data = Data,
+> = (ctx: RouteContext<TParams, TData>) => Promise<unknown>
