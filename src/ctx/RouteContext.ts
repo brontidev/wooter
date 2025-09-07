@@ -1,20 +1,23 @@
 import { Err, Ok, type Result } from "@oxi/result"
 import { None, type Option, Some } from "@oxi/option"
-import { type Data, type Params, WooterError } from "../export/types.ts"
-import { Channel, ChannelAlreadPushedError } from "./Channel.ts"
+import type { Data, Params } from "../export/types.ts"
+import { Channel } from "./Channel.ts"
+import { WooterError } from "../export/error.ts"
 
-export class HandlerDidntRespondERR extends WooterError {
+/**
+ * The handler must respond before exiting
+ */
+export class HandlerDidntRespondError extends WooterError {
+	/** name */
+	override name: string = "HandlerDidntRespondError"
+
 	constructor() {
-		super("The handler must respond before exiting.")
+		super("The handler must respond before exiting")
 	}
 }
 
 export const RouteContext__block = Symbol("RouteContext__block")
 export const RouteContext__respond = Symbol("RouteContext__respond")
-export const RouteContext__block_channel = Symbol("RouteContext__block_channel")
-export const RouteContext__respond_channel = Symbol(
-	"RouteContext__respond_channel",
-)
 
 /**
  * Context class passed into route handlers
@@ -35,29 +38,15 @@ export default class RouteContext<
 	/**
 	 * @internal
 	 */
-	get [RouteContext__block_channel]() {
+	get [RouteContext__block](): RouteContext["blockChannel"] {
 		return this.blockChannel
 	}
 
 	/**
 	 * @internal
 	 */
-	get [RouteContext__respond_channel]() {
+	get [RouteContext__respond](): RouteContext["respondChannel"] {
 		return this.respondChannel
-	}
-
-	/**
-	 * @internal
-	 */
-	get [RouteContext__block](): RouteContext["blockChannel"]["promise"] {
-		return this.blockChannel.wait()
-	}
-
-	/**
-	 * @internal
-	 */
-	get [RouteContext__respond](): RouteContext["respondChannel"]["promise"] {
-		return this.respondChannel.wait()
 	}
 
 	/**
@@ -89,14 +78,8 @@ export default class RouteContext<
 	 * @internal
 	 */
 	protected err(err: unknown) {
-		try {
-			this.respondChannel.push(None, true)
-		} catch (e) {
-			if (e instanceof ChannelAlreadPushedError) {
-				console.warn(err)
-			}
-		}
-		this.blockChannel.push(Err(err), false)
+		this.respondChannel.push(None)
+		this.blockChannel.push(Err(err))
 	}
 
 	/**
@@ -106,7 +89,7 @@ export default class RouteContext<
 	 * This is the equivalent of resolving the handler promise
 	 */
 	readonly ok = (): void => {
-		this.blockChannel.push(Ok(null), false)
+		this.blockChannel.push(Ok(null))
 	}
 
 	/**
@@ -114,13 +97,10 @@ export default class RouteContext<
 	 * @returns Response
 	 */
 	readonly resp = (response: Response): Response => {
-		try {
-			this.respondChannel.push(Some(response))
-		} catch (e) {
-			if (e instanceof ChannelAlreadPushedError) {
-				console.warn("resp() called multiple times")
-			}
+		if (this.respondChannel.resolved) {
+			throw ("resp() called multiple times")
 		}
+		this.respondChannel.push(Some(response))
 		return response
 	}
 
@@ -134,11 +114,9 @@ export default class RouteContext<
 		return (data, req) => {
 			const ctx = new RouteContext(req, data, params)
 			handler(ctx).then(() => {
-				if (ctx.respondChannel.resolved) {
-					ctx.ok()
-				} else {
-					ctx.err(new HandlerDidntRespondERR())
-				}
+				if (ctx.blockChannel.resolved) return
+				if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
+				ctx.ok()
 			}, (err) => {
 				ctx.err(err)
 			})

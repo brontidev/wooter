@@ -1,12 +1,26 @@
 import type { Option } from "@oxi/option"
 import type { Data, Params } from "../export/types.ts"
 import RouteContext, {
-	HandlerDidntRespondERR,
+	HandlerDidntRespondError,
 	type InternalHandler,
 	RouteContext__block,
 	RouteContext__respond,
 } from "./RouteContext.ts"
 import type { Result } from "@oxi/result"
+import { WooterError } from "../export/error.ts"
+
+/**
+ * The middleware handler must call ctx.next() before exiting
+ */
+export class MiddlewareHandlerDidntCallUpError extends WooterError {
+	/** name */
+
+	override name: string = "MiddlewareHandlerDidntCallUpError"
+
+	constructor() {
+		super("The middleware handler must call ctx.next() before exiting")
+	}
+}
 
 /**
  * Context class passed into middleware handlers
@@ -15,8 +29,9 @@ export default class MiddlewareContext<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 	TNextData extends Data = Data,
-> extends RouteContext {
+> extends RouteContext<TParams, TData> {
 	#nextCtx?: RouteContext
+	#blockCalled: boolean = false
 
 	/**
 	 * @internal
@@ -30,7 +45,7 @@ export default class MiddlewareContext<
 			request: Request,
 		) => RouteContext,
 	) {
-		super(request, params, data)
+		super(request, data, params)
 	}
 
 	/**
@@ -51,7 +66,7 @@ export default class MiddlewareContext<
 			request || this.request,
 		)
 		this.#nextCtx = ctx
-		return ctx[RouteContext__respond]
+		return ctx[RouteContext__respond].promise
 	}
 
 	/**
@@ -60,13 +75,14 @@ export default class MiddlewareContext<
 	 * assuming the handler has already been started
 	 * @returns Result containing nothing, or an error
 	 */
-	readonly block = (): Promise<Result<null, unknown>> => {
+	readonly block = async (): Promise<Result<null, unknown>> => {
 		if (!this.#nextCtx) {
 			throw new Error(
 				"middleware attempted to await handler resolution before .next()",
 			)
 		}
-		return this.#nextCtx[RouteContext__block]
+		this.#blockCalled = true
+		return await this.#nextCtx[RouteContext__block].promise
 	}
 
 	/**
@@ -78,14 +94,13 @@ export default class MiddlewareContext<
 		next: InternalHandler,
 	): InternalHandler {
 		return (data, req) => {
-    		console.log(handler)
 			const ctx = new MiddlewareContext(req, data, params, next)
 			handler(ctx).then(() => {
-				if (ctx.respondChannel.resolved) {
-					ctx.ok()
-				} else {
-					ctx.err(new HandlerDidntRespondERR())
-				}
+				if (ctx.blockChannel.resolved) return
+				if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
+				if (!ctx.#blockCalled) return ctx.#nextCtx[RouteContext__block].promise.then((r) => ctx.blockChannel.push(r))
+				if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
+				ctx.ok()
 			}, (err) => {
 				ctx.err(err)
 			})
@@ -108,8 +123,7 @@ export default class MiddlewareContext<
 	readonly pass = async (
 		data?: TNextData,
 		request?: Request,
-	): Promise<Option<Response>> =>
-		(await this.next(data, request)).map((r) => this.resp(r))
+	): Promise<Option<Response>> => (await this.next(data, request)).map((r) => this.resp(r))
 
 	/**
 	 * Runs handler, waits for response and re-throws any errors

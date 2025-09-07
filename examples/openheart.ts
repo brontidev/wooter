@@ -72,9 +72,7 @@ db.listenQueue(
 		const res = await tx.commit()
 		if (!res.ok) {
 			console.warn(
-				`failed to increment: ${
-					key.join(" ")
-				} for the second time, quitting`,
+				`failed to increment: ${key.join(" ")} for the second time, quitting`,
 			)
 		} else {
 			console.info(`incremented ${key.join(" ")}`)
@@ -111,9 +109,7 @@ wooter.namespace(
 			async ({ resp, params: { _domain, uid } }) => {
 				const domain = encodeURI(_domain)
 				const kvList = db.list<number>({
-					prefix: uid.length
-						? keys.uid(domain, uid.join("/"))
-						: keys.domain(domain),
+					prefix: uid.length ? keys.uid(domain, uid.join("/")) : keys.domain(domain),
 				})
 
 				resp(
