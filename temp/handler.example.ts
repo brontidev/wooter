@@ -1,21 +1,7 @@
 import RouteContext, {
 	RouteContext__block,
 	RouteContext__respond,
-} from "./ctx/RouteContext.ts"
-import type { Data, Params } from "./export/types.ts"
-
-const wait = async (ms: number) => {
-	const { resolve, promise } = Promise.withResolvers()
-	setTimeout(resolve, ms)
-	return promise
-}
-
-function someFunctionWithACallback(
-	data: string,
-	callback: (data: string, dataAgain: string) => void,
-) {
-	callback(data, "some other data")
-}
+} from "@/ctx/RouteContext.ts"
 
 const handler = RouteContext.useRouteHandler(async (ctx) => {
 	ctx.resp(new Response("yay!"))

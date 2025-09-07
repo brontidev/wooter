@@ -25,7 +25,7 @@ export class CheminGraph<
 	 * @param path Chemin to match
 	 * @param node Node
 	 */
-	override pushNode(path: TChemin, node: Node): void {
-		super.pushNode(path, node)
+	override addNode(path: TChemin, node: Node): void {
+		super.addNode(path, node)
 	}
 }

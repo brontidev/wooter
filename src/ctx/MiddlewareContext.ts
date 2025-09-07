@@ -78,28 +78,15 @@ export default class MiddlewareContext<
 		next: InternalHandler,
 	): InternalHandler {
 		return (data, req) => {
+    		console.log(handler)
 			const ctx = new MiddlewareContext(req, data, params, next)
-			ctx[RouteContext__respond].then((r) => {
-				console.log(
-					"[useMiddlewareHandler] handler responded",
-					r.toString(),
-				)
-			})
 			handler(ctx).then(() => {
-				console.log("[useMiddlewareHandler] handler resolved")
 				if (ctx.respondChannel.resolved) {
-					console.log(
-						"[useMiddlewareHandler] handler has resolved AND responded, sending `ok`",
-					)
 					ctx.ok()
 				} else {
-					console.log(
-						"[useMiddlewareHandler] handler has resolved but didn't respond",
-					)
 					ctx.err(new HandlerDidntRespondERR())
 				}
 			}, (err) => {
-				console.log("[useMiddlewareHandler] handler errored", err)
 				ctx.err(err)
 			})
 			return ctx
