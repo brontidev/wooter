@@ -53,7 +53,7 @@
 			"./coverage",
 			"./site",
 			"./docs/book",
-			"./src/*example.ts"
+			"./temp"
 		],
 		"rules": {
 			"exclude": ["no-this-alias"]
@@ -63,12 +63,12 @@
 		"semiColons": false,
 		"useTabs": true,
 		"indentWidth": 4,
+		"lineWidth": 130,
 		"exclude": [
 			"./coverage",
 			"./site",
 			"./docs/book",
-			"./src/example.ts",
-			"./src/*example.ts"
+			"./temp"
 		]
 	}
 }
