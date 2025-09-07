@@ -30,3 +30,4 @@ export type Merge<L, R> = Id<
 	& Pick<R, Exclude<keyof R, OptionalPropertyNames<R>>>
 	& Pick<R, Exclude<OptionalPropertyNames<R>, keyof L>>
 	& SpreadProperties<L, R, OptionalPropertyNames<R> & keyof L>
+>
