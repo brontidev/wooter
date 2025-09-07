@@ -1,13 +1,11 @@
 # Handling
 
-Wooter uses 2 promises to when handling a response, one for the response itself,
-and one for the function call of the handler or middleware. This is useful for
-things like logging, or sending extra data after the response is sent.
+Wooter uses 2 promises to when handling a response, one for the response itself, and one for the function call of the handler or
+middleware. This is useful for things like logging, or sending extra data after the response is sent.
 
-The response promise will resolve or reject when either the `resp` or `err`
-function from the [`RouteEvent`](https://jsr.io/@bronti/wooter/doc/~/RouteEvent)
-is called. `err` is mainly for intentionally erroring out, such as custom error
-classes, or repropagating caught errors.
+The response promise will resolve or reject when either the `resp` or `err` function from the
+[`RouteEvent`](https://jsr.io/@bronti/wooter/doc/~/RouteEvent) is called. `err` is mainly for intentionally erroring out, such as
+custom error classes, or repropagating caught errors.
 
 ```ts
 $: import { Wooter, c } from "jsr:@bronti/wooter";
@@ -80,8 +78,7 @@ $: export default app;
 
 # Namespaces
 
-Namespaces are a way to group routes together. You can use `.namespace` to
-create a namespace.
+Namespaces are a way to group routes together. You can use `.namespace` to create a namespace.
 
 ```ts
 $: import { Wooter, c } from "jsr:@bronti/wooter";

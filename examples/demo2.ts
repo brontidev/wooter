@@ -3,12 +3,7 @@
 import { Wooter } from "../src/export/index.ts"
 import { errorResponse, redirectResponse } from "../src/export/util.ts"
 import { chemin, pNumber } from "../src/export/chemin.ts"
-import {
-	parse,
-	type ParseOptions,
-	serialize,
-	type SerializeOptions,
-} from "npm:cookie"
+import { parse, type ParseOptions, serialize, type SerializeOptions } from "npm:cookie"
 
 export class Redirect {
 	status: number
@@ -85,9 +80,7 @@ const wooter = new Wooter()
 
 		// Get all cookies that were set during request handling
 		const newCookies = Object.entries(cookieMap)
-			.filter(([_, value]) =>
-				typeof value === "object" && "name" in value
-			)
+			.filter(([_, value]) => typeof value === "object" && "name" in value)
 			.filter(([_, cookie]) =>
 				cookie && typeof cookie === "object" && "name" in cookie &&
 				"value" in cookie

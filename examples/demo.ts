@@ -1,11 +1,7 @@
 // this is a simple example of wooter derived from the [oak example](https://github.com/oakserver/acorn/blob/main/_examples/server.ts)
 
 import { Wooter } from "../src/export/index.ts"
-import {
-	errorResponse,
-	fixLocation,
-	redirectResponse,
-} from "../src/export/util.ts"
+import { errorResponse, fixLocation, redirectResponse } from "../src/export/util.ts"
 import { chemin, pNumber } from "../src/export/chemin.ts" // "@ts-rex/wooter/chemin"
 
 import { parse, serialize, type SerializeOptions } from "npm:cookie"
@@ -71,8 +67,7 @@ const wooter = new Wooter()
 		> = new Map()
 
 		const cookies: Cookies = {
-			get: (name: string) =>
-				cookieMap.get(name)?.value ?? parsedCookies[name],
+			get: (name: string) => cookieMap.get(name)?.value ?? parsedCookies[name],
 			getAll: () =>
 				Object.fromEntries(
 					Object.entries(parsedCookies).concat(

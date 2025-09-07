@@ -1,8 +1,4 @@
-import {
-	matchExact as matchCheminExact,
-	splitPathname,
-	type TChemin,
-} from "@/export/chemin.ts"
+import { matchExact as matchCheminExact, splitPathname, type TChemin } from "@/export/chemin.ts"
 
 /**
  * A chemin based graph that will match nodes to a pathname
@@ -41,9 +37,7 @@ export class InheritableCheminGraph<
 		pathname: string | string[],
 		data: FindData,
 	): { params: unknown; node: Node } | undefined {
-		const pathParts = Array.isArray(pathname)
-			? pathname
-			: splitPathname(pathname)
+		const pathParts = Array.isArray(pathname) ? pathname : splitPathname(pathname)
 
 		for (const { node, path } of this.nodes) {
 			if (!this.dataMatcher(node, data)) continue

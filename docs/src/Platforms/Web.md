@@ -1,9 +1,8 @@
 # Wooter on Web
 
-Wooter can also work on the browser since it doesn't include http server logic.
-This is useful for an Single-Page app, or Progressive Web App. In this example,
-we'll use a service worker to modify the `fetch` function to create a global API
-without polluting the global scope.
+Wooter can also work on the browser since it doesn't include http server logic. This is useful for an Single-Page app, or
+Progressive Web App. In this example, we'll use a service worker to modify the `fetch` function to create a global API without
+polluting the global scope.
 
 ```ts
 // service-worker.js
