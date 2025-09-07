@@ -1,11 +1,11 @@
-import MiddlewareContext from "./ctx/MiddlewareContext.ts"
+import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 import RouteContext, {
 	RouteContext__block,
 	RouteContext__respond,
 	type RouteHandler,
-} from "./ctx/RouteContext.ts"
+} from "@/ctx/RouteContext.ts"
 import { parse, serialize, type SerializeOptions } from "npm:cookie"
-import type { Params } from "./export/types.ts"
+import type { Params } from "@/export/types.ts"
 
 const handlerInput: RouteHandler<Params, { cookies: Cookies }> = async (
 	ctx,
@@ -24,7 +24,7 @@ type Cookies = {
 }
 
 const middlewareHandler = MiddlewareContext.useMiddlewareHandler(
-	async ({ request, unwrap, resp, next }) => {
+	async ({ request, unwrap, resp }) => {
 		const cookieHeader = request.headers.get("cookie") || ""
 		const parsedCookies = parse(cookieHeader)
 		const cookieMap: Record<
