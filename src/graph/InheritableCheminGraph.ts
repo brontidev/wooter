@@ -27,7 +27,7 @@ export class InheritableCheminGraph<
 	 * @param path Chemin to match
 	 * @param node Node
 	 */
-	protected pushNode(path: TChemin, node: Node) {
+	protected addNode(path: TChemin, node: Node) {
 		this.nodes.add({ path, node })
 	}
 

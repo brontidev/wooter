@@ -11,6 +11,10 @@ export class HandlerDidntRespondERR extends WooterError {
 
 export const RouteContext__block = Symbol("RouteContext__block")
 export const RouteContext__respond = Symbol("RouteContext__respond")
+export const RouteContext__block_channel = Symbol("RouteContext__block_channel")
+export const RouteContext__respond_channel = Symbol(
+	"RouteContext__respond_channel",
+)
 
 /**
  * Context class passed into route handlers
@@ -27,6 +31,20 @@ export default class RouteContext<
 	 * @internal
 	 */
 	protected respondChannel: Channel<Option<Response>> = new Channel()
+
+	/**
+	 * @internal
+	 */
+	get [RouteContext__block_channel]() {
+		return this.blockChannel
+	}
+
+	/**
+	 * @internal
+	 */
+	get [RouteContext__respond_channel]() {
+		return this.respondChannel
+	}
 
 	/**
 	 * @internal
@@ -115,25 +133,13 @@ export default class RouteContext<
 	): InternalHandler {
 		return (data, req) => {
 			const ctx = new RouteContext(req, data, params)
-			console.log("[useRouteHandler] handler started")
-			ctx[RouteContext__respond].then((r) => {
-				console.log("[useRouteHandler] handler responded", r.toString())
-			})
 			handler(ctx).then(() => {
-				console.log("[useRouteHandler] handler resolved")
 				if (ctx.respondChannel.resolved) {
-					console.log(
-						"[useRouteHandler] handler has resolved AND responded, sending `ok`",
-					)
 					ctx.ok()
 				} else {
-					console.log(
-						"[useRouteHandler] handler has resolved but didn't respond",
-					)
 					ctx.err(new HandlerDidntRespondERR())
 				}
 			}, (err) => {
-				console.log("[useRouteHandler] handler errored", err)
 				ctx.err(err)
 			})
 			return ctx
