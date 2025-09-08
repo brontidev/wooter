@@ -8,13 +8,13 @@ import { Err } from "@/export/result.ts"
 
 const graph = new RouterGraph()
 
-graph.addRoute(c.chemin(), {
+graph.addRouteHandlers(c.chemin(), {
 	GET: async ({ resp }) => {
 		resp(new Response("Hello World"))
 	},
 })
 
-graph.addRoute(c.chemin("1"), {
+graph.addRouteHandlers(c.chemin("1"), {
 	GET: async (ctx) => {
 		// This handler errors out before returning a response
 
@@ -24,7 +24,7 @@ graph.addRoute(c.chemin("1"), {
 	},
 })
 
-graph.addRoute(c.chemin("2"), {
+graph.addRouteHandlers(c.chemin("2"), {
 	GET: async (ctx) => {
 		ctx.resp(new Response("yay!"))
 		// respond event: Some(Resonse("yay!"))
@@ -32,7 +32,7 @@ graph.addRoute(c.chemin("2"), {
 	},
 })
 
-graph.addRoute(c.chemin("3"), {
+graph.addRouteHandlers(c.chemin("3"), {
 	GET: async (ctx) => {
 		ctx.resp(new Response("yay!"))
 		// respond event: Some(Resonse("yay!"))
@@ -50,7 +50,7 @@ graph.addRoute(c.chemin("3"), {
 	},
 })
 
-graph.addRoute(c.chemin("4"), {
+graph.addRouteHandlers(c.chemin("4"), {
 	GET: async (ctx) => {
 		// respond event: None
 		// block event: Err(HandlerDidntRespond)
@@ -61,7 +61,7 @@ graph.addRoute(c.chemin("4"), {
 	},
 })
 
-graph.addRoute(c.chemin("5"), {
+graph.addRouteHandlers(c.chemin("5"), {
 	GET: async (ctx) => {
 		setTimeout(() => {
 			ctx.resp(new Response("yay!"))
@@ -78,7 +78,7 @@ graph.addRoute(c.chemin("5"), {
 	},
 })
 
-graph.addRoute(c.chemin("6"), {
+graph.addRouteHandlers(c.chemin("6"), {
 	GET: async (ctx) => {
 		const { resolve, promise } = Promise.withResolvers()
 		setTimeout(resolve, 300)
