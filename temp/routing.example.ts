@@ -9,13 +9,13 @@ import { Err } from "@/export/result.ts"
 const graph = new RouterGraph()
 
 graph.addRoute(c.chemin(), {
-	get: async ({ resp }) => {
+	GET: async ({ resp }) => {
 		resp(new Response("Hello World"))
 	},
 })
 
 graph.addRoute(c.chemin("1"), {
-	get: async (ctx) => {
+	GET: async (ctx) => {
 		// This handler errors out before returning a response
 
 		throw new Error("oh something weird happened")
@@ -25,7 +25,7 @@ graph.addRoute(c.chemin("1"), {
 })
 
 graph.addRoute(c.chemin("2"), {
-	get: async (ctx) => {
+	GET: async (ctx) => {
 		ctx.resp(new Response("yay!"))
 		// respond event: Some(Resonse("yay!"))
 		// block event: Ok
@@ -33,7 +33,7 @@ graph.addRoute(c.chemin("2"), {
 })
 
 graph.addRoute(c.chemin("3"), {
-	get: async (ctx) => {
+	GET: async (ctx) => {
 		ctx.resp(new Response("yay!"))
 		// respond event: Some(Resonse("yay!"))
 		// middlewarectx.next() promise resolves here
@@ -51,7 +51,7 @@ graph.addRoute(c.chemin("3"), {
 })
 
 graph.addRoute(c.chemin("4"), {
-	get: async (ctx) => {
+	GET: async (ctx) => {
 		// respond event: None
 		// block event: Err(HandlerDidntRespond)
 
@@ -62,7 +62,7 @@ graph.addRoute(c.chemin("4"), {
 })
 
 graph.addRoute(c.chemin("5"), {
-	get: async (ctx) => {
+	GET: async (ctx) => {
 		setTimeout(() => {
 			ctx.resp(new Response("yay!"))
 			// 4. (cancelled) respond event: Response("yay!")
@@ -79,7 +79,7 @@ graph.addRoute(c.chemin("5"), {
 })
 
 graph.addRoute(c.chemin("6"), {
-	get: async (ctx) => {
+	GET: async (ctx) => {
 		const { resolve, promise } = Promise.withResolvers()
 		setTimeout(resolve, 300)
 		await promise
@@ -96,7 +96,7 @@ graph.addMiddleware(async ({ unwrapAndRespond }) => {
 	console.log("in middleware", await unwrapAndRespond())
 })
 
-// const handler = graph.getHandler("", "GET")
+// const handler = graph.GETHandler("", "GET")
 // const ctx = handler!({}, new Request("http://localhost:3000/", { method: "GET" }))
 // ctx[RouteContext__respond].then((v) =>
 // 	console.log("respond event: ", v.toString())

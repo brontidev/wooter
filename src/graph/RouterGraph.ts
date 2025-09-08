@@ -1,5 +1,5 @@
 import type { TChemin } from "@dldc/chemin"
-import type { Data, MiddlewareHandler, Params, RouteHandler } from "../export/types.ts"
+import type { Methods, MiddlewareHandler, Params, RouteHandler } from "../export/types.ts"
 import { InheritableCheminGraph } from "./InheritableCheminGraph.ts"
 import type { InternalHandler } from "../ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
@@ -12,7 +12,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 	private middleware = new Set<MiddlewareHandler>()
 
 	constructor() {
-		super((node, [method]) => node.handlers.has(method.toLowerCase() as Lowercase<string>))
+		super((node, [method]) => node.handlers.has(method))
 	}
 
 	addMiddleware(middleware: MiddlewareHandler): void {
@@ -24,11 +24,11 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		handlers:
 			& Partial<
 				Record<
-					"get" | "put" | "post" | "patch" | "delete",
+					Methods,
 					RouteHandler
 				>
 			>
-			& Record<Lowercase<string>, RouteHandler>,
+			& Record<Uppercase<string>, RouteHandler>,
 	) {
 		super.addNode(path, {
 			handlers: new Map(
@@ -64,7 +64,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 	}
 
 	getHandler(pathname: string, method: string): InternalHandler | undefined {
-		method = method.toLowerCase()
+		method = method.toUpperCase()
 		const definition = super.getNode(pathname, [method])
 		if (!definition) return undefined
 		const handler = definition.node.handlers.get(method)
