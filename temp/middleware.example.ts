@@ -10,7 +10,7 @@ import type { Params } from "@/export/types.ts"
 const handlerInput: RouteHandler<Params, { cookies: Cookies }> = async (
 	ctx,
 ) => {
-	ctx.data.cookies.set("hi", "hello")
+	ctx.data.get("cookies").set("hi", "hello")
 	ctx.resp(new Response(await ctx.request.text()))
 }
 // @ts-ignore: idc
@@ -84,7 +84,7 @@ const ctx = middlewareHandler(
 	{},
 	new Request("http://localhost:3000", { method: "POST", body: "hi" }),
 )
-const response = ctx[RouteContext__respond]
-ctx[RouteContext__block].then((v) => console.log("block event: ", v.toString()))
+const response = ctx[RouteContext__respond].promise
+ctx[RouteContext__block].promise.then((v) => console.log("block event: ", v.toString()))
 console.log((await response).unwrap())
 console.log(await (await response).unwrap().text())
