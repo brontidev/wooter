@@ -3,6 +3,7 @@ import { None, type Option, Some } from "@oxi/option"
 import type { Data, Params } from "../export/types.ts"
 import { Channel } from "./Channel.ts"
 import { WooterError } from "../export/error.ts"
+import TypedMap from "../TypedMap.ts"
 
 /**
  * The handler must respond before exiting
@@ -26,6 +27,23 @@ export default class RouteContext<
 	TParams extends Params = Params,
 	TData extends Data = Data,
 > {
+	#data: TypedMap<TData>
+	#params: TypedMap<TParams>
+
+	/**
+	 * Middleware data
+	 */
+	get data(): TypedMap<TData> {
+		return this.#data
+	}
+
+	/**
+	 * Route parameters
+	 */
+	get params(): TypedMap<TParams> {
+		return this.#params
+	}
+
 	/**
 	 * @internal
 	 */
@@ -62,16 +80,12 @@ export default class RouteContext<
 		 * Request object
 		 */
 		readonly request: Request,
-		/**
-		 * Middleware data
-		 */
-		readonly data: TData,
-		/**
-		 * Route parameters
-		 */
-		readonly params: TParams,
+		data: TData,
+		params: TParams,
 	) {
 		this.url = new URL(request.url)
+		this.#data = new TypedMap(data)
+		this.#params = new TypedMap(params)
 	}
 
 	/**

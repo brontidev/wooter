@@ -24,7 +24,7 @@
 			"dependencies": ["lint_jsdoc", "dry_publish"]
 		},
 		"check:format": "deno fmt --check",
-		"check:lint": "deno lint",
+		"check:lint": "deno lint --compact",
 		"fix": {
 			"dependencies": [
 				"fix:format",

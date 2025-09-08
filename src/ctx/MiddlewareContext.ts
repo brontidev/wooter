@@ -38,8 +38,8 @@ export default class MiddlewareContext<
 	 */
 	constructor(
 		override readonly request: Request,
-		override readonly params: TParams,
-		override readonly data: TData,
+		params: TParams,
+		data: TData,
 		private readonly nextHandler: (
 			data: TNextData,
 			request: Request,
