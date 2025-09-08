@@ -10,3 +10,10 @@ export type Data = Record<string, unknown>
 
 export { type default as MiddlewareContext, type MiddlewareHandler } from "../ctx/MiddlewareContext.ts"
 export { type default as RouteContext, type RouteHandler } from "../ctx/RouteContext.ts"
+
+export type { default as TypedMap } from "@/TypedMap.ts"
+
+/**
+ * valid HTTP methods
+ */
+export type Methods = "GET" | "PUT" | "POST" | "PATCH" | "DELETE" | "OPTIONS"
