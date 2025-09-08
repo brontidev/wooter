@@ -1,43 +1,86 @@
 import type { TChemin } from "@dldc/chemin"
-import type { Methods, MiddlewareHandler, Params, RouteHandler } from "../export/types.ts"
+import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@/export/types.ts"
 import { InheritableCheminGraph } from "./InheritableCheminGraph.ts"
-import type { InternalHandler } from "../ctx/RouteContext.ts"
+import type { InternalHandler } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
+import c, { partialMatch } from "@/export/chemin.ts"
 
-type Node = {
-	handlers: Map<string, RouteHandler>
-}
+export type MethodDefinitionInput = Methods | Uppercase<string> | Methods[] | Uppercase<string>[] | "*"
+
+export type MethodDefinitions<TParams extends Params, TData extends Data> =
+	& Partial<Record<Methods, RouteHandler<TParams, TData>>>
+	& Record<Uppercase<string>, RouteHandler<TParams, TData>>
+
+type Node =
+	| {
+		t: 0
+		handlers: Map<string, RouteHandler>
+	}
+	| { t: 1; handler: RouteHandler }
+	| { t: 2; handler: RouteHandler; methods: Set<string> }
 
 export default class RouterGraph extends InheritableCheminGraph<Node, [method: string]> {
 	private middleware = new Set<MiddlewareHandler>()
+	private namespaces = new Set<RouterGraph>()
 
-	constructor() {
-		super((node, [method]) => node.handlers.has(method))
+	constructor(private basePath: TChemin) {
+		super((node, [method]) => {
+			if (node.t === 0) {
+				return node.handlers.has(method)
+			} else if (node.t === 1) {
+				return true
+			} else if (node.t === 2) {
+				return node.methods.has(method)
+			}
+			throw new Error()
+		})
 	}
 
-	addMiddleware(middleware: MiddlewareHandler): void {
+	addMiddleware(middleware: MiddlewareHandler<any, any, any>): void {
 		this.middleware.add(middleware)
 	}
 
-	addRoute(
+	addRoute_type0(
 		path: TChemin,
-		handlers:
-			& Partial<
-				Record<
-					Methods,
-					RouteHandler
-				>
-			>
-			& Record<Uppercase<string>, RouteHandler>,
+		handlers: MethodDefinitions<any, any>,
 	) {
 		super.addNode(path, {
+			t: 0,
 			handlers: new Map(
 				Object.entries(handlers).map(([k, v]) => [k.toLowerCase(), v]),
 			),
 		})
 	}
 
-	private compose(handler: RouteHandler, params: Params): InternalHandler {
+	addRoute_type1(
+		path: TChemin,
+		handler: RouteHandler<any, any>,
+	) {
+		super.addNode(path, {
+			t: 1,
+			handler,
+		})
+	}
+
+	addRoute_type2(
+		path: TChemin,
+		handler: RouteHandler<any, any>,
+		methods: string[],
+	) {
+		super.addNode(path, {
+			t: 2,
+			handler,
+			methods: new Set(methods),
+		})
+	}
+
+	/**
+	 * @todo
+	 */
+	addNamespace(path: TChemin, routerGraph: RouterGraph) {
+	}
+
+	protected compose(handler: RouteHandler, params: Params): InternalHandler {
 		const middleware = this.middleware.values()
 		return (data, req) => {
 			const createNext = (): InternalHandler => (nextData, req) => {
@@ -63,12 +106,54 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		}
 	}
 
-	getHandler(pathname: string, method: string): InternalHandler | undefined {
-		method = method.toUpperCase()
+	static getHandlerFromNode(node: Node, method: string) {
+		if (node.t === 0) {
+			return node.handlers.get(method)
+		} else if (node.t === 1) {
+			return node.handler
+		} else if (node.t === 2) {
+			return node.methods.has(method) && node.handler
+		}
+	}
+
+	/**
+	 * @todo
+	 */
+	protected getNamespaceHandler(pathname: string, method: string): InternalHandler | undefined {
+		for (const namespace of this.namespaces.values()) {
+			const handler = namespace.getHandler(pathname, method)
+			if (handler) return handler
+		}
+	}
+
+	/**
+	 * @todo
+	 */
+	protected getHandlerDefinition(
+		pathname: string,
+		method: string,
+	): [InternalHandler, ReturnType<RouterGraph["getNode"]>] | undefined {
 		const definition = super.getNode(pathname, [method])
 		if (!definition) return undefined
-		const handler = definition.node.handlers.get(method)
+		const handler = RouterGraph.getHandlerFromNode(definition.node, method)
 		if (!handler) return undefined
-		return this.compose(handler, definition.params as Params)
+		return [this.compose(handler, definition.params as Params), definition]
+	}
+
+	/**
+	 * @todo
+	 */
+	getHandler(pathname: string, method: string): InternalHandler | undefined {
+		method = method.toUpperCase()
+		let handler: InternalHandler | undefined = undefined
+		handler = this.getNamespaceHandler(pathname, method)
+		if (!handler) {
+			const handlerDefinition = this.getHandlerDefinition(pathname, method)
+			if (handlerDefinition) {
+				handler = handlerDefinition[0]
+			}
+		}
+		if (!handler) return undefined
+		return handler
 	}
 }

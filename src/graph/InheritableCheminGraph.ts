@@ -1,4 +1,5 @@
 import { matchExact as matchCheminExact, splitPathname, type TChemin } from "@/export/chemin.ts"
+import type { RouteHandler } from "../export/types.ts"
 
 /**
  * A chemin based graph that will match nodes to a pathname

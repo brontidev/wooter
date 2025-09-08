@@ -7,7 +7,7 @@ import {
 
 const graph = new RouterGraph()
 
-graph.addRoute(c.chemin(), {
+graph.addRouteHandlers(c.chemin(), {
 	GET: async ({ resp }) => {
 		resp(new Response("Hello World"))
 	},
