@@ -23,7 +23,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 	private middleware = new Set<MiddlewareHandler>()
 	private namespaces = new Set<RouterGraph>()
 
-	constructor(private basePath: TChemin) {
+	constructor() {
 		super((node, [method]) => {
 			if (node.t === 0) {
 				return node.handlers.has(method)
@@ -74,14 +74,12 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		})
 	}
 
-	/**
-	 * @todo
-	 */
-	addNamespace(path: TChemin, routerGraph: RouterGraph) {
+	addNamespace(routerGraph: RouterGraph) {
+		this.namespaces.add(routerGraph)
 	}
 
-	protected compose(handler: RouteHandler, params: Params): InternalHandler {
-		const middleware = this.middleware.values()
+	protected static compose(handler: RouteHandler, params: Params, middlewareSet: Set<MiddlewareHandler>): InternalHandler {
+		const middleware = middlewareSet.values()
 		return (data, req) => {
 			const createNext = (): InternalHandler => (nextData, req) => {
 				Object.assign(data, nextData)
@@ -116,44 +114,63 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		}
 	}
 
-	/**
-	 * @todo
-	 */
-	protected getNamespaceHandler(pathname: string, method: string): InternalHandler | undefined {
+	protected getNamespaceHandler(pathname: string, method: string): ReturnType<RouterGraph["internalGetHandler"]> | undefined {
 		for (const namespace of this.namespaces.values()) {
-			const handler = namespace.getHandler(pathname, method)
+			const handler = namespace.internalGetHandler(pathname, method)
 			if (handler) return handler
 		}
 	}
 
-	/**
-	 * @todo
-	 */
-	protected getHandlerDefinition(
+	// protected getHandlerDefinition(
+	// 	pathname: string,
+	// 	method: string,
+	// ): [InternalHandler, ReturnType<RouterGraph["getNode"]>] | undefined {
+	// 	const definition = super.getNode(pathname, [method])
+	// 	if (!definition) return undefined
+	// 	const handler = RouterGraph.getHandlerFromNode(definition.node, method)
+	// 	if (!handler) return undefined
+	// 	return [this.compose(handler, definition.params as Params), definition]
+	// }
+
+	// getHandler(pathname: string, method: string): InternalHandler | undefined {
+	// 	method = method.toUpperCase()
+	// 	let handler: InternalHandler | undefined = undefined
+	// 	handler = this.getNamespaceHandler(pathname, method)
+	// 	if (!handler) {
+	// 		const handlerDefinition = this.getHandlerDefinition(pathname, method)
+	// 		if (handlerDefinition) {
+	// 			handler = handlerDefinition[0]
+	// 		}
+	// 	}
+	// 	if (!handler) return undefined
+	// 	return handler
+	// }
+	//
+
+	protected internalGetHandler(
 		pathname: string,
 		method: string,
-	): [InternalHandler, ReturnType<RouterGraph["getNode"]>] | undefined {
-		const definition = super.getNode(pathname, [method])
-		if (!definition) return undefined
-		const handler = RouterGraph.getHandlerFromNode(definition.node, method)
-		if (!handler) return undefined
-		return [this.compose(handler, definition.params as Params), definition]
+	):
+		| [handler: RouteHandler, nodeDef: NonNullable<ReturnType<RouterGraph["getNode"]>>, middleware: Set<MiddlewareHandler>]
+		| undefined {
+		const namespaceHandlerDef = this.getNamespaceHandler(pathname, method)
+		if (namespaceHandlerDef) {
+		    const [handler, nodeDef, middleware] = namespaceHandlerDef
+			return [handler, nodeDef, new Set([...this.middleware.values(), ...middleware.values()])]
+		} else {
+			const nodeDef = super.getNode(pathname, [method])
+			if (!nodeDef) return undefined
+			const handler = RouterGraph.getHandlerFromNode(nodeDef.node, method)
+			if (!handler) return undefined
+			return [handler, nodeDef, this.middleware]
+		}
 	}
 
-	/**
-	 * @todo
-	 */
 	getHandler(pathname: string, method: string): InternalHandler | undefined {
 		method = method.toUpperCase()
-		let handler: InternalHandler | undefined = undefined
-		handler = this.getNamespaceHandler(pathname, method)
-		if (!handler) {
-			const handlerDefinition = this.getHandlerDefinition(pathname, method)
-			if (handlerDefinition) {
-				handler = handlerDefinition[0]
-			}
-		}
-		if (!handler) return undefined
-		return handler
+		const data = this.internalGetHandler(pathname, method)
+		if(!data) return undefined
+		const [handler, { params }, middleware] = data
+		return RouterGraph.compose(handler, params as Params, middleware)
 	}
 }
