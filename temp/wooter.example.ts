@@ -1,16 +1,16 @@
-const auth = someAuthLibrary({
-    // config
+import { Wooter } from "@/Wooter.ts"
+import c from "@/export/chemin.ts"
+
+const app = new Wooter().use<{ auth: { user: string } }>(async ({ unwrapAndRespond }) => {
+    console.log("middleware")
+    await unwrapAndRespond({ auth: { user: "cleothegoat" } })
 })
 
-const app = new Wooter().use(auth.middleware)
-
-app.router(c.chemin('auth'), auth.router)
-
-app.route(c.chemin(), 'get', async ctx => {
+app.route(c.chemin(), 'GET', async ctx => {
     //...
 })
 
-app.route(c.chemin('post-or-get'), ['post', 'get'], async ctx => {
+app.route(c.chemin('post-or-get'), ['POST', 'GET'], async ctx => {
     //...
 })
 
@@ -19,21 +19,21 @@ app.route(c.chemin('all'), '*', async ctx => {
 })
 
 app.route(c.chemin('complex'), {
-    get: async ctx => {
+    GET: async ctx => {
         //...
     },
-    delete: async ctx => {
+    DELETE: async ctx => {
         //...
     }
 })
 
 const api = app.router(c.chemin('api'))
 
-api.route(c.chemin('user', '@me'), 'get', async ctx => {
+api.route(c.chemin('user', '@me'), 'GET', async ctx => {
     const auth = ctx.data.get('auth')
 
     ctx.resp(Response.json(auth.user))
 })
 
 
-export default app
+export default { fetch: app.fetch }
