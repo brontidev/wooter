@@ -12,7 +12,7 @@ app.route(c.chemin(), 'GET', async ctx => {
 
 app.route(c.chemin('3'), 'GET', async ctx => {
     ctx.resp(new Response("ok!"))
-    throw new Error("this should throw")
+    throw new Error("this should throw0")
 })
 
 app.route(c.chemin('post-or-get'), ['POST', 'GET'], async ctx => {
