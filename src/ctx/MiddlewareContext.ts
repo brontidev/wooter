@@ -1,5 +1,5 @@
 import type { Option } from "@oxi/option"
-import type { Data, Params } from "../export/types.ts"
+import type { Data, Params } from "@/export/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
@@ -7,7 +7,8 @@ import RouteContext, {
 	RouteContext__respond,
 } from "./RouteContext.ts"
 import type { Result } from "@oxi/result"
-import { WooterError } from "../export/error.ts"
+import WooterError from "@/WooterError.ts"
+import { TEmptyObject } from "../export/chemin.ts"
 
 /**
  * The middleware handler must call ctx.next() before exiting
@@ -27,7 +28,7 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
  */
 export default class MiddlewareContext<
 	TParams extends Params = Params,
-	TData extends Data = Data,
+	TData extends Data | undefined = undefined,
 	TNextData extends Data = Data,
 > extends RouteContext<TParams, TData> {
 	#nextCtx?: RouteContext
@@ -39,7 +40,7 @@ export default class MiddlewareContext<
 	constructor(
 		override readonly request: Request,
 		params: TParams,
-		data: TData,
+		data: TData extends undefined ? TEmptyObject : TData,
 		private readonly nextHandler: (
 			data: TNextData,
 			request: Request,
@@ -95,6 +96,7 @@ export default class MiddlewareContext<
 	): InternalHandler {
 		return (data, req) => {
 			const ctx = new MiddlewareContext(req, data, params, next)
+			//@ts-ignore:
 			handler(ctx).then(() => {
 				if (ctx.blockChannel.resolved) return
 				if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
@@ -169,6 +171,6 @@ export default class MiddlewareContext<
  */
 export type MiddlewareHandler<
 	TParams extends Params = Params,
-	TData extends Data = Data,
+	TData extends Data | undefined = undefined,
 	TNextData extends Data = Data,
 > = (ctx: MiddlewareContext<TParams, TData, TNextData>) => Promise<unknown>
