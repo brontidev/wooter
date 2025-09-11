@@ -8,14 +8,13 @@ import RouteContext, {
 } from "./RouteContext.ts"
 import type { Result } from "@oxi/result"
 import WooterError from "@/WooterError.ts"
-import { TEmptyObject } from "../export/chemin.ts"
+import type { TEmptyObject } from "../export/chemin.ts"
 
 /**
  * The middleware handler must call ctx.next() before exiting
  */
 export class MiddlewareHandlerDidntCallUpError extends WooterError {
 	/** name */
-
 	override name: string = "MiddlewareHandlerDidntCallUpError"
 
 	constructor() {
@@ -24,14 +23,26 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
 }
 
 /**
+ * The middleware handler must call ctx.next() before being able to call ctx.block()
+ */
+export class MiddlewareCalledBlockBeforeNextError extends WooterError {
+	/** name */
+	override name: string = "MiddlewareCalledBlockBeforeNextError"
+
+	constructor() {
+		super("The middleware handler must call ctx.next() before being able to call ctx.block()")
+	}
+}
+
+/**
  * Context class passed into middleware handlers
  */
 export default class MiddlewareContext<
-	TParams extends Params = Params,
+	TParams extends Params | undefined = undefined,
 	TData extends Data | undefined = undefined,
-	TNextData extends Data = Data,
+	TNextData extends Data | undefined = undefined,
 > extends RouteContext<TParams, TData> {
-	#nextCtx?: RouteContext
+	#nextCtx?: RouteContext<Params, Data>
 	#blockCalled: boolean = false
 
 	/**
@@ -39,12 +50,9 @@ export default class MiddlewareContext<
 	 */
 	constructor(
 		override readonly request: Request,
-		params: TParams,
 		data: TData extends undefined ? TEmptyObject : TData,
-		private readonly nextHandler: (
-			data: TNextData,
-			request: Request,
-		) => RouteContext,
+		params: TParams extends undefined ? TEmptyObject : TParams,
+		private readonly nextHandler: InternalHandler,
 	) {
 		super(request, data, params)
 	}
@@ -59,11 +67,11 @@ export default class MiddlewareContext<
 	 * @returns Response Option
 	 */
 	readonly next = (
-		data?: TNextData,
+		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Option<Response>> => {
 		const ctx = this.nextHandler(
-			data || {} as TNextData,
+			data,
 			request || this.request,
 		)
 		this.#nextCtx = ctx
@@ -78,9 +86,7 @@ export default class MiddlewareContext<
 	 */
 	readonly block = async (): Promise<Result<null, unknown>> => {
 		if (!this.#nextCtx) {
-			throw new Error(
-				"middleware attempted to await handler resolution before .next()",
-			)
+			throw new MiddlewareCalledBlockBeforeNextError()
 		}
 		this.#blockCalled = true
 		return await this.#nextCtx[RouteContext__block].promise
@@ -94,10 +100,11 @@ export default class MiddlewareContext<
 		params: Params,
 		next: InternalHandler,
 	): InternalHandler {
+		const nhandler: (...args: Parameters<MiddlewareHandler>) => Promise<unknown> = async (ctx) => await handler(ctx)
+
 		return (data, req) => {
 			const ctx = new MiddlewareContext(req, data, params, next)
-			//@ts-ignore:
-			handler(ctx).then(() => {
+			nhandler(ctx).then(() => {
 				if (ctx.blockChannel.resolved) return
 				if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
 				if (!ctx.#blockCalled) return ctx.#nextCtx[RouteContext__block].promise.then((r) => ctx.blockChannel.push(r))
@@ -123,7 +130,7 @@ export default class MiddlewareContext<
 	 * @returns Response option
 	 */
 	readonly pass = async (
-		data?: TNextData,
+		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Option<Response>> => (await this.next(data, request)).map((r) => this.resp(r))
 
@@ -136,7 +143,7 @@ export default class MiddlewareContext<
 	 * @returns Response
 	 */
 	readonly unwrap = async (
-		data?: TNextData,
+		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Response> => {
 		return (await this.next(data, request)).unwrapOrElse(
@@ -155,7 +162,7 @@ export default class MiddlewareContext<
 	 * @param request - new request object
 	 * @returns Response
 	 */
-	readonly unwrapAndRespond = async (data?: TNextData): Promise<Response> => {
+	readonly unwrapAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData): Promise<Response> => {
 		return (await this.pass(data)).unwrapOrElse(
 			// @ts-ignore: This case should always error out anyway
 			async () => {
@@ -171,6 +178,6 @@ export default class MiddlewareContext<
  */
 export type MiddlewareHandler<
 	TParams extends Params = Params,
-	TData extends Data | undefined = undefined,
-	TNextData extends Data = Data,
-> = (ctx: MiddlewareContext<TParams, TData, TNextData>) => Promise<unknown>
+	TData extends Data | undefined = Data,
+	TNextData extends Data | undefined = undefined,
+> = (ctx: MiddlewareContext<TParams, TData, TNextData>) => Promise<unknown> | unknown

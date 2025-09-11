@@ -4,7 +4,7 @@ import type { Data, Params } from "@/export/types.ts"
 import { Channel } from "@/ctx/Channel.ts"
 import WooterError from "@/WooterError.ts"
 import TypedMap from "@/TypedMap.ts"
-import { TEmptyObject } from "@dldc/chemin"
+import type { TEmptyObject } from "@dldc/chemin"
 
 /**
  * The handler must respond before exiting
@@ -20,16 +20,15 @@ export class HandlerDidntRespondError extends WooterError {
 
 export const RouteContext__block = Symbol("RouteContext__block")
 export const RouteContext__respond = Symbol("RouteContext__respond")
-
 /**
  * Context class passed into route handlers
  */
 export default class RouteContext<
-	TParams extends Params = Params,
+	TParams extends Params | undefined = undefined,
 	TData extends Data | undefined = undefined,
 > {
 	#data: TypedMap<TData extends undefined ? TEmptyObject : TData>
-	#params: TypedMap<TParams>
+	#params: TypedMap<TParams extends undefined ? TEmptyObject : TParams>
 
 	/**
 	 * Middleware data
@@ -41,7 +40,7 @@ export default class RouteContext<
 	/**
 	 * Route parameters
 	 */
-	get params(): TypedMap<TParams> {
+	get params(): TypedMap<TParams extends undefined ? TEmptyObject : TParams> {
 		return this.#params
 	}
 
@@ -82,10 +81,10 @@ export default class RouteContext<
 		 */
 		readonly request: Request,
 		data: TData extends undefined ? TEmptyObject : TData,
-		params: TParams,
+		params: TParams extends undefined ? TEmptyObject : TParams,
 	) {
 		this.url = new URL(request.url)
-		this.#data = new TypedMap(data ?? {})
+		this.#data = new TypedMap(data)
 		this.#params = new TypedMap(params)
 	}
 
@@ -126,11 +125,11 @@ export default class RouteContext<
 		handler: RouteHandler,
 		params: Params,
 	): InternalHandler {
-    	// @ts-ignore: Typescript is such a bad language (or maybe i'm just lazy 🤭)
+		const nhandler: (...args: Parameters<RouteHandler>) => Promise<unknown> = async (ctx) => await handler(ctx)
+
 		return (data, req) => {
 			const ctx = new RouteContext(req, data, params)
-			// @ts-ignore: Typescript is such a bad language (or maybe i'm just lazy 🤭)
-			handler(ctx).then(() => {
+			nhandler(ctx).then(() => {
 				if (ctx.blockChannel.resolved) return
 				if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
 				ctx.ok()
@@ -142,7 +141,10 @@ export default class RouteContext<
 	}
 }
 
-export type InternalHandler = (data: Data, request: Request) => RouteContext
+export type InternalHandler<TParams extends Params | undefined = Params, TData extends Data | undefined = Data> = (
+	data: Data,
+	request: Request,
+) => RouteContext<TParams, TData>
 
 /**
  * Route handler
@@ -150,6 +152,6 @@ export type InternalHandler = (data: Data, request: Request) => RouteContext
  * @param ctx - Route context
  */
 export type RouteHandler<
-	TParams extends Params = Params,
-	TData extends Data | undefined = undefined,
-> = (ctx: RouteContext<TParams, TData>) => Promise<unknown>
+	TParams extends Params | undefined = Params,
+	TData extends Data | undefined = Data,
+> = (ctx: RouteContext<TParams, TData>) => Promise<unknown> | unknown
