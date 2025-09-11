@@ -1,15 +1,19 @@
 import type { TChemin } from "@dldc/chemin"
 import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@/export/types.ts"
 import { InheritableCheminGraph } from "./InheritableCheminGraph.ts"
-import type { InternalHandler } from "@/ctx/RouteContext.ts"
+import { RouteContext__block, RouteContext__respond, type InternalHandler } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
-import c, { partialMatch } from "@/export/chemin.ts"
 
 export type MethodDefinitionInput = Methods | Uppercase<string> | Methods[] | Uppercase<string>[] | "*"
 
-export type MethodDefinitions<TParams extends Params, TData extends Data> =
-	& Partial<Record<Methods, RouteHandler<TParams, TData>>>
-	& Record<Uppercase<string>, RouteHandler<TParams, TData>>
+export type MethodDefinitions<
+	TParams extends Params,
+	TData extends
+		| Data
+		| undefined = undefined,
+> =
+	& Partial<Record<Methods, RouteHandler<TParams, TData extends undefined ? Data : TData>>>
+	& Record<Uppercase<string>, RouteHandler<TParams, TData extends undefined ? Data : TData>>
 
 type Node =
 	| {
@@ -36,12 +40,14 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		})
 	}
 
+	// deno-lint-ignore no-explicit-any
 	addMiddleware(middleware: MiddlewareHandler<any, any, any>): void {
 		this.middleware.add(middleware)
 	}
 
 	addRoute_type0(
 		path: TChemin,
+		// deno-lint-ignore no-explicit-any
 		handlers: MethodDefinitions<any, any>,
 	) {
 		super.addNode(path, {
@@ -54,6 +60,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 
 	addRoute_type1(
 		path: TChemin,
+		// deno-lint-ignore no-explicit-any
 		handler: RouteHandler<any, any>,
 	) {
 		super.addNode(path, {
@@ -64,6 +71,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 
 	addRoute_type2(
 		path: TChemin,
+		// deno-lint-ignore no-explicit-any
 		handler: RouteHandler<any, any>,
 		methods: string[],
 	) {
@@ -104,7 +112,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		}
 	}
 
-	static getHandlerFromNode(node: Node, method: string) {
+	protected static getHandlerFromNode(node: Node, method: string) {
 		if (node.t === 0) {
 			return node.handlers.get(method)
 		} else if (node.t === 1) {
@@ -155,7 +163,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		| undefined {
 		const namespaceHandlerDef = this.getNamespaceHandler(pathname, method)
 		if (namespaceHandlerDef) {
-		    const [handler, nodeDef, middleware] = namespaceHandlerDef
+			const [handler, nodeDef, middleware] = namespaceHandlerDef
 			return [handler, nodeDef, new Set([...this.middleware.values(), ...middleware.values()])]
 		} else {
 			const nodeDef = super.getNode(pathname, [method])
@@ -169,8 +177,34 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 	getHandler(pathname: string, method: string): InternalHandler | undefined {
 		method = method.toUpperCase()
 		const data = this.internalGetHandler(pathname, method)
-		if(!data) return undefined
+		if (!data) return undefined
 		const [handler, { params }, middleware] = data
 		return RouterGraph.compose(handler, params as Params, middleware)
+	}
+
+	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
+    	const { promise, resolve, reject } = Promise.withResolvers<Response>()
+		const ctx = handler({}, request)
+		ctx[RouteContext__respond].promise.then(async (v) => {
+			await v.match(
+				(v) => new Promise(() => resolve(v)),
+				async () => {
+					reject((await ctx[RouteContext__block].promise).unwrapErr())
+				},
+			)
+		})
+		ctx[RouteContext__block].promise.then((v) => {
+			v.match(
+				(v) => v,
+				(e) => {
+					if (ctx[RouteContext__respond].resolved) {
+						throw e
+					} else {
+						reject(e)
+					}
+				},
+			)
+		})
+		return promise
 	}
 }
