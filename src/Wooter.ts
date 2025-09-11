@@ -1,27 +1,37 @@
-import { TChemin } from "@dldc/chemin"
-import RouterGraph, { MethodDefinitionInput, MethodDefinitions } from "./graph/RouterGraph.ts"
-import { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "./export/types.ts"
-import { Merge } from "./types.ts"
-import c from "./export/chemin.ts"
-import { RouteContext__block, RouteContext__respond } from "./ctx/RouteContext.ts"
+import type { TChemin, TEmptyObject } from "@dldc/chemin"
+import RouterGraph, { type MethodDefinitionInput, type MethodDefinitions } from "@/graph/RouterGraph.ts"
+import type { Data, MiddlewareHandler, Params, RouteHandler } from "@/export/types.ts"
 
-export class Wooter<TData extends Data, TParentParams extends Params = Params> {
-	protected graph: RouterGraph
+import type { Merge } from "@/types.ts"
+import c from "@/export/chemin.ts"
+import RouteContext, { RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
 
-	constructor(protected basePath: TChemin<TParentParams> = c.chemin() as unknown as TChemin<TParentParams>) {
+type MergeData<A extends Data | undefined, B extends Data | undefined> = A extends undefined ? B
+	: (B extends undefined ? A : Merge<A, B>)
+type MergeParams<A extends Params | undefined, B extends Params | undefined> = A extends undefined ? B
+	: (B extends undefined ? A : Merge<A, B>)
+
+/**
+ * Router class
+ */
+export default class Wooter<TData extends Data | undefined = undefined, TParentParams extends Params | undefined = undefined> {
+	private graph: RouterGraph
+	private notFoundHandler?: RouteHandler<TEmptyObject>
+
+	constructor(private basePath: TChemin<TParentParams> = c.chemin() as unknown as TChemin<TParentParams>) {
 		this.graph = new RouterGraph()
 	}
 
 	route<TParams extends Params>(
 		path: TChemin<TParams>,
 		method: MethodDefinitionInput,
-		handler: RouteHandler<Merge<TParams, TParentParams>, TData>,
+		handler: RouteHandler<MergeParams<TParams, TParentParams>, TData>,
 	): this
 	route<TParams extends Params>(path: TChemin<TParams>, handlers: MethodDefinitions<Merge<TParams, TParentParams>, TData>): this
 	route<TParams extends Params>(
 		path: TChemin<TParams>,
 		methodORHandlers: MethodDefinitionInput | MethodDefinitions<Merge<TParams, TParentParams>, TData>,
-		handler?: RouteHandler<Merge<TParams, TParentParams>, TData>,
+		handler?: RouteHandler<MergeParams<TParams, TParentParams>, TData>,
 	): this {
 		// @ts-ignore:
 		path = c.chemin(this.basePath, path)
@@ -40,11 +50,11 @@ export class Wooter<TData extends Data, TParentParams extends Params = Params> {
 		return this
 	}
 
-	use<TNextData extends Data = Data>(
-		handler: MiddlewareHandler<Params, TData, TNextData>,
-	): Wooter<Merge<TData, TNextData>, TParentParams> {
+	use<TNextData extends Data | undefined = undefined>(
+		handler: MiddlewareHandler<Params, TData, TNextData extends undefined ? TEmptyObject : TNextData>,
+	): Wooter<MergeData<TData, TNextData>, TParentParams> {
 		this.graph.addMiddleware(handler)
-		return this as unknown as Wooter<Merge<TData, TNextData>, TParentParams>
+		return this as unknown as Wooter<MergeData<TData, TNextData>, TParentParams>
 	}
 
 	router<TParams extends Params>(path: TChemin<TParams>): Wooter<TData, Merge<TParams, TParentParams>> {
@@ -55,34 +65,21 @@ export class Wooter<TData extends Data, TParentParams extends Params = Params> {
 		return router
 	}
 
-	readonly fetch = async (request: Request): Promise<Response> => {
-		const { promise, resolve, reject } = Promise.withResolvers<Response>()
+	notFound(handler: RouteHandler<TEmptyObject>): this {
+		this.notFoundHandler = handler
+		return this
+	}
+
+	readonly fetch = (request: Request): Promise<Response> => {
 		const url = new URL(request.url)
-		const handler = this.graph.getHandler(url.pathname, request.method)
-		const ctx = handler!({}, request)
-		ctx[RouteContext__respond].promise.then(async (v) => {
-			console.log("respond event: ", v)
-			await v.match(
-				async (v) => resolve(v),
-				async () => {
-					reject((await ctx[RouteContext__block].promise).unwrapErr())
-				},
+		let handler = this.graph.getHandler(url.pathname, request.method)
+		if (!handler) {
+			handler = RouteContext.useRouteHandler(
+				this.notFoundHandler ?? (async ({ resp, url }) => resp(new Response(`Not found ${request.method} ${url.pathname}`, { status: 404 }))),
+				{},
 			)
-		})
-		ctx[RouteContext__block].promise.then((v) => {
-			console.log("block event: ", v.toString())
-			v.match(
-				(v) => v,
-				(e) => {
-					console.log(e)
-					if (ctx[RouteContext__respond].resolved) {
-						throw e
-					} else {
-						reject(e)
-					}
-				},
-			)
-		})
-		return promise
+		}
+
+		return RouterGraph.runHandler(handler, request)
 	}
 }

@@ -1,9 +1,10 @@
 import { Err, Ok, type Result } from "@oxi/result"
 import { None, type Option, Some } from "@oxi/option"
-import type { Data, Params } from "../export/types.ts"
-import { Channel } from "./Channel.ts"
-import { WooterError } from "../export/error.ts"
-import TypedMap from "../TypedMap.ts"
+import type { Data, Params } from "@/export/types.ts"
+import { Channel } from "@/ctx/Channel.ts"
+import WooterError from "@/WooterError.ts"
+import TypedMap from "@/TypedMap.ts"
+import { TEmptyObject } from "@dldc/chemin"
 
 /**
  * The handler must respond before exiting
@@ -25,15 +26,15 @@ export const RouteContext__respond = Symbol("RouteContext__respond")
  */
 export default class RouteContext<
 	TParams extends Params = Params,
-	TData extends Data = Data,
+	TData extends Data | undefined = undefined,
 > {
-	#data: TypedMap<TData>
+	#data: TypedMap<TData extends undefined ? TEmptyObject : TData>
 	#params: TypedMap<TParams>
 
 	/**
 	 * Middleware data
 	 */
-	get data(): TypedMap<TData> {
+	get data(): TypedMap<TData extends undefined ? TEmptyObject : TData> {
 		return this.#data
 	}
 
@@ -80,11 +81,11 @@ export default class RouteContext<
 		 * Request object
 		 */
 		readonly request: Request,
-		data: TData,
+		data: TData extends undefined ? TEmptyObject : TData,
 		params: TParams,
 	) {
 		this.url = new URL(request.url)
-		this.#data = new TypedMap(data)
+		this.#data = new TypedMap(data ?? {})
 		this.#params = new TypedMap(params)
 	}
 
@@ -125,8 +126,10 @@ export default class RouteContext<
 		handler: RouteHandler,
 		params: Params,
 	): InternalHandler {
+    	// @ts-ignore: Typescript is such a bad language (or maybe i'm just lazy 🤭)
 		return (data, req) => {
 			const ctx = new RouteContext(req, data, params)
+			// @ts-ignore: Typescript is such a bad language (or maybe i'm just lazy 🤭)
 			handler(ctx).then(() => {
 				if (ctx.blockChannel.resolved) return
 				if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
@@ -148,5 +151,5 @@ export type InternalHandler = (data: Data, request: Request) => RouteContext
  */
 export type RouteHandler<
 	TParams extends Params = Params,
-	TData extends Data = Data,
+	TData extends Data | undefined = undefined,
 > = (ctx: RouteContext<TParams, TData>) => Promise<unknown>
