@@ -93,7 +93,7 @@ graph.addRoute_type0(c.chemin("6"), {
 })
 
 graph.addMiddleware(async ({ unwrapAndRespond }) => {
-	console.log("in middleware", await unwrapAndRespond())
+	console.log("in middleware", await unwrapAndRespond({}))
 })
 
 // const handler = graph.GETHandler("", "GET")

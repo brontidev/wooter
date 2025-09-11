@@ -1,11 +1,17 @@
 import type { TChemin } from "@dldc/chemin"
 import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@/export/types.ts"
 import { InheritableCheminGraph } from "./InheritableCheminGraph.ts"
-import { RouteContext__block, RouteContext__respond, type InternalHandler } from "@/ctx/RouteContext.ts"
+import { type InternalHandler, RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 
+/**
+ * @internal
+ */
 export type MethodDefinitionInput = Methods | Uppercase<string> | Methods[] | Uppercase<string>[] | "*"
 
+/**
+ * @internal
+ */
 export type MethodDefinitions<
 	TParams extends Params,
 	TData extends
@@ -183,13 +189,13 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 	}
 
 	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
-    	const { promise, resolve, reject } = Promise.withResolvers<Response>()
+		const { promise, resolve, reject } = Promise.withResolvers<Response>()
 		const ctx = handler({}, request)
-		ctx[RouteContext__respond].promise.then(async (v) => {
-			await v.match(
-				(v) => new Promise(() => resolve(v)),
-				async () => {
-					reject((await ctx[RouteContext__block].promise).unwrapErr())
+		ctx[RouteContext__respond].promise.then((v) => {
+			v.match(
+				(v) => resolve(v),
+				() => {
+					ctx[RouteContext__block].promise.then((e) => reject(e.unwrapErr()))
 				},
 			)
 		})
@@ -197,11 +203,8 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 			v.match(
 				(v) => v,
 				(e) => {
-					if (ctx[RouteContext__respond].resolved) {
-						throw e
-					} else {
-						reject(e)
-					}
+					if (ctx[RouteContext__respond].resolved) console.error("Uncaught error in handler (after response): ", e)
+					reject(e)
 				},
 			)
 		})
