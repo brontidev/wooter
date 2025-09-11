@@ -1,37 +1,77 @@
 import type { TChemin, TEmptyObject } from "@dldc/chemin"
 import RouterGraph, { type MethodDefinitionInput, type MethodDefinitions } from "@/graph/RouterGraph.ts"
-import type { Data, MiddlewareHandler, Params, RouteHandler } from "@/export/types.ts"
+import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@/export/types.ts"
 
 import type { Merge } from "@/types.ts"
 import c from "@/export/chemin.ts"
-import RouteContext, { RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
-
-type MergeData<A extends Data | undefined, B extends Data | undefined> = A extends undefined ? B
-	: (B extends undefined ? A : Merge<A, B>)
-type MergeParams<A extends Params | undefined, B extends Params | undefined> = A extends undefined ? B
-	: (B extends undefined ? A : Merge<A, B>)
+import RouteContext from "@/ctx/RouteContext.ts"
 
 /**
  * Router class
  */
 export default class Wooter<TData extends Data | undefined = undefined, TParentParams extends Params | undefined = undefined> {
 	private graph: RouterGraph
-	private notFoundHandler?: RouteHandler<TEmptyObject>
+	#notFoundHandler?: RouteHandler<TEmptyObject>
 
+	/**
+	 * @internal
+	 */
+	private get notFoundHandler(): RouteHandler<TEmptyObject> {
+		return this.#notFoundHandler ??
+			(({ resp, url, request }) => resp(new Response(`Not found ${request.method} ${url.pathname}`, { status: 404 })))
+	}
+
+	/**
+	 * Router class
+	 */
 	constructor(private basePath: TChemin<TParentParams> = c.chemin() as unknown as TChemin<TParentParams>) {
 		this.graph = new RouterGraph()
 	}
 
+	/**
+	 * Defines a route with a single path and a method or multiple methods
+	 *
+	 * @example
+	 * ```ts
+	 * wooter.route(c.chemin(), "GET", ctx => ...)
+	 * ```
+	 * @example
+	 * ```ts
+	 * wooter.route(c.chemin(), ["GET", "POST"], ctx => ...)
+	 * ```
+	 * @param path Path
+	 * @param method HTTP method
+	 * @param handler Handler
+	 */
 	route<TParams extends Params>(
 		path: TChemin<TParams>,
 		method: MethodDefinitionInput,
-		handler: RouteHandler<MergeParams<TParams, TParentParams>, TData>,
+		handler: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TData>,
 	): this
+	/**
+	 * Defines multiple routes for one path with different methods
+	 *
+	 * @example
+	 * ```ts
+	 * wooter.route(c.chemin(), { GET: ctx => ..., POST: ctx => ... })
+	 * // wet throat
+	 * ```
+	 *
+	 * @param path Path
+	 * @param handlers Map of method -> handler
+	 */
 	route<TParams extends Params>(path: TChemin<TParams>, handlers: MethodDefinitions<Merge<TParams, TParentParams>, TData>): this
+	/**
+	 * Defines a route
+	 *
+	 * @param path Path
+	 * @param methodORHandlers
+	 * @param handler Handler
+	 */
 	route<TParams extends Params>(
 		path: TChemin<TParams>,
 		methodORHandlers: MethodDefinitionInput | MethodDefinitions<Merge<TParams, TParentParams>, TData>,
-		handler?: RouteHandler<MergeParams<TParams, TParentParams>, TData>,
+		handler?: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TData>,
 	): this {
 		// @ts-ignore:
 		path = c.chemin(this.basePath, path)
@@ -50,32 +90,46 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 		return this
 	}
 
+	/**
+	 * Applies a middleware to the router
+	 */
 	use<TNextData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<Params, TData, TNextData extends undefined ? TEmptyObject : TNextData>,
-	): Wooter<MergeData<TData, TNextData>, TParentParams> {
+	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams> {
 		this.graph.addMiddleware(handler)
-		return this as unknown as Wooter<MergeData<TData, TNextData>, TParentParams>
+		return this as unknown as Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
 	}
 
-	router<TParams extends Params>(path: TChemin<TParams>): Wooter<TData, Merge<TParams, TParentParams>> {
+	/**
+	 * Returns Wooter with basePath
+	 * > Any routes applied to the new wooter are
+	 * > routed through this one
+	 */
+	router<TParams extends Params>(basePath: TChemin<TParams>): Wooter<TData, Merge<TParams, TParentParams>> {
 		const router = new Wooter<TData, Merge<TParams, TParentParams>>(
-			c.chemin(this.basePath, path) as unknown as TChemin<Merge<TParams, TParentParams>>,
+			c.chemin(this.basePath, basePath) as unknown as TChemin<Merge<TParams, TParentParams>>,
 		)
 		this.graph.addNamespace(router.graph)
 		return router
 	}
 
+	/**
+	 * Registers notFound handler
+	 */
 	notFound(handler: RouteHandler<TEmptyObject>): this {
-		this.notFoundHandler = handler
+		this.#notFoundHandler = handler
 		return this
 	}
 
+	/**
+	 * Sends a request to the wooter
+	 */
 	readonly fetch = (request: Request): Promise<Response> => {
 		const url = new URL(request.url)
 		let handler = this.graph.getHandler(url.pathname, request.method)
 		if (!handler) {
 			handler = RouteContext.useRouteHandler(
-				this.notFoundHandler ?? (async ({ resp, url }) => resp(new Response(`Not found ${request.method} ${url.pathname}`, { status: 404 }))),
+				this.notFoundHandler,
 				{},
 			)
 		}
