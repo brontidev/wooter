@@ -1,4 +1,4 @@
-import { Wooter } from "@/Wooter.ts"
+import { Wooter } from "@/export/index.ts"
 import c from "@/export/chemin.ts"
 
 const app = new Wooter().use<{ auth: { user: string } }>(async ({ unwrapAndRespond }) => {
@@ -8,6 +8,11 @@ const app = new Wooter().use<{ auth: { user: string } }>(async ({ unwrapAndRespo
 
 app.route(c.chemin(), 'GET', async ctx => {
     //...
+})
+
+app.route(c.chemin('3'), 'GET', async ctx => {
+    ctx.resp(new Response("ok!"))
+    throw new Error("this should throw")
 })
 
 app.route(c.chemin('post-or-get'), ['POST', 'GET'], async ctx => {
@@ -35,5 +40,6 @@ api.route(c.chemin('user', '@me'), 'GET', async ctx => {
     ctx.resp(Response.json(auth.user))
 })
 
+app.notFound(async ({ resp, request, url }) => resp(new Response(`not found ${request.method} ${url.pathname} @ ${new Date()}`)))
 
 export default { fetch: app.fetch }
