@@ -1,3 +1,4 @@
+import type { Option } from "@/export/option.ts"
 import type { Data, Params } from "@/export/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
@@ -5,6 +6,7 @@ import RouteContext, {
 	RouteContext__block,
 	RouteContext__respond,
 } from "./RouteContext.ts"
+import type { Result } from "@/export/result.ts"
 import WooterError from "@/WooterError.ts"
 import type { TEmptyObject } from "../export/chemin.ts"
 
