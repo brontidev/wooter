@@ -13,7 +13,7 @@ const handlerInput: RouteHandler<Params, { cookies: Cookies }> = async (
 	ctx.data.get("cookies").set("hi", "hello")
 	ctx.resp(new Response(await ctx.request.text()))
 }
-// @ts-ignore: idc
+
 const routeHandler = RouteContext.useRouteHandler(handlerInput, { hi: "ello" })
 
 type Cookies = {
