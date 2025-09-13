@@ -3,14 +3,19 @@ import Wooter from "@/Wooter.ts"
 import { assertEquals, type assertThrows } from "jsr:@std/assert"
 import { assertSpyCalls, type Spy, spy } from "jsr:@std/testing/mock"
 import c from "@/export/chemin.ts"
-import type { MiddlewareContext, MiddlewareHandler } from "@/export/types.ts"
+import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@/export/types.ts"
 import { assertIsError } from "jsr:@std/assert@^1.0.10/is-error"
 import { assert } from "jsr:@std/assert/assert"
 import { isWooterError, MiddlewareHandlerDidntCallUpError } from "@/export/index.ts"
 
-function middlewareSpy<T extends unknown[]>(
-	handler: (spy: Spy<any, T>, ctx: MiddlewareContext) => Promise<unknown>,
-): [Spy, MiddlewareHandler] {
+function middlewareSpy<
+	T extends unknown[],
+	TParams extends Params = Params,
+	TData extends Data | undefined = undefined,
+	TNextData extends Data | undefined = undefined,
+>(
+	handler: (spy: Spy<any, T>, ctx: MiddlewareContext<TParams, TData, TNextData>) => Promise<unknown>,
+): [Spy, MiddlewareHandler<TParams, TData, TNextData>] {
 	const fn = spy<any, T>()
 	return [fn, (ctx) => handler(fn, ctx)]
 }
@@ -84,10 +89,6 @@ Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", as
 		assert(isWooterError(e))
 		assert(e instanceof MiddlewareHandlerDidntCallUpError)
 	}
-
-	// assertSpyCalls(spy, 1)
-	// const { args: [err] } = spy.calls[0]
-	// assertIsError(err)
 })
 
 Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
@@ -105,10 +106,6 @@ Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
 		assert(isWooterError(e))
 		assert(e instanceof MiddlewareHandlerDidntCallUpError)
 	}
-
-	// assertSpyCalls(spy, 1)
-	// const { args: [err] } = spy.calls[0]
-	// assertIsError(err)
 })
 
 Deno.test("namespacing", async () => {
