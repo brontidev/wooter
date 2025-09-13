@@ -27,8 +27,4 @@ export class Channel<T> {
 		this.resolve(value)
 		this._resolved = true
 	}
-
-	wait(): Promise<T> {
-		return this.promise
-	}
 }
