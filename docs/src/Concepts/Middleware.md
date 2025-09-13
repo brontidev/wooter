@@ -95,7 +95,6 @@ $:	validateSessionToken,
 $:} from '$auth/index.ts'
 $:import { AuthPair } from '$auth/index.ts'
 $:import { Cookies } from '$util/middleware/cookies.ts'
-$:import { None, Option } from '@oxi/option'
 $:import { errorResponse } from '@bronti/wooter/util'
 
 export const useAuth: StandaloneMiddlewareHandler<

@@ -52,10 +52,7 @@
 			"./docs/book",
 			"./temp",
 			"./src/*.test.ts"
-		],
-		"rules": {
-			"exclude": ["no-this-alias"]
-		}
+		]
 	},
 	"fmt": {
 		"semiColons": false,

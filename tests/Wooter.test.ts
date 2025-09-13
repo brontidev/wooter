@@ -1,17 +1,17 @@
+import Wooter from "@/Wooter.ts"
+
 import { assertEquals, type assertThrows } from "jsr:@std/assert"
 import { assertSpyCalls, type Spy, spy } from "jsr:@std/testing/mock"
-import Wooter from "./Wooter.ts"
-import c from "./export/chemin.ts"
-import type { MiddlewareContext, MiddlewareHandler } from "./export/types.ts"
+import c from "@/export/chemin.ts"
+import type { MiddlewareContext, MiddlewareHandler } from "@/export/types.ts"
 import { assertIsError } from "jsr:@std/assert@^1.0.10/is-error"
 import { assert } from "jsr:@std/assert/assert"
-import { isWooterError, MiddlewareHandlerDidntCallUpError } from "./export/index.ts"
+import { isWooterError, MiddlewareHandlerDidntCallUpError } from "@/export/index.ts"
 
 function middlewareSpy<T extends unknown[]>(
 	handler: (spy: Spy<any, T>, ctx: MiddlewareContext) => Promise<unknown>,
 ): [Spy, MiddlewareHandler] {
 	const fn = spy<any, T>()
-	// @ts-ignore
 	return [fn, (ctx) => handler(fn, ctx)]
 }
 
@@ -55,7 +55,7 @@ Deno.test("case 2 - handler errors (before responding) + catching errors in midd
 			ctx.resp(new Response("Internal Server Error", { status: 500 }))
 		}
 	})
-	// @ts-ignore
+
 	wooter.use(middleware)
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
@@ -72,7 +72,6 @@ Deno.test("case 2 - handler errors (before responding) + catching errors in midd
 Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", async () => {
 	const wooter = new Wooter()
 
-	// @ts-ignore
 	wooter.use((ctx) => {})
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
@@ -94,7 +93,6 @@ Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", as
 Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
 	const wooter = new Wooter()
 
-	// @ts-ignore
 	wooter.use((ctx) => {})
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
@@ -116,7 +114,6 @@ Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
 Deno.test("namespacing", async () => {
 	const wooter = new Wooter()
 
-	// @ts-ignore
 	wooter.use((ctx) => {})
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
