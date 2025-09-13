@@ -1,4 +1,3 @@
-import type { Option } from "@oxi/option"
 import type { Data, Params } from "@/export/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
@@ -6,7 +5,6 @@ import RouteContext, {
 	RouteContext__block,
 	RouteContext__respond,
 } from "./RouteContext.ts"
-import type { Result } from "@oxi/result"
 import WooterError from "@/WooterError.ts"
 import type { TEmptyObject } from "../export/chemin.ts"
 
@@ -42,7 +40,7 @@ export default class MiddlewareContext<
 	TData extends Data | undefined = undefined,
 	TNextData extends Data | undefined = undefined,
 > extends RouteContext<TParams, TData> {
-	#nextCtx?: RouteContext<Params, Data>
+	#nextCtx?: RouteContext
 	#blockCalled: boolean = false
 
 	/**
@@ -95,15 +93,16 @@ export default class MiddlewareContext<
 	/**
 	 * @internal
 	 */
-	static useMiddlewareHandler(
-		handler: MiddlewareHandler,
+	static useMiddlewareHandler<TParams extends Params = Params, TData extends Data | undefined = undefined, TNextData extends Data | undefined = undefined>(
+		handler: MiddlewareHandler<TParams, TData, TNextData>,
 		params: Params,
 		next: InternalHandler,
 	): InternalHandler {
-		const nhandler: (...args: Parameters<MiddlewareHandler>) => Promise<unknown> = async (ctx) => await handler(ctx)
+		const nhandler: (...args: Parameters<MiddlewareHandler<TParams, TData, TNextData>>) => Promise<unknown> = async (ctx) => await handler(ctx)
 
 		return (data, req) => {
-			const ctx = new MiddlewareContext(req, data, params, next)
+    		// @ts-expect-error: InternalHandler ignores generics
+			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
 			nhandler(ctx).then(() => {
 				if (ctx.blockChannel.resolved) return
 				if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
@@ -113,7 +112,7 @@ export default class MiddlewareContext<
 			}, (err) => {
 				ctx.err(err)
 			})
-			return ctx
+			return ctx as unknown as MiddlewareContext
 		}
 	}
 
@@ -147,7 +146,7 @@ export default class MiddlewareContext<
 		request?: Request,
 	): Promise<Response> => {
 		return (await this.next(data, request)).unwrapOrElse(
-			// @ts-ignore: This case should always throw anyway
+			// @ts-expect-error: This case should always throw anyway
 			async () => {
 				throw (await this.block()).unwrapErr()
 			},
@@ -164,7 +163,7 @@ export default class MiddlewareContext<
 	 */
 	readonly unwrapAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData): Promise<Response> => {
 		return (await this.pass(data)).unwrapOrElse(
-			// @ts-ignore: This case should always error out anyway
+    		// @ts-expect-error: This case should always throw anyway
 			async () => {
 				throw (await this.block()).unwrapErr()
 			},
@@ -178,6 +177,6 @@ export default class MiddlewareContext<
  */
 export type MiddlewareHandler<
 	TParams extends Params = Params,
-	TData extends Data | undefined = Data,
+	TData extends Data | undefined = undefined,
 	TNextData extends Data | undefined = undefined,
 > = (ctx: MiddlewareContext<TParams, TData, TNextData>) => Promise<unknown> | unknown

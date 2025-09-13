@@ -73,19 +73,18 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 		methodORHandlers: MethodDefinitionInput | MethodDefinitions<Merge<TParams, TParentParams>, TData>,
 		handler?: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TData>,
 	): this {
-		// @ts-ignore:
-		path = c.chemin(this.basePath, path)
+		const wholePath = c.chemin(this.basePath, path)
 		if ((typeof methodORHandlers == "string" || Array.isArray(methodORHandlers))) {
 			if (!handler) throw new TypeError()
 			if (methodORHandlers === "*") {
-				this.graph.addRoute_type1(path, handler)
+				this.graph.addRoute_type1(wholePath, handler)
 			} else {
 				const methods = [methodORHandlers].flat()
-				this.graph.addRoute_type2(path, handler, methods)
+				this.graph.addRoute_type2(wholePath, handler, methods)
 			}
 		} else {
 			const handlers: MethodDefinitions<Merge<TParams, TParentParams>, TData> = methodORHandlers
-			this.graph.addRoute_type0(path, handlers)
+			this.graph.addRoute_type0(wholePath, handlers)
 		}
 		return this
 	}
@@ -94,7 +93,7 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	 * Applies a middleware to the router
 	 */
 	use<TNextData extends Data | undefined = undefined>(
-		handler: MiddlewareHandler<Params, TData, TNextData extends undefined ? TEmptyObject : TNextData>,
+		handler: MiddlewareHandler<Params, TData, TNextData>,
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams> {
 		this.graph.addMiddleware(handler)
 		return this as unknown as Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
