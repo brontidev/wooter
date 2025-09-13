@@ -4,11 +4,12 @@
 	"version": "3.0.0-beta",
 	"license": "MIT",
 	"exports": {
+		".": "./src/export/index.ts",
 		"./chemin": "./src/export/chemin.ts",
 		"./option": "./src/export/option.ts",
 		"./result": "./src/export/result.ts",
-		".": "./src/export/index.ts",
-		"./types": "./src/export/types.ts"
+		"./types": "./src/export/types.ts",
+		"./erorr": "./src/export/error.ts"
 	},
 	"tasks": {
 		"test": "deno test",
