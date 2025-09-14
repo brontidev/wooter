@@ -1,10 +1,10 @@
-import { Err, Ok, type Result } from "@/export/result.ts"
-import { None, type Option, Some } from "@/export/option.ts"
-import type { Data, Params } from "@/export/types.ts"
+import { Err, Ok, type Result } from "@@/result.ts"
+import { None, type Option, Some } from "@@/option.ts"
+import type { Data, Params } from "@@/types.ts"
 import { Channel } from "@/ctx/Channel.ts"
 import WooterError from "@/WooterError.ts"
 import TypedMap from "@/TypedMap.ts"
-import type { TEmptyObject } from "@dldc/chemin"
+import type { TEmptyObject } from "@@/chemin.ts"
 
 /**
  * The handler must respond before exiting
@@ -15,6 +15,18 @@ export class HandlerDidntRespondError extends WooterError {
 
 	constructor() {
 		super("The handler must respond before exiting")
+	}
+}
+
+/**
+ * The handler called resp() multiple times
+ */
+export class HandlerRespondedTwiceError extends WooterError {
+	/** name */
+	override name: string = "HandlerRespondedTwiceError"
+
+	constructor() {
+		super("The handler called resp() multiple times")
 	}
 }
 
@@ -112,7 +124,7 @@ export default class RouteContext<
 	 */
 	readonly resp = (response: Response): Response => {
 		if (this.respondChannel.resolved) {
-			throw ("resp() called multiple times")
+			throw new HandlerRespondedTwiceError()
 		}
 		this.respondChannel.push(Some(response))
 		return response

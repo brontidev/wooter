@@ -1,31 +1,46 @@
-import type { TChemin } from "@/export/chemin.ts"
-import { InheritableCheminGraph } from "./InheritableCheminGraph.ts"
+import { matchExact as matchCheminExact, type TChemin } from "@@/chemin.ts"
 
 /**
- * Constructable
+ * A chemin based graph that will match nodes to a pathname
  */
 export class CheminGraph<
 	Node,
 	FindData,
-> extends InheritableCheminGraph<Node, FindData> {
+> {
+	private nodes = new Set<{ path: TChemin; node: Node }>()
+
+	/**
+	 * Construct a new graph
+	 * @param dataMatcher Callback that returns true if a node matches the data
+	 */
+	constructor(
+		protected dataMatcher: (node: Node, data: FindData) => boolean,
+	) {}
+
+	/**
+	 * Adds a node to the graph
+	 * @param path Chemin to match
+	 * @param node Node
+	 */
+	protected addNode(path: TChemin, node: Node) {
+		this.nodes.add({ path, node })
+	}
+
 	/**
 	 * Matches a node from a pathname
 	 * @param pathname Pathname or Path parts
 	 * @param data Extra check data
 	 * @returns Node Definition
 	 */
-	override getNode(
-		pathname: string | string[],
+	protected getNode(
+		pathname: string,
 		data: FindData,
 	): { params: unknown; node: Node } | undefined {
-		return super.getNode(pathname, data)
-	}
-	/**
-	 * Adds a node to the graph
-	 * @param path Chemin to match
-	 * @param node Node
-	 */
-	override addNode(path: TChemin, node: Node): void {
-		super.addNode(path, node)
+		for (const { node, path } of this.nodes) {
+			if (!this.dataMatcher(node, data)) continue
+			const params = matchCheminExact(path, pathname)
+			if (!params) continue
+			return { params, node }
+		}
 	}
 }
