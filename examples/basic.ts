@@ -1,6 +1,6 @@
 import { delay } from "jsr:@std/async"
 import { c, Wooter } from "@/export/index.ts"
-import { StandaloneMiddlewareHandler } from "@/export/types.ts"
+import type { StandaloneMiddlewareHandler } from "@/export/types.ts"
 
 const wooter = new Wooter()
 

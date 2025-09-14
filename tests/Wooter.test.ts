@@ -1,12 +1,20 @@
+// deno-lint-ignore-file no-explicit-any no-unused-vars
+
 import Wooter from "@/Wooter.ts"
 
 import { assertEquals, type assertThrows } from "jsr:@std/assert"
-import { assertSpyCalls, type Spy, spy } from "jsr:@std/testing/mock"
-import c from "@/export/chemin.ts"
-import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@/export/types.ts"
+import { assertSpyCall, assertSpyCalls, type returnsArg, type Spy, spy } from "jsr:@std/testing/mock"
+import c from "@@/chemin.ts"
+import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@@/types.ts"
 import { assertIsError } from "jsr:@std/assert@^1.0.10/is-error"
 import { assert } from "jsr:@std/assert/assert"
-import { isWooterError, MiddlewareHandlerDidntCallUpError } from "@/export/index.ts"
+import {
+	HandlerDidntRespondError,
+	HandlerRespondedTwiceError,
+	isWooterError,
+	MiddlewareCalledBlockBeforeNextError,
+	MiddlewareHandlerDidntCallUpError,
+} from "@@/index.ts"
 
 function middlewareSpy<
 	T extends unknown[],
@@ -33,7 +41,7 @@ const catchErrors: MiddlewareHandler = async (ctx) => {
 	}
 }
 
-Deno.test("case 1 - handler resopnds", async () => {
+Deno.test("case 1 - handler responds", async () => {
 	const wooter = new Wooter()
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
@@ -111,18 +119,21 @@ Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
 Deno.test("namespacing", async () => {
 	const wooter = new Wooter()
 
-	wooter.use((ctx) => {})
 	wooter.route(c.chemin(), "GET", (ctx) => {
-		throw new Error("oh something weird happened")
+		ctx.resp(new Response("page 1"))
 	})
-	try {
-		const response = await wooter.fetch(new Request("http://localhost:3000/"))
-		assertEquals(response.status, 500)
-		assertEquals(await response.text(), "Internal Server Error")
-	} catch (e) {
-		assert(isWooterError(e))
-		assert(e instanceof MiddlewareHandlerDidntCallUpError)
-	}
+
+	wooter.router(c.chemin("stuff")).route(c.chemin(), "GET", (ctx) => {
+		ctx.resp(new Response("page 2"))
+	})
+	let response: Response
+	response = await wooter.fetch(new Request("http://localhost:3000/"))
+	assertEquals(response.status, 200)
+	assertEquals(await response.text(), "page 1")
+
+	response = await wooter.fetch(new Request("http://localhost:3000/stuff"))
+	assertEquals(response.status, 200)
+	assertEquals(await response.text(), "page 2")
 
 	// assertSpyCalls(spy, 1)
 	// const { args: [err] } = spy.calls[0]
@@ -141,4 +152,169 @@ Deno.test("not found errors", async () => {
 
 	response = await wooter.fetch(new Request("http://localhost:3000/"))
 	assertEquals(response, testResponse)
+})
+
+Deno.test("middleware data", async () => {
+	const randomNumber = Math.random()
+	const wooter = new Wooter().use<{ random: number }>((ctx) => {
+		ctx.unwrapAndRespond({ random: randomNumber })
+	})
+
+	wooter.route(c.chemin(), "GET", (ctx) => {
+		const number = ctx.data.get("random")
+		assertEquals(randomNumber, number)
+		ctx.resp(new Response("Hello World!!"))
+	})
+
+	const response = await wooter.fetch(new Request("http://localhost:3000/"))
+	assertEquals(response.status, 200)
+	assertEquals(await response.text(), "Hello World!!")
+})
+
+Deno.test("Route parameters", async () => {
+	const wooter = new Wooter()
+
+	wooter.route(c.chemin(c.pString("param")), "GET", (ctx) => {
+		ctx.resp(new Response(ctx.params.get("param")))
+	})
+
+	const uuid = crypto.randomUUID()
+	const response = await wooter.fetch(new Request(`http://localhost:3000/${uuid}`))
+	assertEquals(response.status, 200)
+	assertEquals(await response.text(), uuid)
+})
+
+Deno.test("handler responds twice", async () => {
+	const wooter = new Wooter()
+
+	wooter.route(c.chemin(), "GET", (ctx) => {
+		ctx.resp(new Response())
+		ctx.resp(new Response())
+	})
+
+	try {
+		const response = await wooter.fetch(new Request("http://localhost:3000/"))
+		assertEquals(response.status, 200)
+		assertEquals(await response.text(), "")
+	} catch (e) {
+		console.log(e)
+		assert(isWooterError(e))
+		assert(e instanceof HandlerRespondedTwiceError)
+	}
+})
+
+Deno.test("handler doesn't respond", async () => {
+	const wooter = new Wooter()
+
+	wooter.route(c.chemin(), "GET", (ctx) => {})
+
+	try {
+		const response = await wooter.fetch(new Request("http://localhost:3000/"))
+		assertEquals(response.status, 500)
+		assertEquals(await response.text(), "Internal Server Error")
+	} catch (e) {
+		console.log(e)
+		assert(isWooterError(e))
+		assert(e instanceof HandlerDidntRespondError)
+	}
+})
+
+Deno.test("Handler not found if method doesn't match", async () => {
+	const wooter = new Wooter()
+
+	wooter.route(c.chemin(), "POST", (ctx) => {})
+
+	const response = await wooter.fetch(new Request("http://localhost:3000/"))
+	assertEquals(response.status, 404)
+	assertEquals(await response.text(), "Not found GET /")
+})
+
+Deno.test("Request logger example", async () => {
+	const fn = spy<unknown, [response: Response]>()
+	const uuid = crypto.randomUUID()
+	const wooter = new Wooter().use(async (ctx) => {
+		const response = await ctx.unwrap({})
+		response.headers.set("X-Request-Id", uuid)
+		fn(response)
+		ctx.resp(response)
+	})
+
+	wooter.route(c.chemin(), "GET", (ctx) => {
+		ctx.resp(new Response("Hello World!!"))
+	})
+
+	const response = await wooter.fetch(new Request("http://localhost:3000/"))
+	assertEquals(response.status, 200)
+	assertEquals(await response.text(), "Hello World!!")
+	assert(response.headers.get("X-Request-Id") === uuid)
+
+	assertSpyCalls(fn, 1)
+	assert(fn.calls[0].args[0] === response)
+})
+
+Deno.test("Error logger example", async () => {
+	const errorLog = spy<unknown, [error: any, uuid: string]>()
+	const uuid = crypto.randomUUID()
+	const wooter = new Wooter().use(async (ctx) => {
+		let response: Response
+		try {
+			response = await ctx.unwrap({})
+		} catch (error) {
+			errorLog(error, uuid)
+			console.error(error)
+			response = new Response("Internal Server Error", { status: 500 })
+		}
+		response.headers.set("X-Request-Id", uuid)
+
+		ctx.resp(response)
+	})
+
+	wooter.route(c.chemin(), "GET", (ctx) => {
+		throw null
+	})
+
+	const response = await wooter.fetch(new Request("http://localhost:3000/"))
+	assertEquals(response.status, 500)
+	assertEquals(await response.text(), "Internal Server Error")
+	assert(response.headers.get("X-Request-Id") === uuid)
+
+	assertSpyCalls(errorLog, 1)
+	assertSpyCall(errorLog, 0, { args: [null, uuid] })
+})
+
+Deno.test("middleware calls .block() before running handler", async () => {
+	const wooter = new Wooter()
+
+	wooter.use((ctx) => ctx.block())
+	wooter.route(c.chemin(), "GET", (ctx) => {})
+
+	try {
+		await wooter.fetch(new Request("http://localhost:3000/"))
+	} catch (e) {
+		console.log(e)
+		assert(isWooterError(e))
+		assert(e instanceof MiddlewareCalledBlockBeforeNextError)
+	}
+})
+
+Deno.test("ctx ok", async () => {
+	const wooter = new Wooter()
+	const fn = spy<any, [state: string]>()
+
+	wooter.use<{ fn: typeof fn }>(async (ctx) => {
+		ctx.unwrapAndRespond({ fn }).then(() => fn("a"))
+		ctx.block().then(() => fn("b"))
+	})
+	wooter.route(c.chemin(), "GET", (ctx) => {
+		ctx.resp(new Response("Hello world"))
+		ctx.ok()
+		setTimeout(() => {
+			fn("c")
+			console.log("after .ok()")
+		}, 1)
+	})
+
+	const [response, v] = wooter.fetch(new Request("http://localhost:3000/"))
+	console.log(await response, fn)
+	await v
 })
