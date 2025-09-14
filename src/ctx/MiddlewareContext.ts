@@ -1,14 +1,14 @@
-import type { Option } from "@/export/option.ts"
-import type { Data, Params } from "@/export/types.ts"
+import type { Option } from "@@/option.ts"
+import type { Data, Params } from "@@/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
 	RouteContext__block,
 	RouteContext__respond,
 } from "./RouteContext.ts"
-import type { Result } from "@/export/result.ts"
+import type { Result } from "@@/result.ts"
 import WooterError from "@/WooterError.ts"
-import type { TEmptyObject } from "../export/chemin.ts"
+import type { TEmptyObject } from "@@/chemin.ts"
 
 /**
  * The middleware handler must call ctx.next() before exiting
@@ -95,15 +95,20 @@ export default class MiddlewareContext<
 	/**
 	 * @internal
 	 */
-	static useMiddlewareHandler<TParams extends Params = Params, TData extends Data | undefined = undefined, TNextData extends Data | undefined = undefined>(
+	static useMiddlewareHandler<
+		TParams extends Params = Params,
+		TData extends Data | undefined = undefined,
+		TNextData extends Data | undefined = undefined,
+	>(
 		handler: MiddlewareHandler<TParams, TData, TNextData>,
 		params: Params,
 		next: InternalHandler,
 	): InternalHandler {
-		const nhandler: (...args: Parameters<MiddlewareHandler<TParams, TData, TNextData>>) => Promise<unknown> = async (ctx) => await handler(ctx)
+		const nhandler: (...args: Parameters<MiddlewareHandler<TParams, TData, TNextData>>) => Promise<unknown> = async (ctx) =>
+			await handler(ctx)
 
 		return (data, req) => {
-    		// @ts-expect-error: InternalHandler ignores generics
+			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
 			nhandler(ctx).then(() => {
 				if (ctx.blockChannel.resolved) return
@@ -165,7 +170,7 @@ export default class MiddlewareContext<
 	 */
 	readonly unwrapAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData): Promise<Response> => {
 		return (await this.pass(data)).unwrapOrElse(
-    		// @ts-expect-error: This case should always throw anyway
+			// @ts-expect-error: This case should always throw anyway
 			async () => {
 				throw (await this.block()).unwrapErr()
 			},

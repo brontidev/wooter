@@ -71,12 +71,7 @@ const middleware = async (ctx) => {
 	}
 }
 
-import {
-	parse,
-	type ParseOptions,
-	serialize,
-	type SerializeOptions,
-} from "npm:cookie"
+import { parse, type ParseOptions, serialize, type SerializeOptions } from "npm:cookie"
 
 const middleware = async ({ request, resp, next, pass, block }) => {
 	const cookieHeader = request.headers.get("cookie") || ""

@@ -1,9 +1,9 @@
 import type { TChemin, TEmptyObject } from "@dldc/chemin"
 import RouterGraph, { type MethodDefinitionInput, type MethodDefinitions } from "@/graph/RouterGraph.ts"
-import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@/export/types.ts"
+import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@@/types.ts"
 
 import type { Merge } from "@/types.ts"
-import c from "@/export/chemin.ts"
+import c from "@@/chemin.ts"
 import RouteContext from "@/ctx/RouteContext.ts"
 
 /**

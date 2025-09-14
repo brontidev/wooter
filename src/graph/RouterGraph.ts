@@ -1,6 +1,7 @@
+// deno-lint-ignore-file no-explicit-any
 import type { TChemin } from "@dldc/chemin"
-import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@/export/types.ts"
-import { InheritableCheminGraph } from "./InheritableCheminGraph.ts"
+import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@@/types.ts"
+import { CheminGraph } from "./CheminGraph.ts"
 import { type InternalHandler, RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 
@@ -29,7 +30,7 @@ type Node =
 	| { t: 1; handler: RouteHandler }
 	| { t: 2; handler: RouteHandler; methods: Set<string> }
 
-export default class RouterGraph extends InheritableCheminGraph<Node, [method: string]> {
+export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 	private middleware = new Set<MiddlewareHandler>()
 	private namespaces = new Set<RouterGraph>()
 
@@ -46,14 +47,12 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		})
 	}
 
-	// deno-lint-ignore no-explicit-any
 	addMiddleware(middleware: MiddlewareHandler<any, any, any>): void {
 		this.middleware.add(middleware)
 	}
 
 	addRoute_type0(
 		path: TChemin,
-		// deno-lint-ignore no-explicit-any
 		handlers: MethodDefinitions<any, any>,
 	) {
 		super.addNode(path, {
@@ -66,7 +65,6 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 
 	addRoute_type1(
 		path: TChemin,
-		// deno-lint-ignore no-explicit-any
 		handler: RouteHandler<any, any>,
 	) {
 		super.addNode(path, {
@@ -77,7 +75,6 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 
 	addRoute_type2(
 		path: TChemin,
-		// deno-lint-ignore no-explicit-any
 		handler: RouteHandler<any, any>,
 		methods: string[],
 	) {
@@ -118,14 +115,16 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		}
 	}
 
-	protected static getHandlerFromNode(node: Node, method: string) {
+	protected static getHandlerFromNode(node: Node, method: string): RouteHandler {
 		if (node.t === 0) {
-			return node.handlers.get(method)
+			return node.handlers.get(method)!
 		} else if (node.t === 1) {
 			return node.handler
 		} else if (node.t === 2) {
-			return node.methods.has(method) && node.handler
+			return node.handler
 		}
+		// deno-coverage-ignore
+		throw new TypeError("Issue loading route")
 	}
 
 	protected getNamespaceHandler(pathname: string, method: string): ReturnType<RouterGraph["internalGetHandler"]> | undefined {
@@ -134,32 +133,6 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 			if (handler) return handler
 		}
 	}
-
-	// protected getHandlerDefinition(
-	// 	pathname: string,
-	// 	method: string,
-	// ): [InternalHandler, ReturnType<RouterGraph["getNode"]>] | undefined {
-	// 	const definition = super.getNode(pathname, [method])
-	// 	if (!definition) return undefined
-	// 	const handler = RouterGraph.getHandlerFromNode(definition.node, method)
-	// 	if (!handler) return undefined
-	// 	return [this.compose(handler, definition.params as Params), definition]
-	// }
-
-	// getHandler(pathname: string, method: string): InternalHandler | undefined {
-	// 	method = method.toUpperCase()
-	// 	let handler: InternalHandler | undefined = undefined
-	// 	handler = this.getNamespaceHandler(pathname, method)
-	// 	if (!handler) {
-	// 		const handlerDefinition = this.getHandlerDefinition(pathname, method)
-	// 		if (handlerDefinition) {
-	// 			handler = handlerDefinition[0]
-	// 		}
-	// 	}
-	// 	if (!handler) return undefined
-	// 	return handler
-	// }
-	//
 
 	protected internalGetHandler(
 		pathname: string,
@@ -174,9 +147,7 @@ export default class RouterGraph extends InheritableCheminGraph<Node, [method: s
 		} else {
 			const nodeDef = super.getNode(pathname, [method])
 			if (!nodeDef) return undefined
-			const handler = RouterGraph.getHandlerFromNode(nodeDef.node, method)
-			if (!handler) return undefined
-			return [handler, nodeDef, this.middleware]
+			return [RouterGraph.getHandlerFromNode(nodeDef.node, method), nodeDef, this.middleware]
 		}
 	}
 
