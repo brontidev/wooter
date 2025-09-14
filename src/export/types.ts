@@ -1,4 +1,4 @@
-import type { Merge } from "../types.ts"
+import type { Merge } from "@/types.ts"
 
 /**
  * Type representing route parameters

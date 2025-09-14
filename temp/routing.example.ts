@@ -1,9 +1,6 @@
 import RouterGraph from "@/graph/RouterGraph.ts"
 import c from "@/export/chemin.ts"
-import {
-	RouteContext__block,
-	RouteContext__respond,
-} from "@/ctx/RouteContext.ts"
+import { RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import { Err } from "@/export/result.ts"
 
 const graph = new RouterGraph()
@@ -25,7 +22,7 @@ graph.addRoute_type0(c.chemin("1"), {
 })
 
 graph.addRoute_type0(c.chemin("2"), {
-	GET: async (ctx) => {
+	async GET(ctx) {
 		ctx.resp(new Response("yay!"))
 		// respond event: Some(Resonse("yay!"))
 		// block event: Ok
@@ -33,7 +30,7 @@ graph.addRoute_type0(c.chemin("2"), {
 })
 
 graph.addRoute_type0(c.chemin("3"), {
-	GET: async (ctx) => {
+	async GET(ctx) {
 		ctx.resp(new Response("yay!"))
 		// respond event: Some(Resonse("yay!"))
 		// middlewarectx.next() promise resolves here
@@ -51,7 +48,7 @@ graph.addRoute_type0(c.chemin("3"), {
 })
 
 graph.addRoute_type0(c.chemin("4"), {
-	GET: async (ctx) => {
+	async GET(ctx) {
 		// respond event: None
 		// block event: Err(HandlerDidntRespond)
 
@@ -62,7 +59,7 @@ graph.addRoute_type0(c.chemin("4"), {
 })
 
 graph.addRoute_type0(c.chemin("5"), {
-	GET: async (ctx) => {
+	async GET(ctx) {
 		setTimeout(() => {
 			ctx.resp(new Response("yay!"))
 			// 4. (cancelled) respond event: Response("yay!")
@@ -79,7 +76,7 @@ graph.addRoute_type0(c.chemin("5"), {
 })
 
 graph.addRoute_type0(c.chemin("6"), {
-	GET: async (ctx) => {
+	async GET(ctx) {
 		const { resolve, promise } = Promise.withResolvers()
 		setTimeout(resolve, 300)
 		await promise
