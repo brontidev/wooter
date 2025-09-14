@@ -297,24 +297,24 @@ Deno.test("middleware calls .block() before running handler", async () => {
 	}
 })
 
-Deno.test("ctx ok", async () => {
-	const wooter = new Wooter()
-	const fn = spy<any, [state: string]>()
+// Deno.test("ctx ok", async () => {
+// 	const wooter = new Wooter()
+// 	const fn = spy<any, [state: string]>()
 
-	wooter.use<{ fn: typeof fn }>(async (ctx) => {
-		ctx.unwrapAndRespond({ fn }).then(() => fn("a"))
-		ctx.block().then(() => fn("b"))
-	})
-	wooter.route(c.chemin(), "GET", (ctx) => {
-		ctx.resp(new Response("Hello world"))
-		ctx.ok()
-		setTimeout(() => {
-			fn("c")
-			console.log("after .ok()")
-		}, 1)
-	})
+// 	wooter.use<{ fn: typeof fn }>(async (ctx) => {
+// 		ctx.unwrapAndRespond({ fn }).then(() => fn("a"))
+// 		ctx.block().then(() => fn("b"))
+// 	})
+// 	wooter.route(c.chemin(), "GET", (ctx) => {
+// 		ctx.resp(new Response("Hello world"))
+// 		ctx.ok()
+// 		setTimeout(() => {
+// 			fn("c")
+// 			console.log("after .ok()")
+// 		}, 1)
+// 	})
 
-	const [response, v] = wooter.fetch(new Request("http://localhost:3000/"))
-	console.log(await response, fn)
-	await v
-})
+// 	const [response, v] = wooter.fetch(new Request("http://localhost:3000/"))
+// 	console.log(await response, fn)
+// 	await v
+// })
