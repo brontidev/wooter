@@ -1,10 +1,10 @@
 /**
  * Readonly JS map with types
  */
-// deno-coverage-ignore-start This isn't really in the scope of the library to actually test since it's just a wrapper of Map
+// deno-coverage-ignore-start This is just a wrapper of Map, and there is no implementation that needs testing.
 // deno-lint-ignore no-explicit-any
 export default class TypedMap<M extends Record<string, any>> {
-	private map: Map<keyof M, M[keyof M]>
+	private readonly map: Map<keyof M, M[keyof M]>
 
 	/**
 	 * @internal

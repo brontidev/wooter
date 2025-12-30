@@ -164,7 +164,7 @@ wooter.namespace(
 					await db.enqueue({
 						key,
 						idempotency,
-					}) // just try again and pretend everything was fine. advice from Tom Scott (i think)
+					}) // just try again and pretend everything was fine. advice from Tom Scott (I think)
 				} else {
 					console.info(`incremented ${key.join(" ")}`)
 				}
