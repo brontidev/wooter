@@ -4,13 +4,13 @@
  * but more of a simplified version of a promise
  */
 export class Channel<T> {
-	#promise: Promise<T>
+	private readonly _promise: Promise<T>
 
 	get promise(): Promise<T> {
-		return this.#promise
+		return this._promise
 	}
 
-	private resolve: (value: T) => void
+	private readonly on_resolve: (value: T) => void
 	private _resolved: boolean = false
 
 	get resolved(): boolean {
@@ -19,12 +19,12 @@ export class Channel<T> {
 
 	constructor() {
 		const { promise, resolve } = Promise.withResolvers<T>()
-		this.#promise = promise
-		this.resolve = resolve
+		this._promise = promise
+		this.on_resolve = resolve
 	}
 
 	push(value: T) {
-		this.resolve(value)
+		this.on_resolve(value)
 		this._resolved = true
 	}
 }

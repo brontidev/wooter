@@ -20,7 +20,7 @@ $:  port: 8080,
 $:})
 ```
 
-And use the Bun.serve api to serve the app.
+And use the `Bun.serve` api to serve the app.
 
 ```ts
 $:import { Wooter, c } from "@bronti/wooter"

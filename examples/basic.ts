@@ -9,7 +9,7 @@ wooter.route.GET(c.chemin(), async ({ err, resp }) => {
 })
 
 wooter.route.GET(c.chemin("error"), async ({ err, resp }) => {
-	err("An error occured!!")
+	err("An error occurred!!")
 })
 
 wooter.route.GET(c.chemin("gleem"), async ({ err, resp }) => {

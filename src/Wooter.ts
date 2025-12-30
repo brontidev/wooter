@@ -65,26 +65,25 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	 * Defines a route
 	 *
 	 * @param path Path
-	 * @param methodORHandlers
+	 * @param methodOrHandlers
 	 * @param handler Handler
 	 */
 	route<TParams extends Params>(
 		path: TChemin<TParams>,
-		methodORHandlers: MethodDefinitionInput | MethodDefinitions<Merge<TParams, TParentParams>, TData>,
+		methodOrHandlers: MethodDefinitionInput | MethodDefinitions<Merge<TParams, TParentParams>, TData>,
 		handler?: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TData>,
 	): this {
 		const wholePath = c.chemin(this.basePath, path)
-		if ((typeof methodORHandlers == "string" || Array.isArray(methodORHandlers))) {
+		if (typeof methodOrHandlers == "string" || Array.isArray(methodOrHandlers)) {
 			if (!handler) throw new TypeError()
-			if (methodORHandlers === "*") {
-				this.graph.addRoute_type1(wholePath, handler)
+			if (methodOrHandlers === "*") {
+				this.graph.addRoute_wildcardMethod(wholePath, handler)
 			} else {
-				const methods = [methodORHandlers].flat()
-				this.graph.addRoute_type2(wholePath, handler, methods)
+				const methods = new Set([methodOrHandlers].flat())
+				this.graph.addRoute_withMethodSet(wholePath, handler, methods)
 			}
 		} else {
-			const handlers: MethodDefinitions<Merge<TParams, TParentParams>, TData> = methodORHandlers
-			this.graph.addRoute_type0(wholePath, handlers)
+			this.graph.addRoute_withMethodMap(wholePath, methodOrHandlers as MethodDefinitions<Merge<TParams, TParentParams>, TData> )
 		}
 		return this
 	}
