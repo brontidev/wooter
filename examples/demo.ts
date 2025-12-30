@@ -37,7 +37,7 @@ const wooter = new Wooter()
 		async function json() {
 			if (_json) return _json
 			try {
-				// we want to clone this incase something else also wants to read the same request data!
+				// we want to clone this in case something else also wants to read the same request data!
 				return _json = await request.clone().json()
 			} catch (e) {
 				return resp(

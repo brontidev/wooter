@@ -22,13 +22,19 @@ export type MethodDefinitions<
 	& Partial<Record<Methods, RouteHandler<TParams, TData extends undefined ? Data : TData>>>
 	& Record<Uppercase<string>, RouteHandler<TParams, TData extends undefined ? Data : TData>>
 
+enum NodeType {
+	MethodsToHandlers,
+	AnyMethod,
+	HandlerWithMethods,
+}
+
 type Node =
 	| {
-		t: 0
+		t: NodeType.MethodsToHandlers
 		handlers: Map<string, RouteHandler>
 	}
-	| { t: 1; handler: RouteHandler }
-	| { t: 2; handler: RouteHandler; methods: Set<string> }
+	| { t: NodeType.AnyMethod; handler: RouteHandler }
+	| { t: NodeType.HandlerWithMethods; handler: RouteHandler; methods: Set<string> }
 
 export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 	private middleware = new Set<MiddlewareHandler>()
@@ -36,11 +42,11 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 
 	constructor() {
 		super((node, [method]) => {
-			if (node.t === 0) {
+			if (node.t === NodeType.MethodsToHandlers) {
 				return node.handlers.has(method)
-			} else if (node.t === 1) {
+			} else if (node.t === NodeType.AnyMethod) {
 				return true
-			} else if (node.t === 2) {
+			} else if (node.t === NodeType.HandlerWithMethods) {
 				return node.methods.has(method)
 			}
 			throw new Error()
@@ -51,37 +57,49 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		this.middleware.add(middleware)
 	}
 
-	addRoute_type0(
+	/**
+	 * Assign Multiple Methods & Handlers on a particular route
+	 * @internal
+	 */
+	addRoute_withMethodMap(
 		path: TChemin,
 		handlers: MethodDefinitions<any, any>,
 	) {
 		super.addNode(path, {
-			t: 0,
+			t: NodeType.MethodsToHandlers,
 			handlers: new Map(
 				Object.entries(handlers).map(([k, v]) => [k.toLowerCase(), v]),
 			),
 		})
 	}
 
-	addRoute_type1(
+	/**
+	 * Assign One handler for any method on a particular route
+	 * @internal
+	 */
+	addRoute_wildcardMethod(
 		path: TChemin,
 		handler: RouteHandler<any, any>,
 	) {
 		super.addNode(path, {
-			t: 1,
+			t: NodeType.AnyMethod,
 			handler,
 		})
 	}
 
-	addRoute_type2(
+	/**
+	 * Assign One handler for a list of methods on a particular route
+	 * @internal
+	 */
+	addRoute_withMethodSet(
 		path: TChemin,
 		handler: RouteHandler<any, any>,
-		methods: string[],
+		methods: Set<string>,
 	) {
 		super.addNode(path, {
-			t: 2,
+			t: NodeType.HandlerWithMethods,
 			handler,
-			methods: new Set(methods),
+			methods: methods,
 		})
 	}
 
@@ -124,7 +142,7 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 			return node.handler
 		}
 		// deno-coverage-ignore
-		throw new TypeError("Issue loading route")
+		throw new TypeError("critical error loading routes")
 	}
 
 	protected getNamespaceHandler(pathname: string, method: string): ReturnType<RouterGraph["internalGetHandler"]> | undefined {

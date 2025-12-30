@@ -80,7 +80,7 @@ export default class MiddlewareContext<
 
 	/**
 	 * must be called AFTER .next()
-	 * Resolves after the handler is completely finised
+	 * Resolves after the handler is completely finished
 	 * assuming the handler has already been started
 	 * @returns Result containing nothing, or an error
 	 */
@@ -104,13 +104,10 @@ export default class MiddlewareContext<
 		params: Params,
 		next: InternalHandler,
 	): InternalHandler {
-		const nhandler: (...args: Parameters<MiddlewareHandler<TParams, TData, TNextData>>) => Promise<unknown> = async (ctx) =>
-			await handler(ctx)
-
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
-			nhandler(ctx).then(() => {
+			Promise.try(handler, ctx).then(() => {
 				if (ctx.blockChannel.resolved) return
 				if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
 				if (!ctx.#blockCalled) return ctx.#nextCtx[RouteContext__block].promise.then((r) => ctx.blockChannel.push(r))
@@ -161,13 +158,12 @@ export default class MiddlewareContext<
 	}
 
 	/**
-	 * Runs handler, waits for response, sends it and re-throws any errors
-	 *
-	 * shorthand for `(await ctx.pass(data, request)).unwrapOrElse(async () => { throw (await ctx.block()).unwrapErr() }) `
-	 * @param data - middleware data
-	 * @param request - new request object
-	 * @returns Response
-	 */
+     * Runs handler, waits for response, sends it and re-throws any errors
+     *
+     * shorthand for `(await ctx.pass(data, request)).unwrapOrElse(async () => { throw (await ctx.block()).unwrapErr() }) `
+     * @param data - middleware data
+     * @returns Response
+     */
 	readonly unwrapAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData): Promise<Response> => {
 		return (await this.pass(data)).unwrapOrElse(
 			// @ts-expect-error: This case should always throw anyway
