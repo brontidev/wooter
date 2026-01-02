@@ -4,6 +4,7 @@ import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@@/
 import { CheminGraph } from "./CheminGraph.ts"
 import { type InternalHandler, RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
+import { type Option, Some, None } from "@oxi/option"
 
 /**
  * @internal
@@ -177,26 +178,55 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		return RouterGraph.compose(handler, params as Params, middleware)
 	}
 
+	// static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
+	// 	const { promise, resolve, reject } = Promise.withResolvers<Response>()
+	// 	const ctx = handler({}, request)
+	// 	ctx[RouteContext__respond].promise.then((v) => {
+	// 		v.match(
+	// 			(v) => resolve(v),
+	// 			() => {
+	// 				ctx[RouteContext__block].promise.then((e) => reject(e.unwrapErr()))
+	// 			},
+	// 		)
+	// 	})
+	// 	ctx[RouteContext__block].promise.then((v) => {
+	// 		v.match(
+	// 			(v) => v,
+	// 			(e) => {
+	// 				if (ctx[RouteContext__respond].resolved) throw e
+	// 				reject(e)
+	// 			},
+	// 		)
+	// 	})
+	// 	return promise
+	// }
+	
 	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
 		const { promise, resolve, reject } = Promise.withResolvers<Response>()
 		const ctx = handler({}, request)
-		ctx[RouteContext__respond].promise.then((v) => {
-			v.match(
-				(v) => resolve(v),
-				() => {
-					ctx[RouteContext__block].promise.then((e) => reject(e.unwrapErr()))
-				},
-			)
+		const block = ctx[RouteContext__block]
+		const respond = ctx[RouteContext__respond]
+		let respondOption: Option<Awaited<typeof respond.promise>> = None
+
+
+		respond.promise.then(v => {
+			respondOption = Some(v)
+			v.inspect(resolve)
 		})
-		ctx[RouteContext__block].promise.then((v) => {
-			v.match(
-				(v) => v,
-				(e) => {
-					if (ctx[RouteContext__respond].resolved) throw e
-					reject(e)
-				},
-			)
+		block.promise.then(blockResult => {
+			blockResult.inspectErr(err => {
+				respondOption.inspect(v => {
+					v.match(_ => {
+						// there was a response THEN an error, which means we throw
+						throw err
+					}, () => {
+						// error came before a response (this is the intended path from ctx.err())
+						reject(err)
+					})
+				})
+			})
 		})
+
 		return promise
 	}
 }
