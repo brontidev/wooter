@@ -28,8 +28,7 @@ Deno.test("Route with trailing slash", async () => {
 
 	// With trailing slash - chemin should handle this
 	const resp2 = await wooter.fetch(new Request("http://localhost/path/"))
-	// This might be 404 depending on chemin's exact matching behavior
-	assert(resp2.status === 200 || resp2.status === 404)
+	assert(resp2.status === 200)
 })
 
 Deno.test("Query parameters are preserved in request", async () => {
