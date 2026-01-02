@@ -2,7 +2,7 @@
 
 import Wooter from "@/Wooter.ts"
 
-import { assertEquals, type assertThrows } from "jsr:@std/assert"
+import { assertEquals, assertRejects, type assertThrows } from "jsr:@std/assert"
 import { assertSpyCall, assertSpyCalls, type returnsArg, type Spy, spy } from "jsr:@std/testing/mock"
 import c from "@@/chemin.ts"
 import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@@/types.ts"
@@ -113,14 +113,11 @@ Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", as
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
 	})
-	try {
-		const response = await wooter.fetch(new Request("http://localhost:3000/"))
-		assertEquals(response.status, 500)
-		assertEquals(await response.text(), "Internal Server Error")
-	} catch (e) {
-		assert(isWooterError(e))
-		assert(e instanceof MiddlewareHandlerDidntCallUpError)
-	}
+	
+	await assertRejects(
+		async () => await wooter.fetch(new Request("http://localhost:3000/")),
+		MiddlewareHandlerDidntCallUpError
+	)
 })
 
 Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
@@ -130,14 +127,11 @@ Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
 	})
-	try {
-		const response = await wooter.fetch(new Request("http://localhost:3000/"))
-		assertEquals(response.status, 500)
-		assertEquals(await response.text(), "Internal Server Error")
-	} catch (e) {
-		assert(isWooterError(e))
-		assert(e instanceof MiddlewareHandlerDidntCallUpError)
-	}
+	
+	await assertRejects(
+		async () => await wooter.fetch(new Request("http://localhost:3000/")),
+		MiddlewareHandlerDidntCallUpError
+	)
 })
 
 Deno.test("namespacing", async () => {

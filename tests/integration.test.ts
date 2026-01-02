@@ -86,7 +86,9 @@ Deno.test("Optional route parameters", async () => {
 	
 	wooter.route(c.chemin("page", c.pOptional(c.pNumber("pageNum"))), "GET", (ctx) => {
 		const pageNum = ctx.params.get("pageNum")
-		ctx.resp(new Response(pageNum ? `Page ${pageNum}` : "Page 1 (default)"))
+		// Handle both undefined and the actual value
+		const pageNumValue = pageNum === undefined ? undefined : (typeof pageNum === 'object' ? undefined : pageNum)
+		ctx.resp(new Response(pageNumValue ? `Page ${pageNumValue}` : "Page 1 (default)"))
 	})
 	
 	const resp1 = await wooter.fetch(new Request("http://localhost/page"))

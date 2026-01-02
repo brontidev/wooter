@@ -63,7 +63,8 @@ Deno.test("use - middleware can modify request", async () => {
 				"X-Modified": "true"
 			}
 		})
-		await ctx.next({}, newRequest)
+		const response = await ctx.unwrap({}, newRequest)
+		ctx.resp(response)
 	})
 	
 	wooter.route(
@@ -114,7 +115,7 @@ Deno.test("use - can chain multiple middlewares", async () => {
 Deno.test("use - passes route parameters correctly", async () => {
 	const wooter = new Wooter()
 	
-	const paramMiddleware = middleware(async (ctx) => {
+	const paramMiddleware = middleware<undefined, undefined, { id: string }>(async (ctx) => {
 		await ctx.unwrapAndRespond({})
 	})
 	

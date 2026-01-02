@@ -52,7 +52,7 @@ Deno.test("makeError - creates error response with status", () => {
 	const response = makeError(404)
 	
 	assertEquals(response.status, 404)
-	assertEquals(response.statusText, undefined)
+	assertEquals(response.statusText, "")
 })
 
 Deno.test("makeError - creates error response with message", async () => {

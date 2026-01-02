@@ -19,7 +19,7 @@ export default function use<
 	middlewareHandler: MiddlewareHandler<TParams, BaseData, NextData>,
 	handler: RouteHandler<TParams, OptionalMerge<Data, BaseData, NextData>>,
 ): RouteHandler<TParams, BaseData> {
-	return ({ params: _params, request, data, resp }) => {
+	return async ({ params: _params, request, data, resp }) => {
 		const params = Object.fromEntries(_params.entries())
 		const internalHandler = MiddlewareContext.useMiddlewareHandler(middlewareHandler, params, (data, request) => {
 			return RouteContext.useRouteHandler(handler, params)(data, request)
@@ -28,7 +28,7 @@ export default function use<
 		const new_ctx = internalHandler(Object.fromEntries(data.entries()), request)
 
 		new_ctx[RouteContext__respond].promise.then((v) => v.map((r) => resp(r)))
-		return new_ctx[RouteContext__block].promise
+		return await new_ctx[RouteContext__block].promise
 	}
 }
 
