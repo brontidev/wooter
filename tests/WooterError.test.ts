@@ -1,13 +1,7 @@
-import { assertEquals, assert, assertInstanceOf } from "@std/assert"
+import { assert, assertEquals, assertInstanceOf } from "@std/assert"
 import WooterError, { isWooterError } from "@/WooterError.ts"
-import {
-	HandlerDidntRespondError,
-	HandlerRespondedTwiceError,
-} from "@/ctx/RouteContext.ts"
-import {
-	MiddlewareCalledBlockBeforeNextError,
-	MiddlewareHandlerDidntCallUpError,
-} from "@/ctx/MiddlewareContext.ts"
+import { HandlerDidntRespondError, HandlerRespondedTwiceError } from "@/ctx/RouteContext.ts"
+import { MiddlewareCalledBlockBeforeNextError, MiddlewareHandlerDidntCallUpError } from "@/ctx/MiddlewareContext.ts"
 
 Deno.test("WooterError - is an Error instance", () => {
 	const error = new WooterError("test error")
@@ -25,7 +19,7 @@ Deno.test("isWooterError - identifies WooterError instances", () => {
 	const wooterError = new WooterError("test")
 	const regularError = new Error("test")
 	const typeError = new TypeError("test")
-	
+
 	assert(isWooterError(wooterError))
 	assertEquals(isWooterError(regularError), false)
 	assertEquals(isWooterError(typeError), false)
@@ -78,14 +72,14 @@ Deno.test("All Wooter errors can be distinguished", () => {
 		new MiddlewareHandlerDidntCallUpError(),
 		new MiddlewareCalledBlockBeforeNextError(),
 	]
-	
+
 	// All should be WooterErrors
-	errors.forEach(error => {
+	errors.forEach((error) => {
 		assert(isWooterError(error))
 	})
-	
+
 	// Each should have unique name
-	const names = errors.map(e => e.name)
+	const names = errors.map((e) => e.name)
 	const uniqueNames = new Set(names)
 	assertEquals(uniqueNames.size, errors.length)
 })

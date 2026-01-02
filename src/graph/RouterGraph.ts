@@ -4,7 +4,7 @@ import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@@/
 import { CheminGraph } from "./CheminGraph.ts"
 import { type InternalHandler, RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
-import { type Option, Some, None } from "@oxi/option"
+import { None, type Option, Some } from "@oxi/option"
 
 /**
  * @internal
@@ -185,15 +185,14 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		const respond = ctx[RouteContext__respond]
 		let respondOption: Option<Awaited<typeof respond.promise>> = None
 
-
-		respond.promise.then(v => {
+		respond.promise.then((v) => {
 			respondOption = Some(v)
 			v.inspect(resolve)
 		})
-		block.promise.then(blockResult => {
-			blockResult.inspectErr(err => {
-				respondOption.inspect(v => {
-					v.match(_ => {
+		block.promise.then((blockResult) => {
+			blockResult.inspectErr((err) => {
+				respondOption.inspect((v) => {
+					v.match((_) => {
 						// there was a response THEN an error, which means we throw
 						throw err
 					}, () => {
