@@ -1,4 +1,4 @@
-import { type TChemin } from "@@/chemin.ts"
+import type { TChemin } from "@@/chemin.ts"
 
 /**
  * A chemin based graph that will match nodes to a pathname
