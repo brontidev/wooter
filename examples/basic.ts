@@ -1,48 +1,49 @@
 import { delay } from "jsr:@std/async"
-import { c, Wooter } from "@/export/index.ts"
-import { StandaloneMiddlewareHandler } from "@/export/types.ts"
+import { c, Wooter } from "@@/index.ts"
 
 const wooter = new Wooter()
 
-wooter.route.GET(c.chemin(), async ({ err, resp }) => {
+wooter.route(c.chemin(), "GET", async ({ resp }) => {
 	resp(new Response("hi"))
 })
 
-wooter.route.GET(c.chemin("error"), async ({ err, resp }) => {
-	err("An error occured!!")
+wooter.route(c.chemin("error"), "GET", async ({ resp }) => {
+	throw new Error("An error occurred!!")
 })
 
-wooter.route.GET(c.chemin("gleem"), async ({ err, resp }) => {
+wooter.route(c.chemin("gleem"), "GET", async ({ resp }) => {
 	resp(new Response("glirp"))
 })
 
 wooter.route(c.chemin("beep", c.pString("a")), {
-	async GET({ err, resp, params: { a } }) {
+	async GET({ resp, params }) {
+		const a = params.get("a")
 		resp(new Response("boop: " + a))
 	},
-	async POST({ err, resp }) {
+	async POST({ resp }) {
 		resp(new Response("bop"))
 	},
 })
 
-wooter.route.GET(c.chemin("beep"), async ({ err, resp }) => {
+wooter.route(c.chemin("beep"), "GET", async ({ resp }) => {
 	resp(new Response("boop"))
 })
 
-wooter.route.GET(
+wooter.route(
 	c.chemin("with", c.pNumber("param")),
-	async ({ err, resp, params }) => {
-		resp(new Response(`hi ${params.param}`))
+	"GET",
+	async ({ resp, params }) => {
+		resp(new Response(`hi ${params.get("param")}`))
 	},
 )
 
-wooter.route.GET(c.chemin("after"), async ({ err, resp }) => {
+wooter.route(c.chemin("after"), "GET", async ({ resp }) => {
 	resp(new Response("ok!"))
 	await delay(1000)
 	console.log("this ran after the response was sent.")
 })
 
-wooter.route.GET(c.chemin("websocket"), async ({ request, err, resp }) => {
+wooter.route(c.chemin("websocket"), "GET", async ({ request, resp }) => {
 	if (request.headers.get("upgrade") !== "websocket") {
 		return resp(new Response(null, { status: 501 }))
 	}
@@ -60,10 +61,14 @@ wooter.route.GET(c.chemin("websocket"), async ({ request, err, resp }) => {
 	})
 })
 
-wooter.route.GET(c.chemin("exits-without-response"), async ({}) => {
+wooter.route(c.chemin("exits-without-response"), "GET", async ({}) => {})
+
+wooter.route(c.chemin("crash"), "GET", ({ resp }) => {
+	resp(new Response("OK"))
+	throw new Error()
 })
 
-wooter.route.GET(c.chemin("takes-a-while"), async ({ resp }) => {
+wooter.route(c.chemin("takes-a-while"), "GET", async ({ resp }) => {
 	await delay(1000)
 	resp(new Response("I'm here! sorry I took so long"))
 })
