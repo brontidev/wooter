@@ -1,5 +1,5 @@
 {
-	"$schema": "https://github.com/denoland/deno/raw/bc71eb9541567bd7aa8629ea0b83e45ddb1ad807/cli/schemas/config-file.v1.json",
+	"$schema": "https://github.com/denoland/deno/raw/refs/heads/main/cli/schemas/config-file.v1.json",
 	"name": "@bronti/wooter",
 	"version": "3.0.0-beta2",
 	"license": "MIT",
@@ -59,6 +59,7 @@
 			"./temp"
 		]
 	},
+	"unstable":["kv"],
 	"fmt": {
 		"semiColons": false,
 		"useTabs": true,
