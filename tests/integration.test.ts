@@ -1,14 +1,7 @@
 import { assert, assertEquals } from "@std/assert"
 import Wooter from "@/Wooter.ts"
 import * as c from "@@/chemin.ts"
-import { Option } from "@oxi/option"
-
-function optionalValueToOption<T>(optionalValue: c.OptionalValue<T>): Option<T> {
-	if (optionalValue.present) {
-		return Option.Some(optionalValue.value)
-	}
-	return Option.None
-}
+import { optionalValueToOption } from "@@/option.ts"
 
 Deno.test("Multiple HTTP methods on same route", async () => {
 	const wooter = new Wooter()
