@@ -11,9 +11,10 @@ import RouteContext, { RouteContext__block, RouteContext__respond } from "@/ctx/
  * @returns Handler - Handler that wraps the handler in the middleware
  */
 export default function use<
-	TParams extends Params,
-	BaseData extends Data,
 	NextData extends Data | undefined = undefined,
+	BaseData extends Data | undefined = undefined,
+	// deno-lint-ignore ban-types
+	TParams extends Params = {},
 >(
 	middlewareHandler: MiddlewareHandler<TParams, BaseData, NextData>,
 	handler: RouteHandler<TParams, OptionalMerge<Data, BaseData, NextData>>,
@@ -46,8 +47,9 @@ export default function use<
  * wooter.use(userAgent)
  * ```
  */
-export function middleware<TNextData extends Data | undefined = undefined, TData extends Data = Data>(
-	handler: MiddlewareHandler<Params, TData, TNextData>,
-): MiddlewareHandler<Params, TData, TNextData> {
+export function middleware<TNextData extends Data | undefined = undefined, TData extends Data | undefined = undefined, 	// deno-lint-ignore ban-types
+	TParams extends Params = {},>(
+	handler: MiddlewareHandler<TParams, TData, TNextData>,
+): MiddlewareHandler<TParams, TData, TNextData> {
 	return handler
 }

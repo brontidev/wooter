@@ -2,12 +2,10 @@
 
 import Wooter from "@/Wooter.ts"
 
-import { assertEquals, type assertThrows } from "jsr:@std/assert"
-import { assertSpyCall, assertSpyCalls, type returnsArg, type Spy, spy } from "jsr:@std/testing/mock"
+import { assertEquals, assertRejects, assert, assertIsError, assertInstanceOf } from "@std/assert"
+import { assertSpyCall, assertSpyCalls, type returnsArg, type Spy, spy } from "@std/testing/mock"
 import c from "@@/chemin.ts"
 import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@@/types.ts"
-import { assertIsError } from "jsr:@std/assert@^1.0.10/is-error"
-import { assert } from "jsr:@std/assert/assert"
 import {
 	HandlerDidntRespondError,
 	HandlerRespondedTwiceError,
@@ -16,7 +14,6 @@ import {
 	MiddlewareHandlerDidntCallUpError,
 	use,
 } from "@@/index.ts"
-
 function middlewareSpy<
 	T extends unknown[],
 	TParams extends Params = Params,
@@ -113,14 +110,11 @@ Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", as
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
 	})
-	try {
-		const response = await wooter.fetch(new Request("http://localhost:3000/"))
-		assertEquals(response.status, 500)
-		assertEquals(await response.text(), "Internal Server Error")
-	} catch (e) {
-		assert(isWooterError(e))
-		assert(e instanceof MiddlewareHandlerDidntCallUpError)
-	}
+	
+	await assertRejects(
+		async () => await wooter.fetch(new Request("http://localhost:3000/")),
+		MiddlewareHandlerDidntCallUpError
+	)
 })
 
 Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
@@ -130,14 +124,11 @@ Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
 	})
-	try {
-		const response = await wooter.fetch(new Request("http://localhost:3000/"))
-		assertEquals(response.status, 500)
-		assertEquals(await response.text(), "Internal Server Error")
-	} catch (e) {
-		assert(isWooterError(e))
-		assert(e instanceof MiddlewareHandlerDidntCallUpError)
-	}
+	
+	await assertRejects(
+		async () => await wooter.fetch(new Request("http://localhost:3000/")),
+		MiddlewareHandlerDidntCallUpError
+	)
 })
 
 Deno.test("namespacing", async () => {
@@ -208,7 +199,7 @@ Deno.test("Route parameters", async () => {
 	assertEquals(await response.text(), uuid)
 })
 
-Deno.test("handler responds twice", async () => {
+Deno.test("handler responds twice - causes an unhandled rejection", async () => {
 	const wooter = new Wooter()
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
@@ -216,15 +207,17 @@ Deno.test("handler responds twice", async () => {
 		ctx.resp(new Response())
 	})
 
-	try {
-		const response = await wooter.fetch(new Request("http://localhost:3000/"))
-		assertEquals(response.status, 200)
-		assertEquals(await response.text(), "")
-	} catch (e) {
-		console.log(e)
-		assert(isWooterError(e))
-		assert(e instanceof HandlerRespondedTwiceError)
-	}
+	addEventListener("unhandledrejection", (e) => {
+		e.preventDefault()
+		assertIsError(e.reason)
+		assert(isWooterError(e.reason))
+		assertInstanceOf(e.reason, HandlerRespondedTwiceError)
+	})
+
+
+	const response = await wooter.fetch(new Request("http://localhost:3000/"))
+	assertEquals(response.status, 200)
+	assertEquals(await response.text(), "")
 })
 
 Deno.test("handler doesn't respond", async () => {

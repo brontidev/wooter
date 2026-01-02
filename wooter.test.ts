@@ -1,21 +1,10 @@
 // deno-lint-ignore-file no-explicit-any no-unused-vars
 
-import type {
-	c,
-	HandlerDidntRespondError,
-	HandlerRespondedTwiceError,
-	isWooterError,
-	middleware,
-	MiddlewareCalledBlockBeforeNextError,
-	MiddlewareHandlerDidntCallUpError,
-	use,
-	Wooter,
-} from "@@/index.ts"
 import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@@/types.ts"
-import type { assertEquals } from "@std/assert/equals"
-
-import {} from "@std/assert"
-import { type assertSpyCall, type assertSpyCalls, type returnsArg, type Spy, spy } from "@std/testing/mock"
+import { type Spy, spy, assertSpyCallArgs } from "@std/testing/mock"
+import { assertEquals } from "@std/assert"
+import c from "@@/chemin.ts"
+import Wooter from "@/Wooter.ts"
 
 const BASE_URL = new URL("http://example.com/")
 
@@ -48,4 +37,37 @@ function wooterFetch(wooter: Wooter, path: string, requestInit?: RequestInit): [
 	return [url, request, responsePromise]
 }
 
-// TODO: write tests
+// Integration tests using helper functions
+
+Deno.test("wooterFetch - helper creates proper request", async () => {
+	const wooter = new Wooter()
+	wooter.route(c.chemin("test"), "GET", (ctx) => {
+		ctx.resp(new Response("OK"))
+	})
+	
+	const [url, request, responsePromise] = wooterFetch(wooter, "/test")
+	
+	assertEquals(url.pathname, "/test")
+	assertEquals(request.url, BASE_URL + "test")
+	
+	const response = await responsePromise
+	assertEquals(response.status, 200)
+})
+
+Deno.test("useCatchErrors - middleware catches errors", async () => {
+	const wooter = new Wooter()
+	const [errorSpy, catchMiddleware] = useCatchErrors()
+	const testError = new Error("Test error")
+	
+	wooter.use(catchMiddleware)
+	wooter.route(c.chemin(), "GET", () => {
+		throw testError
+	})
+	
+	const [, , responsePromise] = wooterFetch(wooter, "/")
+	const response = await responsePromise
+	
+	assertEquals(response.status, 500)
+	assertEquals(await response.text(), "Internal Server Error")
+	assertSpyCallArgs(errorSpy, 0, [testError])
+})

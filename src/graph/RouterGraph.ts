@@ -178,29 +178,6 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		return RouterGraph.compose(handler, params as Params, middleware)
 	}
 
-	// static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
-	// 	const { promise, resolve, reject } = Promise.withResolvers<Response>()
-	// 	const ctx = handler({}, request)
-	// 	ctx[RouteContext__respond].promise.then((v) => {
-	// 		v.match(
-	// 			(v) => resolve(v),
-	// 			() => {
-	// 				ctx[RouteContext__block].promise.then((e) => reject(e.unwrapErr()))
-	// 			},
-	// 		)
-	// 	})
-	// 	ctx[RouteContext__block].promise.then((v) => {
-	// 		v.match(
-	// 			(v) => v,
-	// 			(e) => {
-	// 				if (ctx[RouteContext__respond].resolved) throw e
-	// 				reject(e)
-	// 			},
-	// 		)
-	// 	})
-	// 	return promise
-	// }
-	
 	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
 		const { promise, resolve, reject } = Promise.withResolvers<Response>()
 		const ctx = handler({}, request)
