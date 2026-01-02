@@ -4,9 +4,9 @@ import * as c from "@@/chemin.ts"
 import { Option } from "@oxi/option"
 
 
-function optionalValue_to_option<T>(optional_value: c.OptionalValue<T>): Option<T> {
-	if(optional_value.present) {
-		return Option.Some(optional_value.value)
+function optionalValueToOption<T>(optionalValue: c.OptionalValue<T>): Option<T> {
+	if(optionalValue.present) {
+		return Option.Some(optionalValue.value)
 	}
 	return Option.None
 }
