@@ -140,13 +140,18 @@ export default class RouteContext<
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new RouteContext<TParams, TData>(req, data, params)
-			Promise.try(handler, ctx).then(() => {
-				if (ctx.blockChannel.resolved) return
-				if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
-				ctx.ok()
-			}, (err) => {
-				ctx.err(err)
-			})
+			const run = async () => {
+				debugger;
+				try {
+					await Promise.try(handler, ctx)
+					if (ctx.blockChannel.resolved) return
+					if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
+					ctx.ok()
+				} catch (err) {
+					ctx.err(err)
+				}
+			};
+			run()
 			return ctx as unknown as RouteContext
 		}
 	}

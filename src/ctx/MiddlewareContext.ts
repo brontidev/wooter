@@ -107,20 +107,21 @@ export default class MiddlewareContext<
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
-			// Note: Must use .then() here as outer function is synchronous, but inner handler needs await
-			Promise.try(handler, ctx).then(async () => {
-				if (ctx.blockChannel.resolved) return
-				if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
-				if (!ctx.#blockCalled) {
-					const result = await ctx.#nextCtx[RouteContext__block].promise
-					ctx.blockChannel.push(result)
-					return
+			const run = async () => {
+				debugger;
+				try {
+					await Promise.try(handler, ctx)
+					if (ctx.blockChannel.resolved) return
+					if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
+					if (!ctx.#blockCalled) return await ctx.#nextCtx[RouteContext__block].promise.then((r) => ctx.blockChannel.push(r))
+					if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
+					ctx.ok()
+				} catch (e) {
+					ctx.err(e)
 				}
-				if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
-				ctx.ok()
-			}, (err) => {
-				ctx.err(err)
-			})
+			}
+
+			run()
 			return ctx as unknown as MiddlewareContext
 		}
 	}
