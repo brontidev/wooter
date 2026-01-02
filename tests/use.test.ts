@@ -5,13 +5,13 @@ import c from "@@/chemin.ts"
 import use, { middleware } from "@@/use.ts"
 
 Deno.test("middleware - creates typed middleware handler", async () => {
-	const wooter = new Wooter()
-	
 	const authMiddleware = middleware<{ userId: number }>(async (ctx) => {
 		await ctx.unwrapAndRespond({ userId: 123 })
 	})
+	const wooter = new Wooter().use(authMiddleware)
 	
-	wooter.use(authMiddleware)
+
+
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		const userId = ctx.data.get("userId")
 		assertEquals(userId, 123)

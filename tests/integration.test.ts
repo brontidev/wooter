@@ -84,7 +84,7 @@ Deno.test("Multiple route parameters", async () => {
 Deno.test("Optional route parameters", async () => {
 	const wooter = new Wooter()
 	
-	wooter.route(c.chemin("page", c.pOpt(c.pNumber("pageNum"))), "GET", (ctx) => {
+	wooter.route(c.chemin("page", c.pOptional(c.pNumber("pageNum"))), "GET", (ctx) => {
 		const pageNum = ctx.params.get("pageNum")
 		ctx.resp(new Response(pageNum ? `Page ${pageNum}` : "Page 1 (default)"))
 	})

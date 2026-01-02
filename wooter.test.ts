@@ -1,8 +1,7 @@
 // deno-lint-ignore-file no-explicit-any no-unused-vars
 
-import type { Wooter } from "@@/index.ts"
 import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@@/types.ts"
-import { type Spy, spy } from "@std/testing/mock"
+import { type Spy, spy, assertSpyCallArgs } from "@std/testing/mock"
 import { assertEquals } from "@std/assert"
 import c from "@@/chemin.ts"
 import Wooter from "@/Wooter.ts"
@@ -58,10 +57,11 @@ Deno.test("wooterFetch - helper creates proper request", async () => {
 Deno.test("useCatchErrors - middleware catches errors", async () => {
 	const wooter = new Wooter()
 	const [errorSpy, catchMiddleware] = useCatchErrors()
+	const testError = new Error("Test error")
 	
 	wooter.use(catchMiddleware)
 	wooter.route(c.chemin(), "GET", () => {
-		throw new Error("Test error")
+		throw testError
 	})
 	
 	const [, , responsePromise] = wooterFetch(wooter, "/")
@@ -69,4 +69,5 @@ Deno.test("useCatchErrors - middleware catches errors", async () => {
 	
 	assertEquals(response.status, 500)
 	assertEquals(await response.text(), "Internal Server Error")
+	assertSpyCallArgs(errorSpy, 0, [testError])
 })
