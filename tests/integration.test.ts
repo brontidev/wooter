@@ -1,6 +1,15 @@
 import { assertEquals, assert } from "@std/assert"
 import Wooter from "@/Wooter.ts"
-import c from "@@/chemin.ts"
+import * as c from "@@/chemin.ts"
+import { Option } from "@oxi/option"
+
+
+function optionalValue_to_option<T>(optional_value: c.OptionalValue<T>): Option<T> {
+	if(optional_value.present) {
+		return Option.Some(optional_value.value)
+	}
+	return Option.None
+}
 
 Deno.test("Multiple HTTP methods on same route", async () => {
 	const wooter = new Wooter()
@@ -85,10 +94,8 @@ Deno.test("Optional route parameters", async () => {
 	const wooter = new Wooter()
 	
 	wooter.route(c.chemin("page", c.pOptional(c.pNumber("pageNum"))), "GET", (ctx) => {
-		const pageNum = ctx.params.get("pageNum")
-		// pOptional returns the value or undefined
-		const pageNumValue = typeof pageNum === 'number' ? pageNum : undefined
-		ctx.resp(new Response(pageNumValue ? `Page ${pageNumValue}` : "Page 1 (default)"))
+		const pageNum = optionalValue_to_option(ctx.params.get("pageNum"))
+		ctx.resp(new Response(pageNum.mapOr("Page 1 (default)", (v) => `Page ${v}`)))
 	})
 	
 	const resp1 = await wooter.fetch(new Request("http://localhost/page"))
@@ -126,7 +133,7 @@ Deno.test("Middleware execution order", async () => {
 		"middleware2-before",
 		"handler",
 		"middleware2-after",
-		"middleware1-after",
+		// "middleware1-after", // this will not be present because the middleware responds before order.push is called again
 	])
 })
 
