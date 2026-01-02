@@ -1,7 +1,7 @@
 // This is another example of wooter, which shows off the middleware functionality and namespaces.
 
 import { c, makeError, makeRedirect, Wooter } from "@@/index.ts"
-import { parse, type ParseOptions, serialize, type SerializeOptions } from "npm:cookie"
+import cookies from "./middleware/cookies.ts"
 
 export class Redirect {
 	status: number
@@ -18,13 +18,6 @@ export class Redirect {
 		this.status = status
 		this.location = location
 	}
-}
-
-type Cookies = {
-	get(name: string): string | undefined
-	getAll(): Record<string, string | undefined>
-	delete(name: string): void
-	set(name: string, value: string, options?: Partial<SerializeOptions>): void
 }
 
 const wooter = new Wooter()
@@ -44,67 +37,7 @@ const wooter = new Wooter()
 			throw e
 		}
 	})
-	.use<{ cookies: Cookies }>(async ({ request, resp, unwrap }) => {
-		const cookieHeader = request.headers.get("cookie") || ""
-		const parsedCookies = parse(cookieHeader)
-		const cookieMap: Map<
-			string,
-			{ value: string; opts?: Partial<SerializeOptions> }
-		> = new Map()
-
-		const cookies: Cookies = {
-			get: (name: string) => cookieMap.get(name)?.value ?? parsedCookies[name],
-			getAll: () =>
-				Object.fromEntries(
-					Object.entries(parsedCookies).concat(
-						cookieMap.entries().toArray().map(
-							([name, { value }]) => {
-								return [name, value] as const
-							},
-						),
-					),
-				),
-			delete: (name: string) => {
-				cookieMap.set(name, { value: "", opts: { maxAge: 0 } })
-			},
-			set: (
-				name: string,
-				value: string,
-				options?: Partial<SerializeOptions>,
-			) => {
-				cookieMap.set(name, { value, opts: options })
-			},
-		}
-
-		const response = await unwrap({ cookies })
-
-		// Get all cookies that were set during request handling
-		const newCookies = cookieMap.entries().toArray()
-			.map(([name, cookie]) =>
-				serialize(name, cookie.value || "", {
-					...cookie.opts,
-					httpOnly: true, // Ensure cookies are httpOnly by default for security
-					secure: true, // Ensure cookies are secure by default
-				})
-			)
-
-		if (newCookies.length > 0) {
-			const existingHeaders = new Headers(response.headers)
-			newCookies.forEach((cookie) => {
-				existingHeaders.append("Set-Cookie", cookie)
-			})
-
-			return resp(
-				new Response(response.body, {
-					status: response.status,
-					statusText: response.statusText,
-					headers: existingHeaders,
-				}),
-			)
-		}
-
-		resp(response)
-	})
+	.use(cookies)
 	.use<{ username: string }>(async ({ request, resp, unwrapAndRespond }) => {
 		let username = request.headers.get("x-username")
 		if (!username) return resp(makeError(402, "Missing username"))
@@ -136,7 +69,7 @@ const wooter = new Wooter()
 				sameSite: "lax",
 				maxAge: 86400 * 7,
 				path: "/",
-			} satisfies SerializeOptions,
+			},
 		)
 		throw new Redirect(302, "/home")
 	})
@@ -145,9 +78,9 @@ const wooter = new Wooter()
 {
 	const apiWooter = wooter.router(c.chemin("api", c.pNumber("asd")))
 
-	apiWooter.route(c.chemin("gateway"), "GET", async ({ request, resp, data }) => {
+	apiWooter.route(c.chemin("gateway"), "GET", async ({ resp, data }) => {
 		const username = data.get("username")
-		resp(Response.json({ ok: true }))
+		resp(Response.json({ ok: true, msg: `Hello, ${username}` }))
 	})
 }
 

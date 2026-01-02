@@ -96,6 +96,13 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	 */
 	use<TNextData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<Params, TData, TNextData>,
+	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
+	// @ts-ignore: this is a fix to allow standalone handlers to work
+	use<TNextData extends Data | undefined = undefined>(
+		handler: MiddlewareHandler<Params, Data, TNextData>,
+	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
+	use<TNextData extends Data | undefined = undefined>(
+		handler: MiddlewareHandler<Params, TData, TNextData>,
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams> {
 		this.graph.addMiddleware(handler)
 		return this as unknown as Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>

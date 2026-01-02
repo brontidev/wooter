@@ -30,3 +30,23 @@ export default function use<
 		return new_ctx[RouteContext__block].promise
 	}
 }
+
+/**
+ * Creates & Types a middleware handler
+ * @param handler Middleware handler
+ *
+ * @example
+ * ```ts
+ * const userAgent = middleware<{ userAgent: string | null }>(async ({ request, unwrapAndRespond }) => {
+ *     await unwrapAndRespond({ userAgent: request.headers.get('User-Agent') })
+ * })
+ *
+ * wooter.use(userAgent)
+ * ```
+ *
+ */
+export function middleware<TNextData extends Data | undefined = undefined, TData extends Data = Data>(
+	handler: MiddlewareHandler<Params, TData, TNextData>,
+): MiddlewareHandler<Params, TData, TNextData> {
+	return handler
+}

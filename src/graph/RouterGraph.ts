@@ -99,7 +99,7 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		super.addNode(path, {
 			t: NodeType.HandlerWithMethods,
 			handler,
-			methods: new Set(methods.values().map(x => x.toUpperCase())),
+			methods: new Set(methods.values().map((x) => x.toUpperCase())),
 		})
 	}
 

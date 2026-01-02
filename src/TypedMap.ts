@@ -17,7 +17,18 @@ export default class TypedMap<M extends Record<string, any>> {
 	 * indicates whether an element with the specified key exists or not.
 	 * @returns boolean indicating whether an element with the specified key exists or not.
 	 */
-	has(key: keyof M): boolean {
+	has(key: keyof M): true {
+		// @ts-ignore: If the value is not there, it is the users fault, not ours
+		return this.map.has(key)
+	}
+
+	/**
+	 * [ignores types]
+	 *
+	 * indicates whether an element with the specified key exists or not.
+	 * @returns boolean indicating whether an element with the specified key exists or not.
+	 */
+	hasAny(key: keyof M): boolean {
 		return this.map.has(key)
 	}
 
@@ -38,6 +49,15 @@ export default class TypedMap<M extends Record<string, any>> {
 	 */
 	get<K extends keyof M>(key: K): M[K] {
 		return this.map.get(key)! as unknown as M[K]
+	}
+
+	/**
+	 * Ignores types
+	 * Returns a specified element from the Map object. If the value that is associated to the provided key is an object, then you will get a reference to that object and any change made to that object will effectively modify it inside the Map.
+	 * @returns Returns the element associated with the specified key. If no element is associated with the specified key, undefined is returned.
+	 */
+	getAny(key: unknown): unknown {
+		return this.map.get(key as keyof M)
 	}
 
 	/**
