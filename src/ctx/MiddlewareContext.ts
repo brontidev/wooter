@@ -158,12 +158,12 @@ export default class MiddlewareContext<
 	}
 
 	/**
-     * Runs handler, waits for response, sends it and re-throws any errors
-     *
-     * shorthand for `(await ctx.pass(data, request)).unwrapOrElse(async () => { throw (await ctx.block()).unwrapErr() }) `
-     * @param data - middleware data
-     * @returns Response
-     */
+	 * Runs handler, waits for response, sends it and re-throws any errors
+	 *
+	 * shorthand for `(await ctx.pass(data, request)).unwrapOrElse(async () => { throw (await ctx.block()).unwrapErr() }) `
+	 * @param data - middleware data
+	 * @returns Response
+	 */
 	readonly unwrapAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData): Promise<Response> => {
 		return (await this.pass(data)).unwrapOrElse(
 			// @ts-expect-error: This case should always throw anyway

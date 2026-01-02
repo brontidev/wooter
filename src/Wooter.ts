@@ -83,7 +83,10 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 				this.graph.addRoute_withMethodSet(wholePath, handler, methods)
 			}
 		} else {
-			this.graph.addRoute_withMethodMap(wholePath, methodOrHandlers as MethodDefinitions<Merge<TParams, TParentParams>, TData> )
+			this.graph.addRoute_withMethodMap(
+				wholePath,
+				methodOrHandlers as MethodDefinitions<Merge<TParams, TParentParams>, TData>,
+			)
 		}
 		return this
 	}

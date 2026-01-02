@@ -9,5 +9,5 @@ export default class WooterError extends Error {}
  * @param v - Value to check
  */
 export function isWooterError(v: unknown): v is WooterError {
-    return v instanceof WooterError
+	return v instanceof WooterError
 }
