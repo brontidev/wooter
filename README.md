@@ -4,9 +4,6 @@
 [![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
 > [!WARNING]
-> This is the WIP version 3 branch of an already WIP library. This code is very unstable and should not be used in production.
-
-> [!WARNING]
 > wooter is beta & WIP, the main features are implemented but there are some bugs that may appear. I advise against using this for
 > big influential projects until v100.0.0\
 > **woot around and find out**
