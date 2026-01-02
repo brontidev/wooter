@@ -1,4 +1,4 @@
-import { matchExact as matchCheminExact, type TChemin } from "@@/chemin.ts"
+import { type TChemin } from "@@/chemin.ts"
 
 /**
  * A chemin based graph that will match nodes to a pathname
@@ -38,7 +38,7 @@ export class CheminGraph<
 	): { params: unknown; node: Node } | undefined {
 		for (const { node, path } of this.nodes) {
 			if (!this.dataMatcher(node, data)) continue
-			const params = matchCheminExact(path, pathname)
+			const params = path.matchExact(pathname)
 			if (!params) continue
 			return { params, node }
 		}
