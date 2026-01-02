@@ -92,15 +92,33 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	}
 
 	/**
-	 * Applies a middleware to the router
+	 * Applies middleware to a wooter
+	 * @param handler middleware to apply
+	 * @return wooter with new types
+	 *
+	 * @ignore
 	 */
 	use<TNextData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<Params, TData, TNextData>,
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
+
+	/**
+	 * Applies middleware to a wooter
+	 * @param handler middleware to apply
+	 * @return wooter with new types
+	 *
+	 * @ignore
+	 */
 	// @ts-ignore: this is a fix to allow standalone handlers to work
 	use<TNextData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<Params, Data, TNextData>,
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
+
+	/**
+	 * Applies middleware to a wooter
+	 * @param handler middleware to apply
+	 * @return wooter with new types
+	 */
 	use<TNextData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<Params, TData, TNextData>,
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams> {

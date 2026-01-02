@@ -43,7 +43,6 @@ export default function use<
  *
  * wooter.use(userAgent)
  * ```
- *
  */
 export function middleware<TNextData extends Data | undefined = undefined, TData extends Data = Data>(
 	handler: MiddlewareHandler<Params, TData, TNextData>,
