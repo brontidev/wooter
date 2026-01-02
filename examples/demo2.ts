@@ -1,8 +1,6 @@
 // This is another example of wooter, which shows off the middleware functionality and namespaces.
 
-import { Wooter } from "../src/export/index.ts"
-import { errorResponse, redirectResponse } from "../src/export/util.ts"
-import { chemin, pNumber } from "../src/export/chemin.ts"
+import { c, makeError, makeRedirect, Wooter } from "@@/index.ts"
 import { parse, type ParseOptions, serialize, type SerializeOptions } from "npm:cookie"
 
 export class Redirect {
@@ -23,20 +21,20 @@ export class Redirect {
 }
 
 type Cookies = {
-	get(name: string): string
+	get(name: string): string | undefined
 	getAll(): Record<string, string | undefined>
 	delete(name: string): void
 	set(name: string, value: string, options?: Partial<SerializeOptions>): void
 }
 
 const wooter = new Wooter()
-	.use(async ({ request, resp, up }) => {
+	.use(async ({ request, resp, unwrap }) => {
 		try {
-			await up()
+			resp(await unwrap(request))
 		} catch (e) {
 			// doing err(new Redirect(...)) will run this
 			if (e instanceof Redirect) {
-				return resp(redirectResponse(
+				return resp(makeRedirect(
 					e.location,
 					{
 						status: e.status,
@@ -46,45 +44,42 @@ const wooter = new Wooter()
 			throw e
 		}
 	})
-	.use<{ cookies: Cookies }>(async ({ request, resp, up }) => {
+	.use<{ cookies: Cookies }>(async ({ request, resp, unwrap }) => {
 		const cookieHeader = request.headers.get("cookie") || ""
 		const parsedCookies = parse(cookieHeader)
-		const cookieMap: Record<
+		const cookieMap: Map<
 			string,
 			{ value: string; opts?: Partial<SerializeOptions> }
-		> = {}
+		> = new Map()
 
 		const cookies: Cookies = {
-			get: (name: string) => cookieMap[name].value ?? parsedCookies[name],
+			get: (name: string) => cookieMap.get(name)?.value ?? parsedCookies[name],
 			getAll: () =>
 				Object.fromEntries(
 					Object.entries(parsedCookies).concat(
-						Object.entries(cookieMap).map(([name, { value }]) => {
-							return [name, value]
-						}),
+						cookieMap.entries().toArray().map(
+							([name, { value }]) => {
+								return [name, value] as const
+							},
+						),
 					),
 				),
 			delete: (name: string) => {
-				cookieMap[name] = { value: "", opts: { maxAge: 0 } }
+				cookieMap.set(name, { value: "", opts: { maxAge: 0 } })
 			},
 			set: (
 				name: string,
 				value: string,
 				options?: Partial<SerializeOptions>,
 			) => {
-				cookieMap[name] = { value, opts: options }
+				cookieMap.set(name, { value, opts: options })
 			},
 		}
 
-		const response = await up({ cookies })
+		const response = await unwrap({ cookies })
 
 		// Get all cookies that were set during request handling
-		const newCookies = Object.entries(cookieMap)
-			.filter(([_, value]) => typeof value === "object" && "name" in value)
-			.filter(([_, cookie]) =>
-				cookie && typeof cookie === "object" && "name" in cookie &&
-				"value" in cookie
-			)
+		const newCookies = cookieMap.entries().toArray()
 			.map(([name, cookie]) =>
 				serialize(name, cookie.value || "", {
 					...cookie.opts,
@@ -93,65 +88,68 @@ const wooter = new Wooter()
 				})
 			)
 
-		// Add cookies to response headers
 		if (newCookies.length > 0) {
-			const newResponse: Response = response.clone()
+			const existingHeaders = new Headers(response.headers)
 			newCookies.forEach((cookie) => {
-				newResponse.headers.append("Set-Cookie", cookie)
+				existingHeaders.append("Set-Cookie", cookie)
 			})
 
-			return resp(newResponse)
+			return resp(
+				new Response(response.body, {
+					status: response.status,
+					statusText: response.statusText,
+					headers: existingHeaders,
+				}),
+			)
 		}
 
 		resp(response)
 	})
-	.use<{ username: string }>(async ({ request, resp, up }) => {
+	.use<{ username: string }>(async ({ request, resp, unwrapAndRespond }) => {
 		let username = request.headers.get("x-username")
-		if (!username) return resp(errorResponse(402, "Missing username"))
-		await up({ username })
+		if (!username) return resp(makeError(402, "Missing username"))
+		await unwrapAndRespond({ username })
 	})
 
-wooter
-	.namespace(chemin("auth"), (wooter) => {
-		wooter.route.GET(
-			chemin("login"),
-			async ({ request, resp, err, data: { cookies } }) => {
-				let json = await request.json()
-				if (!json.username || !json.password) {
-					return resp(
-						errorResponse(400, "Missing username or password"),
-					)
-				}
-				if (json.username !== "admin" || json.password !== "admin") {
-					return resp(
-						errorResponse(401, "Invalid username or password"),
-					)
-				}
-				cookies.set(
-					"session",
-					"example",
-					{
-						httpOnly: true,
-						sameSite: "lax",
-						maxAge: 86400 * 7,
-						path: "/",
-					} satisfies SerializeOptions,
-				)
-				err(new Redirect(302, "/home"))
-			},
-		)
-	})
-	.namespace(
-		chemin("api", pNumber("asd")),
-		(wooter) => {
-			wooter.route.GET(
-				chemin("gateway"),
-				async ({ request, resp, err, data: { username } }) => {
-					resp(Response.json({ "ok": true }))
-				},
+{
+	const authWooter = wooter.router(c.chemin("auth"))
+
+	authWooter.route(c.chemin("auth"), "GET", async ({ request, resp, data }) => {
+		const cookies = data.get("cookies")
+
+		let json = await request.json()
+		if (!json.username || !json.password) {
+			return resp(
+				makeError(400, "Missing username or password"),
 			)
-		},
-	)
+		}
+		if (json.username !== "admin" || json.password !== "admin") {
+			return resp(
+				makeError(401, "Invalid username or password"),
+			)
+		}
+		cookies.set(
+			"session",
+			"example",
+			{
+				httpOnly: true,
+				sameSite: "lax",
+				maxAge: 86400 * 7,
+				path: "/",
+			} satisfies SerializeOptions,
+		)
+		throw new Redirect(302, "/home")
+	})
+}
+
+{
+	const apiWooter = wooter.router(c.chemin("api", c.pNumber("asd")))
+
+	apiWooter.route(c.chemin("gateway"), "GET", async ({ request, resp, data }) => {
+		const username = data.get("username")
+		resp(Response.json({ ok: true }))
+	})
+}
 
 const { fetch } = wooter
 Deno.serve({ port: 3000 }, fetch)

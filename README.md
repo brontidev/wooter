@@ -33,22 +33,23 @@ import { c, Wooter } from "jsr:@bronti/wooter"
 
 const wooter = new Wooter()
 
-wooter.route.GET(c.chemin(), ({ err, resp }) => {
+wooter.route(c.chemin(), "GET", ({ resp }) => {
 	resp(new Response("hi"))
 })
 
-wooter.GET(c.chemin("error"), ({ err, resp }) => {
-	err("An error occured!!")
+wooter.route(c.chemin("error"), "GET", ({ resp }) => {
+	resp(new Response("An error occured!!", { status: 500 }))
 })
 
-wooter.route.GET(
+wooter.route(
 	c.chemin("with", c.pNumber("param")),
-	({ err, resp, params }) => {
-		resp(new Response(`hi ${params.param}`))
+	"GET",
+	({ resp, params }) => {
+		resp(new Response(`hi ${params.get("param")}`))
 	},
 )
 
-wooter.route.GET(c.chemin("after"), async ({ err, resp }) => {
+wooter.route(c.chemin("after"), "GET", async ({ resp }) => {
 	resp(new Response("ok!"))
 	await delay(400)
 	console.log("this ran after the response was sent.")
