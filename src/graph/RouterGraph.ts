@@ -192,7 +192,7 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 			v.match(
 				(v) => v,
 				(e) => {
-					if (ctx[RouteContext__respond].resolved) throw e;
+					if (ctx[RouteContext__respond].resolved) throw e
 					reject(e)
 				},
 			)

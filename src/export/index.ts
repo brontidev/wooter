@@ -1,6 +1,6 @@
 export * from "@@/error.ts"
 export * from "@@/response.ts"
-export { default as use } from "@@/use.ts"
+export { default as use, middleware } from "@@/use.ts"
 export * as c from "@@/chemin.ts"
 export { Option } from "@@/option.ts"
 export { Result } from "@@/result.ts"
