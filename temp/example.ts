@@ -22,7 +22,7 @@ equivalent to await ctx.next().andThen(r => ctx.resp(r))
 
 ^ next handler might still be running after this has already resolved
 
-.unwrap(data?): Promise<Response> -> runs .next(data) | .block(), re-throwing any errors or just returning the result
+.unwrap(data?): Promise<Response> -> runs .next(data) & .block(), re-throwing any errors or just returning the result
 
 equivalent to
 ```ts
@@ -30,7 +30,7 @@ await ctx.next().unwrapOrElse(async () => await ctx.block().unwrap())
 ```
 
 
-.unwrapResp(data?): Promise<Response> -> runs .pass(data) | .block(), re-throwing any errors or just returning the result
+.unwrapResp(data?): Promise<Response> -> runs .pass(data) & .block(), re-throwing any errors or just returning the result
 
 
 equivalent to

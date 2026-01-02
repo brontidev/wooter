@@ -117,8 +117,9 @@ export default class MiddlewareContext<
 					}
 					if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
 					ctx.ok()
-				} catch (e) {
-					ctx.err(e)
+				} catch (err) {
+					if (ctx.blockChannel.resolved) return console.error(err)
+					ctx.err(err)
 				}
 			}
 

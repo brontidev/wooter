@@ -147,6 +147,7 @@ export default class RouteContext<
 					if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
 					ctx.ok()
 				} catch (err) {
+					if (ctx.blockChannel.resolved) return console.error(err)
 					ctx.err(err)
 				}
 			}
