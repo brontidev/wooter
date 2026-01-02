@@ -1,6 +1,6 @@
 // TODO: Create a function that transforms a handler by applying middleware to it on the spot
 
-import { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@@/types.ts"
+import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@@/types.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 import RouteContext, { RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
 
