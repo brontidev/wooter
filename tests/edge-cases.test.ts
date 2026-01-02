@@ -1,8 +1,7 @@
-import { assertEquals, assert, assertRejects } from "@std/assert"
+import { assert, assertEquals, assertRejects } from "@std/assert"
 import Wooter from "@/Wooter.ts"
 import c from "@@/chemin.ts"
-import { isWooterError, HandlerDidntRespondError, HandlerRespondedTwiceError } from "@@/error.ts"
-import { MiddlewareHandlerDidntCallUpError } from "@bronti/wooter"
+import { MiddlewareHandlerDidntCallUpError } from "@@/index.ts"
 
 Deno.test("Empty route path", async () => {
 	const wooter = new Wooter()
@@ -52,10 +51,12 @@ Deno.test("Request body is accessible", async () => {
 		ctx.resp(new Response(`Echo: ${body}`))
 	})
 
-	const resp = await wooter.fetch(new Request("http://localhost/echo", {
-		method: "POST",
-		body: "Hello World"
-	}))
+	const resp = await wooter.fetch(
+		new Request("http://localhost/echo", {
+			method: "POST",
+			body: "Hello World",
+		}),
+	)
 
 	assertEquals(await resp.text(), "Echo: Hello World")
 })
@@ -68,9 +69,11 @@ Deno.test("Request headers are accessible", async () => {
 		ctx.resp(new Response(`UA: ${userAgent}`))
 	})
 
-	const resp = await wooter.fetch(new Request("http://localhost/", {
-		headers: { "User-Agent": "TestBot/1.0" }
-	}))
+	const resp = await wooter.fetch(
+		new Request("http://localhost/", {
+			headers: { "User-Agent": "TestBot/1.0" },
+		}),
+	)
 
 	assertEquals(await resp.text(), "UA: TestBot/1.0")
 })
@@ -130,14 +133,8 @@ Deno.test("Middleware without calling next throws error", async () => {
 		ctx.resp(new Response("OK"))
 	})
 
-	// await wooter.fetch(new Request("http://localhost/")).then(() => {
-	// 	assert(false, "Should have thrown an error")
-
-	// }).catch(e => {
-	// 	assert(isWooterError(e))
-	// })
 	assertRejects(async () => {
-    	await wooter.fetch(new Request("http://localhost/"))
+		await wooter.fetch(new Request("http://localhost/"))
 	}, MiddlewareHandlerDidntCallUpError)
 })
 
@@ -180,7 +177,6 @@ Deno.test("Middleware data persistence", async () => {
 		await ctx.unwrapAndRespond({ timestamp: Date.now() })
 	})
 
-
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		const timestamp = ctx.data.get("timestamp")
 		assert(typeof timestamp === "number")
@@ -213,10 +209,12 @@ Deno.test("Response status text", async () => {
 	const wooter = new Wooter()
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
-		ctx.resp(new Response("Custom error", {
-			status: 400,
-			statusText: "Bad Request"
-		}))
+		ctx.resp(
+			new Response("Custom error", {
+				status: 400,
+				statusText: "Bad Request",
+			}),
+		)
 	})
 
 	const resp = await wooter.fetch(new Request("http://localhost/"))

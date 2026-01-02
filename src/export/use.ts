@@ -30,7 +30,9 @@ export default function use<
 		const new_ctx = internalHandler(data, request)
 
 		new_ctx[RouteContext__respond].promise.then((v) => v.map((r) => resp(r)))
-		return (await new_ctx[RouteContext__block].promise).inspectErr(e => { throw e })
+		return (await new_ctx[RouteContext__block].promise).inspectErr((e) => {
+			throw e
+		})
 	}
 }
 
@@ -47,8 +49,11 @@ export default function use<
  * wooter.use(userAgent)
  * ```
  */
-export function middleware<TNextData extends Data | undefined = undefined, TData extends Data | undefined = undefined, 	// deno-lint-ignore ban-types
-	TParams extends Params = {},>(
+export function middleware<
+	TNextData extends Data | undefined = undefined,
+	TData extends Data | undefined = undefined, // deno-lint-ignore ban-types
+	TParams extends Params = {},
+>(
 	handler: MiddlewareHandler<TParams, TData, TNextData>,
 ): MiddlewareHandler<TParams, TData, TNextData> {
 	return handler

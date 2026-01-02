@@ -2,8 +2,8 @@
 
 import Wooter from "@/Wooter.ts"
 
-import { assertEquals, assertRejects, assert, assertIsError, assertInstanceOf } from "@std/assert"
-import { assertSpyCall, assertSpyCalls, type returnsArg, type Spy, spy } from "@std/testing/mock"
+import { assert, assertEquals, assertInstanceOf, assertIsError, assertRejects } from "@std/assert"
+import { assertSpyCall, assertSpyCalls, type Spy, spy } from "@std/testing/mock"
 import c from "@@/chemin.ts"
 import type { Data, MiddlewareContext, MiddlewareHandler, Params } from "@@/types.ts"
 import {
@@ -24,19 +24,6 @@ function middlewareSpy<
 ): [Spy, MiddlewareHandler<TParams, TData, TNextData>] {
 	const fn = spy<any, T>()
 	return [fn, (ctx) => handler(fn, ctx)]
-}
-
-const catchErrors: MiddlewareHandler = async (ctx) => {
-	try {
-		console.log("before unwrapandrespond")
-		await ctx.unwrapAndRespond({})
-		console.log("before block")
-		await ctx.block()
-	} catch (e) {
-		console.log("error")
-		console.warn(e)
-		ctx.resp(new Response("Internal Server Error", { status: 500 }))
-	}
 }
 
 Deno.test("case 1 - handler responds", async () => {
@@ -110,10 +97,10 @@ Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", as
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
 	})
-	
+
 	await assertRejects(
 		async () => await wooter.fetch(new Request("http://localhost:3000/")),
-		MiddlewareHandlerDidntCallUpError
+		MiddlewareHandlerDidntCallUpError,
 	)
 })
 
@@ -124,10 +111,10 @@ Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
 	wooter.route(c.chemin(), "GET", (ctx) => {
 		throw new Error("oh something weird happened")
 	})
-	
+
 	await assertRejects(
 		async () => await wooter.fetch(new Request("http://localhost:3000/")),
-		MiddlewareHandlerDidntCallUpError
+		MiddlewareHandlerDidntCallUpError,
 	)
 })
 
@@ -213,7 +200,6 @@ Deno.test("handler responds twice - causes an unhandled rejection", async () => 
 		assert(isWooterError(e.reason))
 		assertInstanceOf(e.reason, HandlerRespondedTwiceError)
 	})
-
 
 	const response = await wooter.fetch(new Request("http://localhost:3000/"))
 	assertEquals(response.status, 200)
