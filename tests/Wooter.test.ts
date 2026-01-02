@@ -14,6 +14,7 @@ import {
 	isWooterError,
 	MiddlewareCalledBlockBeforeNextError,
 	MiddlewareHandlerDidntCallUpError,
+	use,
 } from "@@/index.ts"
 
 function middlewareSpy<
@@ -51,6 +52,29 @@ Deno.test("case 1 - handler responds", async () => {
 	const response = await wooter.fetch(new Request("http://localhost:3000/"))
 	assertEquals(response.status, 200)
 	assertEquals(await response.text(), "Hello World!!")
+})
+
+Deno.test("use()", async () => {
+	const wooter = new Wooter()
+
+	const [spy, middleware] = middlewareSpy(async (spy, ctx) => {
+		spy()
+		await ctx.unwrapAndRespond({})
+	})
+
+	wooter.route(
+		c.chemin(),
+		"GET",
+		// @ts-ignore
+		use(middleware, async (ctx) => {
+			ctx.resp(new Response())
+		}),
+	)
+
+	const response = await wooter.fetch(new Request("http://localhost:3000/"))
+	assertEquals(response.status, 200)
+
+	assertSpyCalls(spy, 1)
 })
 
 Deno.test("case 2 - handler errors (before responding) + catching errors in middleware", async () => {
