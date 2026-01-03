@@ -1,6 +1,0 @@
-<component name="DependencyValidationManager">
-	<scope
-		name="proj"
-		pattern="file[wooter]:src//*||file[wooter]:tests//*||file[wooter]:examples//*||file:bundle.ts||file:deno.jsonc||file:README.md||file[wooter]:docs/src//*"
-	/>
-</component>
