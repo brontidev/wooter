@@ -6,6 +6,9 @@ import type { Merge } from "@/types.ts"
 import c from "@@/chemin.ts"
 import RouteContext from "@/ctx/RouteContext.ts"
 
+
+type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : never;
+
 /**
  * Router class
  */
@@ -109,9 +112,9 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	 *
 	 * @ignore
 	 */
-	// @ts-ignore: this is a fix to allow standalone handlers to work
-	use<TNextData extends Data | undefined = undefined>(
-		handler: MiddlewareHandler<Params, Data, TNextData>,
+	// for .use-ing standalone middleware
+	use<TNextData extends Data | undefined = undefined, THandlerInputData extends Data & KeysSubset<THandlerInputData, TData> | undefined = undefined>(
+		handler: MiddlewareHandler<Params, THandlerInputData, TNextData>,
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
 
 	/**
