@@ -6,7 +6,7 @@ import use, { middleware } from "@@/use.ts"
 
 Deno.test("middleware - creates typed middleware handler", async () => {
 	const authMiddleware = middleware<{ userId: number }>(async (ctx) => {
-		await ctx.unwrapAndRespond({ userId: 123 })
+		await ctx.expectAndRespond({ userId: 123 })
 	})
 	const wooter = new Wooter().use(authMiddleware)
 
@@ -26,7 +26,7 @@ Deno.test("use - applies middleware to specific handler", async () => {
 
 	const testMiddleware = middleware<{ value: string }>(async (ctx) => {
 		middlewareSpy()
-		await ctx.unwrapAndRespond({ value: "from-middleware" })
+		await ctx.expectAndRespond({ value: "from-middleware" })
 	})
 
 	wooter.route(
@@ -61,7 +61,7 @@ Deno.test("use - middleware can modify request", async () => {
 				"X-Modified": "true",
 			},
 		})
-		const response = await ctx.unwrap({}, newRequest)
+		const response = await ctx.expectResponse({}, newRequest)
 		ctx.resp(response)
 	})
 
@@ -85,13 +85,13 @@ Deno.test("use - can chain multiple middlewares", async () => {
 
 	const middleware1 = middleware<{ step1: boolean }>(async (ctx) => {
 		executionOrder.push(1)
-		await ctx.unwrapAndRespond({ step1: true })
+		await ctx.expectAndRespond({ step1: true })
 	})
 
 	const middleware2 = middleware<{ step2: boolean }, { step1: boolean }>(async (ctx) => {
 		executionOrder.push(2)
 		assert(ctx.data.get("step1"))
-		await ctx.unwrapAndRespond({ step2: true })
+		await ctx.expectAndRespond({ step2: true })
 	})
 
 	wooter.route(
@@ -117,7 +117,7 @@ Deno.test("use - passes route parameters correctly", async () => {
 	const wooter = new Wooter()
 
 	const paramMiddleware = middleware<undefined, undefined, { id: string }>(async (ctx) => {
-		await ctx.unwrapAndRespond({})
+		await ctx.expectAndRespond({})
 	})
 
 	wooter.route(

@@ -174,7 +174,7 @@ Deno.test("String parameter accepts any value", async () => {
 
 Deno.test("Middleware data persistence", async () => {
 	const wooter = new Wooter().use<{ timestamp: number }>(async (ctx) => {
-		await ctx.unwrapAndRespond({ timestamp: Date.now() })
+		await ctx.expectAndRespond({ timestamp: Date.now() })
 	})
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
@@ -189,11 +189,11 @@ Deno.test("Middleware data persistence", async () => {
 
 Deno.test("Multiple middleware data merging", async () => {
 	const wooter = new Wooter().use<{ auth: boolean }>(async (ctx) => {
-		await ctx.unwrapAndRespond({ auth: true })
+		await ctx.expectAndRespond({ auth: true })
 	}).use<{ userId: number }>(async (ctx) => {
 		const auth = ctx.data.get("auth")
 		assert(auth === true)
-		await ctx.unwrapAndRespond({ userId: 42 })
+		await ctx.expectAndRespond({ userId: 42 })
 	})
 
 	wooter.route(c.chemin(), "GET", (ctx) => {

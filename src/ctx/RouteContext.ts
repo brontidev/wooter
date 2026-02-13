@@ -1,7 +1,7 @@
-import { Err, Ok, type Result } from "@@/result.ts"
-import { None, type Option, Some } from "@@/option.ts"
+import { err, ok, type Result } from "@@/result.ts"
+import { none, type Option, some } from "@@/option.ts"
+import { Soon } from "@bronti/robust/Soon"
 import type { Data, Params } from "@@/types.ts"
-import { Channel } from "@/ctx/Channel.ts"
 import WooterError from "@/WooterError.ts"
 import TypedMap from "@/TypedMap.ts"
 import type { TEmptyObject } from "@@/chemin.ts"
@@ -30,7 +30,7 @@ export class HandlerRespondedTwiceError extends WooterError {
 	}
 }
 
-export const RouteContext__block = Symbol("RouteContext__block")
+export const RouteContext__execution = Symbol("RouteContext__block")
 export const RouteContext__respond = Symbol("RouteContext__respond")
 /**
  * Context class passed into route handlers
@@ -59,24 +59,24 @@ export default class RouteContext<
 	/**
 	 * @internal
 	 */
-	protected blockChannel: Channel<Result<null, unknown>> = new Channel()
+	protected executeSoon: Soon<Result<null, unknown>> = new Soon()
 	/**
 	 * @internal
 	 */
-	protected respondChannel: Channel<Option<Response>> = new Channel()
+	protected respondSoon: Soon<Option<Response>> = new Soon()
 
 	/**
 	 * @internal
 	 */
-	get [RouteContext__block](): RouteContext["blockChannel"] {
-		return this.blockChannel
+	get [RouteContext__execution](): RouteContext["executeSoon"] {
+		return this.executeSoon
 	}
 
 	/**
 	 * @internal
 	 */
-	get [RouteContext__respond](): RouteContext["respondChannel"] {
-		return this.respondChannel
+	get [RouteContext__respond](): RouteContext["respondSoon"] {
+		return this.respondSoon
 	}
 
 	/**
@@ -103,9 +103,9 @@ export default class RouteContext<
 	/**
 	 * @internal
 	 */
-	protected err(err: unknown) {
-		this.respondChannel.push(None)
-		this.blockChannel.push(Err(err))
+	protected err(e: unknown) {
+		this.respondSoon.push(none())
+		this.executeSoon.push(err(e))
 	}
 
 	/**
@@ -115,7 +115,7 @@ export default class RouteContext<
 	 * This is the equivalent of resolving the handler promise
 	 */
 	readonly ok = (): void => {
-		this.blockChannel.push(Ok(null))
+		this.executeSoon.push(ok(null))
 	}
 
 	/**
@@ -123,11 +123,21 @@ export default class RouteContext<
 	 * @returns Response
 	 */
 	readonly resp = (response: Response): Response => {
-		if (this.respondChannel.resolved) {
+		if (this.respondSoon.resolved) {
 			throw new HandlerRespondedTwiceError()
 		}
-		this.respondChannel.push(Some(response))
+		this.respondSoon.push(some(response))
 		return response
+	}
+
+	/**
+	 * @internal
+	 * Used for useRouteHandler & useMiddlewareHandler to handle any errors that happen within the handler
+	 * @param e error
+	 */
+	protected catchErr = (e: unknown): void => {
+		if(this.executeSoon.resolved) return console.error(e);
+		this.err(e)
 	}
 
 	/**
@@ -140,18 +150,27 @@ export default class RouteContext<
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new RouteContext<TParams, TData>(req, data, params)
-			const run = async () => {
-				try {
-					await Promise.try(handler, ctx)
-					if (ctx.blockChannel.resolved) return
-					if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
-					ctx.ok()
-				} catch (err) {
-					if (ctx.blockChannel.resolved) return console.error(err)
-					ctx.err(err)
-				}
-			}
-			run()
+			// const run = async () => {
+			// 	try {
+			// 		await Promise.try(handler, ctx)
+			// 		if (ctx.executeSoon.resolved) return
+			// 		if (!ctx.respondSoon.resolved) return ctx.err(new HandlerDidntRespondError())
+			// 		ctx.ok()
+			// 	} catch (err) {
+			// 		if (ctx.executeSoon.resolved) return console.error(err)
+			// 		ctx.err(err)
+			// 	}
+			// }
+			// run()
+
+			const run = Soon.tryable<void, unknown>(async w => {
+				await handler(ctx)
+						if (ctx.executeSoon.resolved) return
+						if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
+			}, ctx.catchErr)
+
+			run().then(r => r.match(ctx.ok, ctx.catchErr))
+
 			return ctx as unknown as RouteContext
 		}
 	}

@@ -103,13 +103,13 @@ Deno.test("Middleware execution order", async () => {
 
 	wooter.use(async (ctx) => {
 		order.push("middleware1-before")
-		await ctx.unwrapAndRespond({})
+		await ctx.expectAndRespond({})
 		order.push("middleware1-after")
 	})
 
 	wooter.use(async (ctx) => {
 		order.push("middleware2-before")
-		await ctx.unwrapAndRespond({})
+		await ctx.expectAndRespond({})
 		order.push("middleware2-after")
 	})
 
@@ -199,7 +199,7 @@ Deno.test("Middleware can modify response headers", async () => {
 	const wooter = new Wooter()
 
 	wooter.use(async (ctx) => {
-		const response = await ctx.unwrap({})
+		const response = await ctx.expectResponse({})
 		response.headers.set("X-Custom-Header", "middleware-value")
 		ctx.resp(response)
 	})

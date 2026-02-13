@@ -23,7 +23,7 @@ function middlewareSpy<
 const useCatchErrors = () =>
 	middlewareSpy(async (spy, ctx) => {
 		try {
-			await ctx.unwrapAndRespond({})
+			await ctx.expectAndRespond({})
 		} catch (e) {
 			spy(e)
 			ctx.resp(new Response("Internal Server Error", { status: 500 }))

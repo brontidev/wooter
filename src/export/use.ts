@@ -2,7 +2,7 @@
 
 import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@@/types.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
-import RouteContext, { RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
+import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 
 /**
  * Applies a middleware directly to a handler, returning a new handler
@@ -30,7 +30,7 @@ export default function use<
 		const new_ctx = internalHandler(data, request)
 
 		new_ctx[RouteContext__respond].promise.then((v) => v.map((r) => resp(r)))
-		return (await new_ctx[RouteContext__block].promise).inspectErr((e) => {
+		return (await new_ctx[RouteContext__execution].promise).inspectErr((e) => {
 			throw e
 		})
 	}

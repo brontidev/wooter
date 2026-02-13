@@ -1,13 +1,11 @@
 /**
- * Exports [@oxi/option](https://jsr.io/@oxi/option)
- *
  * @module
  */
 
 import type * as c from "./chemin.ts"
-import { Option } from "@oxi/option"
 
-export * from "@oxi/option"
+import { none, Option, some, UnwrapNoneError } from "@bronti/robust/Option"
+export { none, Option, some, UnwrapNoneError }
 
 /**
  * Converts a chemin optional parameter to an Option
@@ -16,7 +14,7 @@ export * from "@oxi/option"
  */
 export function optionalValueToOption<T>(optionalValue: c.OptionalValue<T>): Option<T> {
 	if (optionalValue.present) {
-		return Option.Some(optionalValue.value)
+		return some(optionalValue.value)
 	}
-	return Option.None
+	return none()
 }
