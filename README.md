@@ -3,11 +3,6 @@
 [![JSR](https://jsr.io/badges/@bronti/wooter)](https://jsr.io/@bronti/wooter)
 [![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
-> [!WARNING]
-> wooter is beta & WIP, the main features are implemented but there are some bugs that may appear. I advise against using this for
-> big influential projects until v100.0.0\
-> **woot around and find out**
-
 > [!NOTE]
 > wooter uses [epoch semver](https://antfu.me/posts/epoch-semver).
 
