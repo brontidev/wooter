@@ -25,11 +25,10 @@ const bookPatch = z.object({
 const wooter = new Wooter()
 	.use(cookies)
 	.use(json)
-	.use<{ parseJson: <TSchema extends z.Schema, T = z.infer<TSchema>>(schema: TSchema) => Promise<T> }>(
+	.use<{ parseJson: <TSchema extends z.Schema>(schema: TSchema) => Promise<z.infer<TSchema>> }>(
 		async ({ data, resp, unwrapAndRespond }) => {
 			const json = data.get("json")
 			await unwrapAndRespond({
-				// @ts-ignore: I didn't feel like rewriting the types
 				parseJson: async (schema) => {
 					const result = schema.safeParse(await json())
 					if (result.success) {
