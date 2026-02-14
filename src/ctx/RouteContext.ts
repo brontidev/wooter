@@ -3,7 +3,7 @@ import { none, type Option, some } from "@@/option.ts"
 import { Soon } from "@bronti/robust/Soon"
 import type { Data, Params } from "@@/types.ts"
 import WooterError from "@/WooterError.ts"
-import TypedMap from "@/TypedMap.ts"
+import { TypedMap } from "@bronti/robust/TypedMap"
 import type { TEmptyObject } from "@@/chemin.ts"
 
 /**

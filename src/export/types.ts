@@ -14,7 +14,7 @@ export type { default as MiddlewareContext, MiddlewareHandler } from "@/ctx/Midd
 export type { default as RouteContext, RouteHandler } from "@/ctx/RouteContext.ts"
 export type { MethodDefinitionInput, MethodDefinitions } from "@/graph/RouterGraph.ts"
 
-export type { default as TypedMap } from "@/TypedMap.ts"
+export type { TypedMap } from "@bronti/robust/TypedMap"
 
 /**
  * @internal
