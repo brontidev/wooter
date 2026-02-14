@@ -107,24 +107,6 @@ export default class MiddlewareContext<
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
-			// const run = async () => {
-			// 	try {
-			// 		await Promise.try(handler, ctx)
-			// 		if (ctx.executeSoon.resolved) return
-			// 		if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
-			// 		if (!ctx.#blockCalled) {
-			// 			return await ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
-			// 		}
-			// 		if (!ctx.respondSoon.resolved) return ctx.err(new HandlerDidntRespondError())
-			// 		ctx.ok()
-			// 	} catch (err) {
-			// 		if (ctx.executeSoon.resolved) return console.error(err)
-			// 		ctx.err(err)
-			// 	}
-			// }
-			//
-			// run()
-
 
 			const run = Soon.tryable<void, unknown>(async (w) => {
 				await handler(ctx)

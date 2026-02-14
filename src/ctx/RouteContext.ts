@@ -136,7 +136,10 @@ export default class RouteContext<
 	 * @param e error
 	 */
 	protected catchErr = (e: unknown): void => {
-		if(this.executeSoon.resolved) return console.error(e);
+		if(this.executeSoon.resolved) {
+			console.error(e);
+			return;
+		}
 		this.err(e)
 	}
 
@@ -150,23 +153,11 @@ export default class RouteContext<
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new RouteContext<TParams, TData>(req, data, params)
-			// const run = async () => {
-			// 	try {
-			// 		await Promise.try(handler, ctx)
-			// 		if (ctx.executeSoon.resolved) return
-			// 		if (!ctx.respondSoon.resolved) return ctx.err(new HandlerDidntRespondError())
-			// 		ctx.ok()
-			// 	} catch (err) {
-			// 		if (ctx.executeSoon.resolved) return console.error(err)
-			// 		ctx.err(err)
-			// 	}
-			// }
-			// run()
 
 			const run = Soon.tryable<void, unknown>(async w => {
 				await handler(ctx)
-						if (ctx.executeSoon.resolved) return
-						if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
+				if (ctx.executeSoon.resolved) return
+				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
 			}, ctx.catchErr)
 
 			run().then(r => r.match(ctx.ok, ctx.catchErr))
