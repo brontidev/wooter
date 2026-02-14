@@ -26,12 +26,12 @@ jobs:
             - name: Get version
               id: version
               run: echo "VERSION=$(cat ./deno.jsonc | jq -r .version)" >> "$GITHUB_OUTPUT"
-            - name: Generate bundle
-              run: deno task bundle
-            - name: Create release
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ steps.version.outputs.VERSION }}
-                  target_commitish: ${{ github.ref_name }}
-                  files: |
-                      out/*
+#            - name: Generate bundle
+#              run: deno task bundle
+#            - name: Create release
+#              uses: softprops/action-gh-release@v2
+#              with:
+#                  tag_name: ${{ steps.version.outputs.VERSION }}
+#                  target_commitish: ${{ github.ref_name }}
+#                  files: |
+#                      out/*
