@@ -1,14 +1,14 @@
-import type {Option} from "@@/option.ts"
-import type {Data, Params} from "@@/types.ts"
+import type { Option } from "@@/option.ts"
+import type { Data, Params } from "@@/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
 	RouteContext__execution,
 	RouteContext__respond,
 } from "./RouteContext.ts"
-import {type Result} from "@@/result.ts"
+import type { Result } from "@@/result.ts"
 import WooterError from "@/WooterError.ts"
-import type {TEmptyObject} from "@@/chemin.ts"
+import type { TEmptyObject } from "@@/chemin.ts"
 import { Soon } from "@bronti/robust/Soon"
 
 /**
@@ -125,18 +125,17 @@ export default class MiddlewareContext<
 			//
 			// run()
 
-
-			const run = Soon.tryable<void, unknown>(async (w) => {
+			const run = Soon.tryable<void, unknown>(async (_) => {
 				await handler(ctx)
-				if(ctx.executeSoon.resolved) return;
-				if(!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError();
-				if(!ctx.#blockCalled) {
-					return ctx.#nextCtx[RouteContext__execution].map(r => ctx.executeSoon.push(r))
+				if (ctx.executeSoon.resolved) return
+				if (!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError()
+				if (!ctx.#blockCalled) {
+					return ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
 				}
-				if(!ctx.respondSoon.resolved) throw new HandlerDidntRespondError();
+				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
 			}, ctx.catchErr)
 
-			run().then(r => r.match(ctx.ok, ctx.catchErr))
+			run().then((r) => r.match(ctx.ok, ctx.catchErr))
 
 			return ctx as unknown as MiddlewareContext
 		}
@@ -171,8 +170,8 @@ export default class MiddlewareContext<
 		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Response> => {
-		const res = await this.next(data, request);
-		if(res.isSome()) {
+		const res = await this.next(data, request)
+		if (res.isSome()) {
 			return res.unwrap()
 		} else {
 			throw (await this.wait()).unwrapErr()
@@ -187,9 +186,12 @@ export default class MiddlewareContext<
 	 * @param request - new request object
 	 * @returns Response
 	 */
-	readonly expectAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> => {
-		const res = await this.relay(data, request);
-		if(res.isSome()) {
+	readonly expectAndRespond = async (
+		data: TNextData extends undefined ? TEmptyObject : TNextData,
+		request?: Request,
+	): Promise<Response> => {
+		const res = await this.relay(data, request)
+		if (res.isSome()) {
 			return res.unwrap()
 		} else {
 			throw (await this.wait()).unwrapErr()

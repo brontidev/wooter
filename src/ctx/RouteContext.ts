@@ -131,14 +131,14 @@ export default class RouteContext<
 	}
 
 	/**
-	 * `@internal`
+	 * @internal
 	 * Used for useRouteHandler & useMiddlewareHandler to handle any errors that happen within the handler
-	 * `@param` e error
+	 * @param e error
 	 */
 	protected catchErr = (e: unknown): void => {
-		if(this.executeSoon.resolved) {
-			console.error(e);
-			return;
+		if (this.executeSoon.resolved) {
+			console.error(e)
+			return
 		}
 		this.err(e)
 	}
@@ -154,13 +154,13 @@ export default class RouteContext<
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new RouteContext<TParams, TData>(req, data, params)
 
-			const run = Soon.tryable<void, unknown>(async w => {
+			const run = Soon.tryable<void, unknown>(async (_) => {
 				await handler(ctx)
 				if (ctx.executeSoon.resolved) return
 				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
 			}, ctx.catchErr)
 
-			run().then(r => r.match(ctx.ok, ctx.catchErr))
+			run().then((r) => r.match(ctx.ok, ctx.catchErr))
 
 			return ctx as unknown as RouteContext
 		}

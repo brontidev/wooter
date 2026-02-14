@@ -104,20 +104,23 @@ Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", as
 	)
 })
 
-Deno.test("middleware case 2 - middleware calls .wait" +
-	"() before ", async () => {
-	const wooter = new Wooter()
+Deno.test(
+	"middleware case 2 - middleware calls .wait" +
+		"() before ",
+	async () => {
+		const wooter = new Wooter()
 
-	wooter.use((ctx) => {})
-	wooter.route(c.chemin(), "GET", (ctx) => {
-		throw new Error("oh something weird happened")
-	})
+		wooter.use((ctx) => {})
+		wooter.route(c.chemin(), "GET", (ctx) => {
+			throw new Error("oh something weird happened")
+		})
 
-	await assertRejects(
-		async () => await wooter.fetch(new Request("http://localhost:3000/")),
-		MiddlewareHandlerDidntCallUpError,
-	)
-})
+		await assertRejects(
+			async () => await wooter.fetch(new Request("http://localhost:3000/")),
+			MiddlewareHandlerDidntCallUpError,
+		)
+	},
+)
 
 Deno.test("namespacing", async () => {
 	const wooter = new Wooter()
