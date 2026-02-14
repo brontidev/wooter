@@ -1,9 +1,9 @@
 import { makeError } from "@@/index.ts"
 import { middleware } from "@@/use.ts"
 
-const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, unwrapAndRespond }) => {
+const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, expectAndRespond }) => {
 	let _json: any
-	await unwrapAndRespond({
+	await expectAndRespond({
 		json: async () => {
 			if (_json) return _json
 			try {

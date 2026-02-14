@@ -2,9 +2,9 @@
 import type { TChemin } from "@dldc/chemin"
 import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@@/types.ts"
 import { CheminGraph } from "./CheminGraph.ts"
-import { type InternalHandler, RouteContext__block, RouteContext__respond } from "@/ctx/RouteContext.ts"
+import { type InternalHandler, RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
-import { None, type Option, Some } from "@oxi/option"
+import { none, type Option, some } from "@@/option.ts"
 
 /**
  * @internal
@@ -181,12 +181,12 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
 		const { promise, resolve, reject } = Promise.withResolvers<Response>()
 		const ctx = handler({}, request)
-		const block = ctx[RouteContext__block]
+		const block = ctx[RouteContext__execution]
 		const respond = ctx[RouteContext__respond]
-		let respondOption: Option<Awaited<typeof respond.promise>> = None
+		let respondOption: Option<Awaited<typeof respond.promise>> = none()
 
 		respond.promise.then((v) => {
-			respondOption = Some(v)
+			respondOption = some(v)
 			v.inspect(resolve)
 		})
 		block.promise.then((blockResult) => {

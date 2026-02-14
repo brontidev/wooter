@@ -10,7 +10,7 @@ import {
 	HandlerDidntRespondError,
 	HandlerRespondedTwiceError,
 	isWooterError,
-	MiddlewareCalledBlockBeforeNextError,
+	MiddlewareCalledWaitBeforeNextError,
 	MiddlewareHandlerDidntCallUpError,
 	use,
 } from "@@/index.ts"
@@ -43,7 +43,7 @@ Deno.test("use()", async () => {
 
 	const [spy, middleware] = middlewareSpy(async (spy, ctx) => {
 		spy()
-		await ctx.unwrapAndRespond({})
+		await ctx.expectAndRespond({})
 	})
 
 	wooter.route(
@@ -66,9 +66,9 @@ Deno.test("case 2 - handler errors (before responding) + catching errors in midd
 	const [spy, middleware] = middlewareSpy(async (spy, ctx) => {
 		try {
 			console.log("before unwrapandrespond")
-			await ctx.unwrapAndRespond({})
+			await ctx.expectAndRespond({})
 			console.log("before block")
-			await ctx.block()
+			await ctx.wait()
 		} catch (e) {
 			console.log("error")
 			console.warn(e)
@@ -104,7 +104,8 @@ Deno.test("middleware case 1 - middleware doesn't respond + wooter re-throw", as
 	)
 })
 
-Deno.test("middleware case 2 - middleware calls .block() before ", async () => {
+Deno.test("middleware case 2 - middleware calls .wait" +
+	"() before ", async () => {
 	const wooter = new Wooter()
 
 	wooter.use((ctx) => {})
@@ -159,7 +160,7 @@ Deno.test("not found errors", async () => {
 Deno.test("middleware data", async () => {
 	const randomNumber = Math.random()
 	const wooter = new Wooter().use<{ random: number }>((ctx) => {
-		ctx.unwrapAndRespond({ random: randomNumber })
+		ctx.expectAndRespond({ random: randomNumber })
 	})
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
@@ -236,7 +237,7 @@ Deno.test("Request logger example", async () => {
 	const fn = spy<unknown, [response: Response]>()
 	const uuid = crypto.randomUUID()
 	const wooter = new Wooter().use(async (ctx) => {
-		const response = await ctx.unwrap({})
+		const response = await ctx.expectResponse({})
 		response.headers.set("X-Request-Id", uuid)
 		fn(response)
 		ctx.resp(response)
@@ -261,7 +262,7 @@ Deno.test("Error logger example", async () => {
 	const wooter = new Wooter().use(async (ctx) => {
 		let response: Response
 		try {
-			response = await ctx.unwrap({})
+			response = await ctx.expectResponse({})
 		} catch (error) {
 			errorLog(error, uuid)
 			console.error(error)
@@ -285,10 +286,10 @@ Deno.test("Error logger example", async () => {
 	assertSpyCall(errorLog, 0, { args: [null, uuid] })
 })
 
-Deno.test("middleware calls .block() before running handler", async () => {
+Deno.test("middleware calls .wait() before running handler", async () => {
 	const wooter = new Wooter()
 
-	wooter.use((ctx) => ctx.block())
+	wooter.use((ctx) => ctx.wait())
 	wooter.route(c.chemin(), "GET", (ctx) => {})
 
 	try {
@@ -296,7 +297,7 @@ Deno.test("middleware calls .block() before running handler", async () => {
 	} catch (e) {
 		console.log(e)
 		assert(isWooterError(e))
-		assert(e instanceof MiddlewareCalledBlockBeforeNextError)
+		assert(e instanceof MiddlewareCalledWaitBeforeNextError)
 	}
 })
 
@@ -306,7 +307,7 @@ Deno.test("middleware calls .block() before running handler", async () => {
 
 // 	wooter.use<{ fn: typeof fn }>(async (ctx) => {
 // 		ctx.unwrapAndRespond({ fn }).then(() => fn("a"))
-// 		ctx.block().then(() => fn("b"))
+// 		ctx.wait().then(() => fn("b"))
 // 	})
 // 	wooter.route(c.chemin(), "GET", (ctx) => {
 // 		ctx.resp(new Response("Hello world"))

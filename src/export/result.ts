@@ -1,7 +1,6 @@
 /**
- * Exports [@oxi/result](https://jsr.io/@oxi/result)
- *
  * @module
  */
 
-export * from "@oxi/result"
+import { err, ExpectErrError, ExpectOkError, ok, Result } from "@bronti/robust/Result"
+export { err, ExpectErrError, ExpectOkError, ok, Result }

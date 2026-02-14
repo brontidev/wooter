@@ -21,9 +21,9 @@ export class Redirect {
 }
 
 const wooter = new Wooter()
-	.use(async ({ request, resp, unwrap }) => {
+	.use(async ({ request, resp, expectResponse }) => {
 		try {
-			resp(await unwrap(request))
+			resp(await expectResponse(request))
 		} catch (e) {
 			// doing err(new Redirect(...)) will run this
 			if (e instanceof Redirect) {
@@ -38,10 +38,10 @@ const wooter = new Wooter()
 		}
 	})
 	.use(cookies)
-	.use<{ username: string }>(async ({ request, resp, unwrapAndRespond }) => {
+	.use<{ username: string }>(async ({ request, resp, expectAndRespond }) => {
 		let username = request.headers.get("x-username")
 		if (!username) return resp(makeError(402, "Missing username"))
-		await unwrapAndRespond({ username })
+		await expectAndRespond({ username })
 	})
 
 {

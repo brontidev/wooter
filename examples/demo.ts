@@ -26,9 +26,9 @@ const wooter = new Wooter()
 	.use(cookies)
 	.use(json)
 	.use<{ parseJson: <TSchema extends z.Schema>(schema: TSchema) => Promise<z.infer<TSchema>> }>(
-		async ({ data, resp, unwrapAndRespond }) => {
+		async ({ data, resp, expectAndRespond }) => {
 			const json = data.get("json")
-			await unwrapAndRespond({
+			await expectAndRespond({
 				parseJson: async (schema) => {
 					const result = schema.safeParse(await json())
 					if (result.success) {

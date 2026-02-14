@@ -1,7 +1,7 @@
 import { assert, assertEquals, assertInstanceOf } from "@std/assert"
 import WooterError, { isWooterError } from "@/WooterError.ts"
 import { HandlerDidntRespondError, HandlerRespondedTwiceError } from "@/ctx/RouteContext.ts"
-import { MiddlewareCalledBlockBeforeNextError, MiddlewareHandlerDidntCallUpError } from "@/ctx/MiddlewareContext.ts"
+import { MiddlewareCalledWaitBeforeNextError, MiddlewareHandlerDidntCallUpError } from "@/ctx/MiddlewareContext.ts"
 
 Deno.test("WooterError - is an Error instance", () => {
 	const error = new WooterError("test error")
@@ -56,13 +56,13 @@ Deno.test("MiddlewareHandlerDidntCallUpError - extends WooterError", () => {
 	assertEquals(error.message, "The middleware handler must call ctx.next() before exiting")
 })
 
-Deno.test("MiddlewareCalledBlockBeforeNextError - extends WooterError", () => {
-	const error = new MiddlewareCalledBlockBeforeNextError()
+Deno.test("MiddlewareCalledWaitBeforeNextError - extends WooterError", () => {
+	const error = new MiddlewareCalledWaitBeforeNextError()
 	assertInstanceOf(error, WooterError)
-	assertInstanceOf(error, MiddlewareCalledBlockBeforeNextError)
+	assertInstanceOf(error, MiddlewareCalledWaitBeforeNextError)
 	assert(isWooterError(error))
-	assertEquals(error.name, "MiddlewareCalledBlockBeforeNextError")
-	assertEquals(error.message, "The middleware handler must call ctx.next() before being able to call ctx.block()")
+	assertEquals(error.name, "MiddlewareCalledWaitBeforeNextError")
+	assertEquals(error.message, "The middleware handler must call ctx.next() before being able to call ctx.wait()")
 })
 
 Deno.test("All Wooter errors can be distinguished", () => {
@@ -70,7 +70,7 @@ Deno.test("All Wooter errors can be distinguished", () => {
 		new HandlerDidntRespondError(),
 		new HandlerRespondedTwiceError(),
 		new MiddlewareHandlerDidntCallUpError(),
-		new MiddlewareCalledBlockBeforeNextError(),
+		new MiddlewareCalledWaitBeforeNextError(),
 	]
 
 	// All should be WooterErrors

@@ -1,14 +1,15 @@
-import type { Option } from "@@/option.ts"
-import type { Data, Params } from "@@/types.ts"
+import type {Option} from "@@/option.ts"
+import type {Data, Params} from "@@/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
-	RouteContext__block,
+	RouteContext__execution,
 	RouteContext__respond,
 } from "./RouteContext.ts"
-import type { Result } from "@@/result.ts"
+import {type Result} from "@@/result.ts"
 import WooterError from "@/WooterError.ts"
-import type { TEmptyObject } from "@@/chemin.ts"
+import type {TEmptyObject} from "@@/chemin.ts"
+import { Soon } from "@bronti/robust/Soon"
 
 /**
  * The middleware handler must call ctx.next() before exiting
@@ -23,14 +24,14 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
 }
 
 /**
- * The middleware handler must call ctx.next() before being able to call ctx.block()
+ * The middleware handler must call ctx.next() before being able to call ctx.wait()
  */
-export class MiddlewareCalledBlockBeforeNextError extends WooterError {
+export class MiddlewareCalledWaitBeforeNextError extends WooterError {
 	/** name */
-	override name: string = "MiddlewareCalledBlockBeforeNextError"
+	override name: string = "MiddlewareCalledWaitBeforeNextError"
 
 	constructor() {
-		super("The middleware handler must call ctx.next() before being able to call ctx.block()")
+		super("The middleware handler must call ctx.next() before being able to call ctx.wait()")
 	}
 }
 
@@ -80,16 +81,15 @@ export default class MiddlewareContext<
 
 	/**
 	 * must be called AFTER .next()
-	 * Resolves after the handler is completely finished
-	 * assuming the handler has already been started
+	 * Waits until the handler is done executing
 	 * @returns Result containing nothing, or an error
 	 */
-	readonly block = async (): Promise<Result<null, unknown>> => {
+	readonly wait = async (): Promise<Result<null, unknown>> => {
 		if (!this.#nextCtx) {
-			throw new MiddlewareCalledBlockBeforeNextError()
+			throw new MiddlewareCalledWaitBeforeNextError()
 		}
 		this.#blockCalled = true
-		return await this.#nextCtx[RouteContext__block].promise
+		return await this.#nextCtx[RouteContext__execution].promise
 	}
 
 	/**
@@ -107,23 +107,37 @@ export default class MiddlewareContext<
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
-			const run = async () => {
-				try {
-					await Promise.try(handler, ctx)
-					if (ctx.blockChannel.resolved) return
-					if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
-					if (!ctx.#blockCalled) {
-						return await ctx.#nextCtx[RouteContext__block].promise.then((r) => ctx.blockChannel.push(r))
-					}
-					if (!ctx.respondChannel.resolved) return ctx.err(new HandlerDidntRespondError())
-					ctx.ok()
-				} catch (err) {
-					if (ctx.blockChannel.resolved) return console.error(err)
-					ctx.err(err)
-				}
-			}
+			// const run = async () => {
+			// 	try {
+			// 		await Promise.try(handler, ctx)
+			// 		if (ctx.executeSoon.resolved) return
+			// 		if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
+			// 		if (!ctx.#blockCalled) {
+			// 			return await ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
+			// 		}
+			// 		if (!ctx.respondSoon.resolved) return ctx.err(new HandlerDidntRespondError())
+			// 		ctx.ok()
+			// 	} catch (err) {
+			// 		if (ctx.executeSoon.resolved) return console.error(err)
+			// 		ctx.err(err)
+			// 	}
+			// }
+			//
+			// run()
 
-			run()
+
+			const run = Soon.tryable<void, unknown>(async (w) => {
+				await handler(ctx)
+				if(ctx.executeSoon.resolved) return;
+				if(!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError();
+				if(!ctx.#blockCalled) {
+					return ctx.#nextCtx[RouteContext__execution].map(r => ctx.executeSoon.push(r))
+				}
+				if(!ctx.respondSoon.resolved) throw new HandlerDidntRespondError();
+			}, ctx.catchErr)
+
+			run().then(r => r.match(ctx.ok, ctx.catchErr))
+
 			return ctx as unknown as MiddlewareContext
 		}
 	}
@@ -133,14 +147,14 @@ export default class MiddlewareContext<
 	///
 
 	/**
-	 * Runs handler & sends response, if it is not empty
+	 * Runs the next handler, and sends the response once it's done
 	 *
 	 * shorthand for `(await ctx.next(data, request)).map(r => ctx.resp(r))`
 	 * @param data - middleware data
 	 * @param request - new request object
 	 * @returns Response option
 	 */
-	readonly pass = async (
+	readonly relay = async (
 		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Option<Response>> => (await this.next(data, request)).map((r) => this.resp(r))
@@ -148,37 +162,38 @@ export default class MiddlewareContext<
 	/**
 	 * Runs handler, waits for response and re-throws any errors
 	 *
-	 * shorthand for `(await ctx.next(data, request)).unwrapOrElse(async () => { throw (await ctx.block()).unwrapErr() }) `
+	 * shorthand for `(await ctx.next(data, request)).unwrapOrElse(async () => { throw (await ctx.wait()).unwrapErr() }) `
 	 * @param data - middleware data
 	 * @param request - new request object
 	 * @returns Response
 	 */
-	readonly unwrap = async (
+	readonly expectResponse = async (
 		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Response> => {
-		return (await this.next(data, request)).unwrapOrElse(
-			// @ts-expect-error: This case should always throw anyway
-			async () => {
-				throw (await this.block()).unwrapErr()
-			},
-		)
+		const res = await this.next(data, request);
+		if(res.isSome()) {
+			return res.unwrap()
+		} else {
+			throw (await this.wait()).unwrapErr()
+		}
 	}
 
 	/**
 	 * Runs handler, waits for response, sends it and re-throws any errors
 	 *
-	 * shorthand for `(await ctx.pass(data, request)).unwrapOrElse(async () => { throw (await ctx.block()).unwrapErr() }) `
+	 * shorthand for `(await ctx.pass(data, request)).unwrapOrElse(async () => { throw (await ctx.wait()).unwrapErr() }) `
 	 * @param data - middleware data
+	 * @param request - new request object
 	 * @returns Response
 	 */
-	readonly unwrapAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData): Promise<Response> => {
-		return (await this.pass(data)).unwrapOrElse(
-			// @ts-expect-error: This case should always throw anyway
-			async () => {
-				throw (await this.block()).unwrapErr()
-			},
-		)
+	readonly expectAndRespond = async (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> => {
+		const res = await this.relay(data, request);
+		if(res.isSome()) {
+			return res.unwrap()
+		} else {
+			throw (await this.wait()).unwrapErr()
+		}
 	}
 }
 /**
