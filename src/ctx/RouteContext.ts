@@ -30,7 +30,7 @@ export class HandlerRespondedTwiceError extends WooterError {
 	}
 }
 
-export const RouteContext__execution = Symbol("RouteContext__block")
+export const RouteContext__execution = Symbol("RouteContext__execution")
 export const RouteContext__respond = Symbol("RouteContext__respond")
 /**
  * Context class passed into route handlers
