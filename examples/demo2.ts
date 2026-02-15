@@ -21,9 +21,13 @@ export class Redirect {
 }
 
 const wooter = new Wooter()
-	.use(async ({ request, resp, expectResponse }) => {
+	.use<{ redirect: (...args: ConstructorParameters<typeof Redirect>) => never }>(async ({ request, resp, expectResponse }) => {
 		try {
-			resp(await expectResponse(request))
+			resp(await expectResponse({
+				redirect: (...args) => {
+					throw new Redirect(...args)
+				}
+			}, request))
 		} catch (e) {
 			// doing err(new Redirect(...)) will run this
 			if (e instanceof Redirect) {
@@ -47,9 +51,7 @@ const wooter = new Wooter()
 {
 	const authWooter = wooter.router(c.chemin("auth"))
 
-	authWooter.route(c.chemin("auth"), "GET", async ({ request, resp, data }) => {
-		const cookies = data.get("cookies")
-
+	authWooter.route(c.chemin("auth"), "GET", async ({ request, resp, data: { cookies, redirect } }) => {
 		let json = await request.json()
 		if (!json.username || !json.password) {
 			return resp(
@@ -71,15 +73,14 @@ const wooter = new Wooter()
 				path: "/",
 			},
 		)
-		throw new Redirect(302, "/home")
+		redirect(302, "/home")
 	})
 }
 
 {
 	const apiWooter = wooter.router(c.chemin("api", c.pNumber("asd")))
 
-	apiWooter.route(c.chemin("gateway"), "GET", async ({ resp, data }) => {
-		const username = data.get("username")
+	apiWooter.route(c.chemin("gateway"), "GET", async ({ resp, data: { username } }) => {
 		resp(Response.json({ ok: true, msg: `Hello, ${username}` }))
 	})
 }

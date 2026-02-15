@@ -11,7 +11,7 @@ Deno.test("middleware - creates typed middleware handler", async () => {
 	const wooter = new Wooter().use(authMiddleware)
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
-		const userId = ctx.data.get("userId")
+		const userId = ctx.data.userId
 		assertEquals(userId, 123)
 		ctx.resp(new Response("OK"))
 	})
@@ -33,7 +33,7 @@ Deno.test("use - applies middleware to specific handler", async () => {
 		c.chemin("with-middleware"),
 		"GET",
 		use(testMiddleware, (ctx) => {
-			assertEquals(ctx.data.get("value"), "from-middleware")
+			assertEquals(ctx.data.value, "from-middleware")
 			ctx.resp(new Response("OK"))
 		}),
 	)
@@ -90,7 +90,7 @@ Deno.test("use - can chain multiple middlewares", async () => {
 
 	const middleware2 = middleware<{ step2: boolean }, { step1: boolean }>(async (ctx) => {
 		executionOrder.push(2)
-		assert(ctx.data.get("step1"))
+		assert(ctx.data.step1)
 		await ctx.expectAndRespond({ step2: true })
 	})
 
@@ -101,8 +101,8 @@ Deno.test("use - can chain multiple middlewares", async () => {
 			middleware1,
 			use(middleware2, (ctx) => {
 				executionOrder.push(3)
-				assert(ctx.data.get("step1"))
-				assert(ctx.data.get("step2"))
+				assert(ctx.data.step1)
+				assert(ctx.data.step2)
 				ctx.resp(new Response("OK"))
 			}),
 		),

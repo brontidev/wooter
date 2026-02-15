@@ -167,7 +167,7 @@ Deno.test("middleware data", async () => {
 	})
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
-		const number = ctx.data.get("random")
+		const number = ctx.data.random
 		assertEquals(randomNumber, number)
 		ctx.resp(new Response("Hello World!!"))
 	})

@@ -39,13 +39,13 @@ export default class RouteContext<
 	TParams extends Params | undefined = undefined,
 	TData extends Data | undefined = undefined,
 > {
-	private readonly _data: TypedMap<TData extends undefined ? TEmptyObject : TData>
+	private readonly _data: TData extends undefined ? TEmptyObject : TData
 	private readonly _params: TypedMap<TParams extends undefined ? TEmptyObject : TParams>
 
 	/**
 	 * Middleware data
 	 */
-	get data(): TypedMap<TData extends undefined ? TEmptyObject : TData> {
+	get data(): TData extends undefined ? TEmptyObject : TData {
 		return this._data
 	}
 
@@ -96,7 +96,7 @@ export default class RouteContext<
 		params: TParams extends undefined ? TEmptyObject : TParams,
 	) {
 		this.url = new URL(request.url)
-		this._data = new TypedMap(data)
+		this._data = data
 		this._params = new TypedMap(params)
 	}
 

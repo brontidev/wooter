@@ -26,8 +26,7 @@ const wooter = new Wooter()
 	.use(cookies)
 	.use(json)
 	.use<{ parseJson: <TSchema extends z.Schema>(schema: TSchema) => Promise<z.infer<TSchema>> }>(
-		async ({ data, resp, expectAndRespond }) => {
-			const json = data.get("json")
+		async ({ data: { json }, resp, expectAndRespond }) => {
 			await expectAndRespond({
 				parseJson: async (schema) => {
 					const result = schema.safeParse(await json())
@@ -41,8 +40,7 @@ const wooter = new Wooter()
 			})
 		},
 	)
-wooter.route(c.chemin(), "GET", async ({ resp, data }) => {
-	const cookies = data.get("cookies")
+wooter.route(c.chemin(), "GET", async ({ resp, data: { cookies } }) => {
 	const count = Option.from(cookies.get("count")).map((x) => parseInt(x)).unwrapOr(0) + 1
 	cookies.set("count", count.toString())
 	resp(Response.json({
@@ -65,8 +63,7 @@ wooter.route(c.chemin("book"), {
 		resp(Response.json((await Array.fromAsync(db.list<Book>({ prefix: ["books"] })))
 			.filter(({ key }) => key[1] !== "id")))
 	},
-	async POST({ resp, data, url }) {
-		const parseJson = data.get("parseJson")
+	async POST({ resp, data: { parseJson }, url }) {
 		const body = await parseJson(book)
 		const idEntry = await db.get<number>(["books", "id"])
 		const id = (idEntry.value ?? 0) + 1
@@ -97,8 +94,7 @@ wooter.route(c.chemin("book", c.pNumber("id")), {
 				.match((v) => Response.json(v), () => makeError(404, "Book not found")),
 		)
 	},
-	async PUT({ params, data, resp }) {
-		const parseJson = data.get("parseJson")
+	async PUT({ params, data: { parseJson }, resp }) {
 		const id = params.get("id")
 		const body = await parseJson(book)
 		const bookEntry = await db.get<Book>(["books", id])
@@ -114,8 +110,7 @@ wooter.route(c.chemin("book", c.pNumber("id")), {
 		}
 		resp(Response.json(body))
 	},
-	async PATCH({ params, data, resp }) {
-		const parseJson = data.get("parseJson")
+	async PATCH({ params, data: { parseJson }, resp }) {
 		const id = params.get("id")
 		const body = await parseJson(bookPatch)
 		const bookEntry = await db.get<Book>(["books", id])

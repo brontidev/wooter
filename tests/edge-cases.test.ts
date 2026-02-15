@@ -178,7 +178,7 @@ Deno.test("Middleware data persistence", async () => {
 	})
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
-		const timestamp = ctx.data.get("timestamp")
+		const timestamp = ctx.data.timestamp
 		assert(typeof timestamp === "number")
 		assert(timestamp > 0)
 		ctx.resp(new Response("OK"))
@@ -191,14 +191,14 @@ Deno.test("Multiple middleware data merging", async () => {
 	const wooter = new Wooter().use<{ auth: boolean }>(async (ctx) => {
 		await ctx.expectAndRespond({ auth: true })
 	}).use<{ userId: number }>(async (ctx) => {
-		const auth = ctx.data.get("auth")
+		const auth = ctx.data.auth
 		assert(auth === true)
 		await ctx.expectAndRespond({ userId: 42 })
 	})
 
 	wooter.route(c.chemin(), "GET", (ctx) => {
-		assertEquals(ctx.data.get("auth"), true)
-		assertEquals(ctx.data.get("userId"), 42)
+		assertEquals(ctx.data.auth, true)
+		assertEquals(ctx.data.userId, 42)
 		ctx.resp(new Response("OK"))
 	})
 

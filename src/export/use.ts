@@ -20,7 +20,7 @@ export default function use<
 	handler: RouteHandler<TParams, OptionalMerge<Data, BaseData, NextData>>,
 ): RouteHandler<TParams, BaseData> {
 	return async ({ params: _params, request, data: _data, resp }) => {
-		let data = Object.fromEntries(_data.entries())
+		let data = Object.fromEntries(Object.entries(_data))
 		const params = Object.fromEntries(_params.entries())
 		const internalHandler = MiddlewareContext.useMiddlewareHandler(middlewareHandler, params, (nextData, request) => {
 			data = Object.assign(data, nextData)
