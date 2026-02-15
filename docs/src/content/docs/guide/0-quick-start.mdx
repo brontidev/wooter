@@ -1,0 +1,101 @@
+---
+title: 0. quick start
+description: Installing wooter and setting up a router
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+# 1. installing
+Wooter can be installed from JSR.io
+
+<Tabs>
+    <TabItem label="deno">
+        ```
+        deno add jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="bun">
+        ```
+        bunx jsr add @bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="npm">
+        ```
+        npx jsr add @bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="vlt">
+        ```
+        vlt add jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="pnpm">
+        ```
+        pnpm i jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="yarn">
+        ```
+        yarn add jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="browser">
+        ```ts
+        import { /* ... */ } from "https://esm.sh/jsr/@bronti/wooter@3";
+        ```
+    </TabItem>
+</Tabs>
+
+# hello world!
+Define routes using `.route()`
+
+```ts
+import { c, Wooter } from "@bronti/wooter"
+const wooter = new Wooter()
+
+wooter.route(c.chemin(), "GET", (ctx) => {
+    ctx.resp("Hello world!")
+})
+```
+
+# serving
+Wooter does not implement an HTTP server, instead it exposes a single entry point: `.fetch(request: Request): Promise<Response>`
+
+## using `export default`
+In some environments, serving is as easy as exporting a default object with a fetch method:
+```ts
+export default wooter;
+// or
+const { fetch } = wooter;
+export default { fetch };
+```
+
+This works out of the box for Cloudflare, Vercel, Bun, and Deno (using `deno serve`), and Deno Deploy.
+
+## manual serving
+
+<Tabs>
+    <TabItem label="deno">
+        ```ts
+        Deno.serve({ port: 3000 }, wooter.fetch)
+        ```
+    </TabItem>
+</Tabs>
