@@ -23,11 +23,13 @@ export class Redirect {
 const wooter = new Wooter()
 	.use<{ redirect: (...args: ConstructorParameters<typeof Redirect>) => never }>(async ({ request, resp, expectResponse }) => {
 		try {
-			resp(await expectResponse({
-				redirect: (...args) => {
-					throw new Redirect(...args)
-				}
-			}, request))
+			resp(
+				await expectResponse({
+					redirect: (...args) => {
+						throw new Redirect(...args)
+					},
+				}, request),
+			)
 		} catch (e) {
 			// doing err(new Redirect(...)) will run this
 			if (e instanceof Redirect) {

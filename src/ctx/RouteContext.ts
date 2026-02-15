@@ -122,10 +122,16 @@ export default class RouteContext<
 	 * Responds to the request
 	 * @returns Response
 	 */
-	readonly resp = (response: Response): Response => {
+	readonly resp: {
+		(response: Response): Response
+		(body?: BodyInit | null, init?: ResponseInit): Response
+	} = (responseOrBody: Response | BodyInit | null | undefined, init?: ResponseInit): Response => {
 		if (this.respondSoon.resolved) {
 			throw new HandlerRespondedTwiceError()
 		}
+
+		const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
+
 		this.respondSoon.push(some(response))
 		return response
 	}
