@@ -1,0 +1,550 @@
+---
+title: 4. Advanced Patterns
+description: Advanced routing and middleware patterns
+---
+
+# Advanced Patterns
+
+This guide covers advanced use cases and patterns for building robust applications with wooter.
+
+## After-Response Processing
+
+One of wooter's most powerful features is the ability to execute code **after** sending the response.
+
+### Why After-Response?
+
+- Keep response times low
+- Process webhooks asynchronously
+- Update caches
+- Log analytics
+- Clean up resources
+
+### Basic Pattern
+
+```ts
+wooter.route(c.chemin("webhook"), "POST", async ({ resp, request }) => {
+    // Respond immediately
+    resp(new Response("Accepted", { status: 202 }))
+    
+    // Process after responding
+    const data = await request.json()
+    await processWebhook(data)
+    await updateCache()
+    console.log("Webhook processed!")
+})
+```
+
+### With Error Handling
+
+```ts
+wooter.route(c.chemin("process"), "POST", async ({ resp, request }) => {
+    resp(new Response("Processing", { status: 202 }))
+    
+    try {
+        const data = await request.json()
+        await heavyProcessing(data)
+    } catch (error) {
+        // Error after response - log it
+        console.error("Background processing failed:", error)
+        await notifyAdmins(error)
+    }
+})
+```
+
+### Controlled Cleanup
+
+Use `ok()` to mark completion explicitly:
+
+```ts
+wooter.route(c.chemin("task"), "POST", async ({ resp, request, ok }) => {
+    const task = await createTask(await request.json())
+    
+    resp(Response.json({ taskId: task.id }))
+    
+    try {
+        await executeTask(task)
+    } catch (error) {
+        console.error("Task failed:", error)
+    } finally {
+        ok() // Mark handler as complete
+    }
+})
+```
+
+## Complex Middleware Chains
+
+### Authentication + Authorization
+
+```ts
+import { middleware } from "@bronti/wooter/use"
+
+// Step 1: Authenticate
+const authenticate = middleware<{ user: User | null }>(async ({ request, expectAndRespond }) => {
+    const token = request.headers.get("Authorization")
+    const user = token ? await validateToken(token) : null
+    await expectAndRespond({ user })
+})
+
+// Step 2: Require authentication
+const requireAuth = middleware<{ user: User }>(async ({ data, resp, expectAndRespond }) => {
+    if (!data.user) {
+        return resp(new Response("Unauthorized", { status: 401 }))
+    }
+    // Type narrows: data.user is now User (not User | null)
+    await expectAndRespond({ user: data.user })
+})
+
+// Step 3: Require admin
+const requireAdmin = middleware<{ user: User & { isAdmin: true } }>(
+    async ({ data, resp, expectAndRespond }) => {
+        if (!data.user.isAdmin) {
+            return resp(new Response("Forbidden", { status: 403 }))
+        }
+        await expectAndRespond({ user: data.user as User & { isAdmin: true } })
+    }
+)
+
+const wooter = new Wooter()
+    .use(authenticate)
+
+// Public route
+wooter.route(c.chemin("public"), "GET", ({ resp }) => {
+    resp(new Response("Public data"))
+})
+
+// Protected routes
+const protected = wooter.router(c.chemin("api"))
+    .use(requireAuth)
+
+protected.route(c.chemin("profile"), "GET", ({ resp, data }) => {
+    // data.user is guaranteed to exist
+    resp(Response.json(data.user))
+})
+
+// Admin routes
+const admin = protected.router(c.chemin("admin"))
+    .use(requireAdmin)
+
+admin.route(c.chemin("users"), "GET", ({ resp, data }) => {
+    // data.user is guaranteed to be admin
+    resp(Response.json({ admin: data.user }))
+})
+```
+
+### Request Validation
+
+```ts
+import { z } from "zod"
+import { middleware } from "@bronti/wooter/use"
+
+const withValidation = <T extends z.Schema>(schema: T) => 
+    middleware<{ validated: z.infer<T> }>(async ({ request, resp, expectAndRespond }) => {
+        try {
+            const body = await request.json()
+            const validated = schema.parse(body)
+            await expectAndRespond({ validated })
+        } catch (error) {
+            resp(Response.json(
+                { error: "Validation failed", details: error },
+                { status: 400 }
+            ))
+            throw error
+        }
+    })
+
+const userSchema = z.object({
+    name: z.string(),
+    email: z.string().email(),
+    age: z.number().min(18)
+})
+
+wooter.route(
+    c.chemin("user"),
+    "POST",
+    use(withValidation(userSchema), ({ resp, data }) => {
+        // data.validated is fully typed!
+        const user = data.validated
+        resp(Response.json({ created: user }))
+    })
+)
+```
+
+### Rate Limiting
+
+```ts
+const rateLimit = middleware(async ({ request, resp, url, relay }) => {
+    const ip = request.headers.get("X-Forwarded-For") || "unknown"
+    const key = `${ip}:${url.pathname}`
+    
+    const count = await redis.incr(key)
+    
+    if (count === 1) {
+        await redis.expire(key, 60) // 60 second window
+    }
+    
+    if (count > 100) {
+        return resp(new Response("Too many requests", { status: 429 }))
+    }
+    
+    await relay({})
+})
+```
+
+### Caching
+
+```ts
+const cached = middleware(async ({ request, url, next, resp }) => {
+    const cacheKey = `${request.method}:${url.pathname}`
+    
+    // Check cache
+    const cached = await cache.get(cacheKey)
+    if (cached) {
+        return resp(new Response(cached, {
+            headers: { "X-Cache": "HIT" }
+        }))
+    }
+    
+    // Get fresh response
+    const responseOption = await next({})
+    
+    await responseOption.inspect(async (response) => {
+        // Cache the response
+        const body = await response.clone().text()
+        await cache.set(cacheKey, body, { ttl: 300 })
+        
+        resp(new Response(body, {
+            ...response,
+            headers: {
+                ...Object.fromEntries(response.headers),
+                "X-Cache": "MISS"
+            }
+        }))
+    })
+})
+```
+
+## Error Boundaries
+
+### Global Error Handler
+
+```ts
+const errorBoundary = middleware(async ({ next, resp }) => {
+    const responseOption = await next({})
+    
+    if (responseOption.isSome()) {
+        return resp(responseOption.unwrap())
+    }
+    
+    // No response = error occurred
+    const result = await wait()
+    
+    result.match(
+        () => {
+            // Shouldn't happen - handler errored but returned Ok
+            resp(new Response("Unknown error", { status: 500 }))
+        },
+        (error) => {
+            console.error("Unhandled error:", error)
+            
+            if (error instanceof ValidationError) {
+                resp(Response.json(
+                    { error: error.message },
+                    { status: 400 }
+                ))
+            } else if (error instanceof NotFoundError) {
+                resp(Response.json(
+                    { error: "Not found" },
+                    { status: 404 }
+                ))
+            } else {
+                resp(new Response("Internal server error", { status: 500 }))
+            }
+        }
+    )
+})
+
+wooter.use(errorBoundary)
+```
+
+### Typed Error Responses
+
+```ts
+class AppError extends Error {
+    constructor(
+        message: string,
+        public status: number,
+        public code: string
+    ) {
+        super(message)
+    }
+}
+
+const errorHandler = middleware(async ({ next, wait, resp }) => {
+    const responseOption = await next({})
+    
+    if (responseOption.isSome()) {
+        return resp(responseOption.unwrap())
+    }
+    
+    const result = await wait()
+    
+    result.inspectErr((error) => {
+        if (error instanceof AppError) {
+            resp(Response.json({
+                error: error.message,
+                code: error.code
+            }, { status: error.status }))
+        } else {
+            resp(new Response("Internal error", { status: 500 }))
+        }
+    })
+})
+
+wooter.use(errorHandler)
+
+wooter.route(c.chemin("user", c.pNumber("id")), "GET", async ({ params, resp }) => {
+    const user = await db.findUser(params.get("id"))
+    
+    if (!user) {
+        throw new AppError("User not found", 404, "USER_NOT_FOUND")
+    }
+    
+    resp(Response.json(user))
+})
+```
+
+## WebSocket Upgrade
+
+```ts
+wooter.route(c.chemin("ws"), "GET", async ({ request, resp }) => {
+    if (request.headers.get("upgrade") !== "websocket") {
+        return resp(new Response("Expected WebSocket", { status: 426 }))
+    }
+    
+    const { socket, response } = Deno.upgradeWebSocket(request)
+    
+    resp(response)
+    
+    socket.addEventListener("open", () => {
+        console.log("WebSocket connected")
+    })
+    
+    socket.addEventListener("message", (event) => {
+        socket.send(`Echo: ${event.data}`)
+    })
+    
+    socket.addEventListener("close", () => {
+        console.log("WebSocket closed")
+    })
+})
+```
+
+## Server-Sent Events (SSE)
+
+```ts
+wooter.route(c.chemin("events"), "GET", ({ resp }) => {
+    const stream = new ReadableStream({
+        async start(controller) {
+            const encoder = new TextEncoder()
+            
+            // Send event every second
+            const interval = setInterval(() => {
+                const data = `data: ${JSON.stringify({ time: Date.now() })}\n\n`
+                controller.enqueue(encoder.encode(data))
+            }, 1000)
+            
+            // Clean up after 30 seconds
+            setTimeout(() => {
+                clearInterval(interval)
+                controller.close()
+            }, 30000)
+        }
+    })
+    
+    resp(new Response(stream, {
+        headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    }))
+})
+```
+
+## Request Context / Dependency Injection
+
+```ts
+// Create a context manager
+const createContext = () => {
+    const db = new Database()
+    const logger = new Logger()
+    
+    return { db, logger }
+}
+
+const withContext = middleware<{ ctx: ReturnType<typeof createContext> }>(
+    async ({ expectAndRespond }) => {
+        const ctx = createContext()
+        
+        try {
+            await expectAndRespond({ ctx })
+        } finally {
+            // Clean up
+            await ctx.db.close()
+        }
+    }
+)
+
+wooter.use(withContext)
+
+wooter.route(c.chemin("data"), "GET", async ({ resp, data }) => {
+    const { db, logger } = data.ctx
+    
+    logger.info("Fetching data")
+    const result = await db.query("SELECT * FROM users")
+    
+    resp(Response.json(result))
+})
+```
+
+## Multi-Tenancy
+
+```ts
+const withTenant = middleware<{ tenant: Tenant }>(
+    async ({ request, url, resp, expectAndRespond }) => {
+        // Extract tenant from subdomain
+        const host = url.hostname
+        const subdomain = host.split(".")[0]
+        
+        const tenant = await loadTenant(subdomain)
+        
+        if (!tenant) {
+            return resp(new Response("Tenant not found", { status: 404 }))
+        }
+        
+        await expectAndRespond({ tenant })
+    }
+)
+
+wooter.use(withTenant)
+
+wooter.route(c.chemin("dashboard"), "GET", ({ resp, data }) => {
+    // data.tenant is scoped to the current subdomain
+    resp(new Response(`Dashboard for ${data.tenant.name}`))
+})
+```
+
+## File Upload Handling
+
+```ts
+wooter.route(c.chemin("upload"), "POST", async ({ request, resp }) => {
+    const formData = await request.formData()
+    const file = formData.get("file") as File
+    
+    if (!file) {
+        return resp(new Response("No file provided", { status: 400 }))
+    }
+    
+    // Respond immediately
+    resp(new Response("Uploading...", { status: 202 }))
+    
+    // Process file in background
+    const buffer = await file.arrayBuffer()
+    await saveFile(file.name, buffer)
+    await processImage(file.name)
+    console.log("File processed!")
+})
+```
+
+## Conditional Middleware
+
+```ts
+const conditionalMiddleware = (
+    condition: (ctx: RouteContext) => boolean,
+    middleware: MiddlewareHandler
+) => {
+    return async (ctx: MiddlewareContext) => {
+        if (condition(ctx)) {
+            await middleware(ctx)
+        } else {
+            await ctx.relay({})
+        }
+    }
+}
+
+wooter.use(
+    conditionalMiddleware(
+        (ctx) => ctx.url.pathname.startsWith("/api"),
+        rateLimit
+    )
+)
+```
+
+## Redirects
+
+```ts
+import { makeRedirect } from "@bronti/wooter"
+
+wooter.route(c.chemin("old-path"), "GET", ({ resp }) => {
+    resp(makeRedirect("/new-path", { status: 301 }))
+})
+
+// Temporary redirect
+wooter.route(c.chemin("temp"), "GET", ({ resp }) => {
+    resp(makeRedirect("/new-location", { status: 307 }))
+})
+```
+
+## Composition Patterns
+
+### Middleware Factory
+
+```ts
+const createAuthMiddleware = (options: { allowAnonymous?: boolean } = {}) => {
+    return middleware<{ user: User | null }>(async ({ request, resp, expectAndRespond }) => {
+        const token = request.headers.get("Authorization")
+        const user = token ? await validateToken(token) : null
+        
+        if (!user && !options.allowAnonymous) {
+            return resp(new Response("Unauthorized", { status: 401 }))
+        }
+        
+        await expectAndRespond({ user })
+    })
+}
+
+// Use with different configs
+const strictAuth = createAuthMiddleware()
+const optionalAuth = createAuthMiddleware({ allowAnonymous: true })
+```
+
+### Combining Multiple Data Sources
+
+```ts
+const withUserAndSettings = middleware<{ 
+    user: User
+    settings: Settings 
+}>(async ({ expectAndRespond }) => {
+    const [user, settings] = await Promise.all([
+        fetchUser(),
+        fetchSettings()
+    ])
+    
+    await expectAndRespond({ user, settings })
+})
+```
+
+## Key Takeaways
+
+1. **After-response processing** - One of wooter's killer features
+2. **Chain middleware** - Build complex pipelines
+3. **Error boundaries** - Handle errors at the right level
+4. **Explicit control** - You decide when and how to respond
+5. **Type safety** - Leverage TypeScript for data flow
+6. **No magic** - Everything is explicit and traceable
+
+## Resources
+
+- [API Reference →](/reference/api)
+- [Middleware Reference →](/reference/middleware)
+- [Examples on GitHub](https://github.com/bronti/wooter/tree/main/examples)
