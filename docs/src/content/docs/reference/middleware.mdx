@@ -14,7 +14,7 @@ A collection of production-ready middleware examples you can use or adapt for yo
 ```ts
 import { middleware } from "@bronti/wooter/use"
 
-const basicAuth = middleware<{ user: string }>(async ({ request, resp, expectAndRespond }) => {
+const basicAuth = middleware<{ username: string }>(async ({ request, resp, expectAndRespond }) => {
     const auth = request.headers.get("Authorization")
     
     if (!auth?.startsWith("Basic ")) {
@@ -33,7 +33,7 @@ const basicAuth = middleware<{ user: string }>(async ({ request, resp, expectAnd
         return resp(new Response("Invalid credentials", { status: 401 }))
     }
     
-    await expectAndRespond({ user: username })
+    await expectAndRespond({ username })
 })
 ```
 
