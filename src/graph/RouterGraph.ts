@@ -185,7 +185,6 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 
 		respond.then((v) => v.inspect(resolve))
 		block.then((blockResult) => {
-			debugger
 			blockResult.inspectErr((err) => {
 				respond.value.inspect((v) => {
 					v.match((_) => {

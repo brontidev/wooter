@@ -110,11 +110,9 @@ export default class MiddlewareContext<
 
 			const run = Soon.tryable<void, unknown>(async (w) => {
 				await handler(ctx)
-				debugger
 				if (ctx.executeSoon.resolved) return
 				if (!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError()
 				if (!ctx.#blockCalled) {
-					console.log("middleware doesn't call .wait(), so we're force-propagating errors errors")
 					return ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
 				}
 				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
