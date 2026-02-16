@@ -1,0 +1,169 @@
+---
+title: 1. Core Concepts
+description: Understanding wooter's imperative, explicit design philosophy
+---
+
+# Core Concepts
+
+wooter is built on a simple philosophy: **be explicit, not magical**. This guide covers the fundamental concepts that make wooter different from other router libraries.
+
+## The Response Lifecycle
+
+Unlike many router libraries that use return values or implicit response handling, wooter requires you to **explicitly call `resp()`** to send a response.
+
+### Why Explicit Responses?
+
+This imperative design gives you complete control over the response lifecycle:
+
+```ts
+wooter.route(c.chemin("user"), "GET", async ({ resp }) => {
+    // You MUST call resp() before the handler exits
+    resp(new Response("User data"))
+})
+```
+
+**This will throw an error:**
+```ts
+wooter.route(c.chemin("user"), "GET", async ({ resp }) => {
+    // Handler exits without calling resp()!
+    // ❌ HandlerDidntRespondError
+})
+```
+
+### Response-First, Side-Effects After
+
+One of wooter's most powerful features is the ability to perform work **after** sending the response:
+
+```ts
+import { delay } from "jsr:@std/async"
+
+wooter.route(c.chemin("webhook"), "POST", async ({ resp, request }) => {
+    // Respond immediately
+    resp(new Response("OK", { status: 202 }))
+    
+    // Process webhook after responding
+    await delay(100)
+    const data = await request.json()
+    await processWebhook(data)
+    console.log("Webhook processed!")
+})
+```
+
+The response is sent to the client immediately, but your handler continues executing. This is perfect for:
+- Background processing
+- Logging and analytics
+- Webhook processing
+- Cache updates
+
+## No Magic, No BS
+
+wooter doesn't try to be clever. What you write is what you get:
+
+### You Control When to Respond
+
+```ts
+wooter.route(c.chemin("data"), "GET", async ({ resp }) => {
+    const data = await fetchData()
+    
+    if (!data) {
+        // Explicitly respond with error
+        return resp(new Response("Not found", { status: 404 }))
+    }
+    
+    // Explicitly respond with success
+    resp(Response.json(data))
+})
+```
+
+### You Control Error Handling
+
+```ts
+wooter.route(c.chemin("risky"), "GET", async ({ resp }) => {
+    try {
+        const result = await riskyOperation()
+        resp(Response.json(result))
+    } catch (error) {
+        // You decide how to handle errors
+        resp(new Response("Something went wrong", { status: 500 }))
+    }
+})
+```
+
+### You Can Only Respond Once
+
+Attempting to call `resp()` multiple times will throw an error:
+
+```ts
+wooter.route(c.chemin("bad"), "GET", async ({ resp }) => {
+    resp(new Response("First"))
+    resp(new Response("Second")) // ❌ HandlerRespondedTwiceError
+})
+```
+
+## The Context Object
+
+Every route handler receives a context object with:
+
+### `resp(response: Response): Response`
+Send the response. **Must be called exactly once.**
+
+### `request: Request`
+The incoming Request object.
+
+### `url: URL`
+Parsed URL from the request.
+
+### `params: TypedMap<Params>`
+Route parameters (covered in the Routing guide).
+
+### `data: Data`
+Data injected by middleware (covered in the Middleware guide).
+
+### `ok(): void` (advanced)
+Manually mark the handler as complete without catching further errors. Rarely needed.
+
+## Promises and Async Handlers
+
+All handlers can be async or sync:
+
+```ts
+// Sync handler
+wooter.route(c.chemin("sync"), "GET", ({ resp }) => {
+    resp(new Response("Sync response"))
+})
+
+// Async handler
+wooter.route(c.chemin("async"), "GET", async ({ resp }) => {
+    const data = await fetchData()
+    resp(Response.json(data))
+})
+```
+
+The key rule: **you must call `resp()` before your handler's promise resolves**.
+
+## Separation of Response and Execution
+
+This is crucial to understand:
+
+- **Response Promise**: Resolves when `resp()` is called
+- **Execution Promise**: Resolves when the handler function completes
+
+```ts
+wooter.route(c.chemin("example"), "GET", async ({ resp }) => {
+    resp(new Response("OK"))    // Response promise resolves here
+    await someCleanup()         // Execution continues
+    console.log("Done!")        // Execution promise resolves here
+})
+```
+
+This separation is what enables after-response side effects and is fundamental to understanding middleware (next guide).
+
+## Key Takeaways
+
+1. **Always call `resp()`** - No implicit response handling
+2. **Call it exactly once** - Multiple responses throw errors
+3. **Work after responding** - Continue executing after sending the response
+4. **No magic** - Explicit control over the entire lifecycle
+5. **Errors are yours** - Handle errors however you want
+
+Next: [Routing →](/guide/2-routing)
