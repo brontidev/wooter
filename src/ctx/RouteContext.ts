@@ -18,6 +18,9 @@ export class HandlerDidntRespondError extends WooterError {
 	}
 }
 
+export const ControlFlowBreak = Symbol("ControlFlowBreak")
+export type ControlFlowBreak = typeof ControlFlowBreak
+
 /**
  * The handler called resp() multiple times
  */
@@ -58,18 +61,23 @@ export default class RouteContext<
 
 	/**
 	 * @internal
+	 * none = handler exited without erroring
+	 * some(Error) = handler threw
 	 */
-	protected executeSoon: Soon<Result<null, unknown>> = new Soon()
+	protected errSoon: Soon<Option<unknown>> = new Soon()
+
 	/**
 	 * @internal
+	 * none = handler did not call resp()
+	 * some(Response) = handler called resp() with Response
 	 */
 	protected respondSoon: Soon<Option<Response>> = new Soon()
 
 	/**
 	 * @internal
 	 */
-	get [RouteContext__execution](): RouteContext["executeSoon"] {
-		return this.executeSoon
+	get [RouteContext__execution](): RouteContext["errSoon"] {
+		return this.errSoon
 	}
 
 	/**
@@ -105,7 +113,7 @@ export default class RouteContext<
 	 */
 	protected err(e: unknown) {
 		this.respondSoon.push(none())
-		this.executeSoon.push(err(e))
+		this.errSoon.push(some(e))
 	}
 
 	/**
@@ -115,7 +123,7 @@ export default class RouteContext<
 	 * This is the equivalent of resolving the handler promise
 	 */
 	readonly ok = (): void => {
-		this.executeSoon.push(ok(null))
+		this.errSoon.push(none())
 	}
 
 	/**
@@ -136,16 +144,26 @@ export default class RouteContext<
 		return response
 	}
 
+	readonly safeExit = (): never => {
+		throw ControlFlowBreak
+	}
+
 	/**
 	 * @internal
 	 * Used for useRouteHandler & useMiddlewareHandler to handle any errors that happen within the handler
 	 * @param e error
 	 */
 	protected catchErr = (e: unknown): void => {
-		if (this.executeSoon.resolved) {
+		if (this.errSoon.resolved) {
 			console.error(e)
 			return
 		}
+
+		if (e === ControlFlowBreak && this.respondSoon.resolved) {
+			this.errSoon.push(none())
+			return
+		}
+
 		this.err(e)
 	}
 
@@ -162,7 +180,7 @@ export default class RouteContext<
 
 			const run = Soon.tryable<void, unknown>(async (w) => {
 				await handler(ctx)
-				if (ctx.executeSoon.resolved) return
+				if (ctx.errSoon.resolved) return
 				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
 				w.push(void 0)
 			}, ctx.catchErr)
