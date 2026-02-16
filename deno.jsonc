@@ -57,13 +57,7 @@
 			"./examples",
 			"./tests",
 			"./temp"
-		],
-		"rules": {
-			"exclude": [
-				// TEMPORARY: do not merge this branch until this rule is re-enabled
-				"no-debugger"
-			]
-		}
+		]
 	},
 	"unstable": ["kv"],
 	"fmt": {

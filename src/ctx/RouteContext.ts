@@ -162,7 +162,6 @@ export default class RouteContext<
 
 			const run = Soon.tryable<void, unknown>(async (w) => {
 				await handler(ctx)
-				debugger
 				if (ctx.executeSoon.resolved) return
 				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
 				w.push(void 0)
