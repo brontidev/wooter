@@ -228,7 +228,7 @@ const cached = middleware(async ({ request, url, next, resp }) => {
 ### Global Error Handler
 
 ```ts
-const errorBoundary = middleware(async ({ next, resp }) => {
+const errorBoundary = middleware(async ({ next, wait, resp }) => {
     const responseOption = await next({})
     
     if (responseOption.isSome()) {

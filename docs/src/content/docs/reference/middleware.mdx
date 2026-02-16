@@ -85,12 +85,14 @@ const apiKeyAuth = middleware<{ apiKey: string }>(async ({ request, resp, expect
 ```ts
 const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, expectAndRespond }) => {
     let _json: any
+    let _jsonFetched = false
     
     await expectAndRespond({
         json: async () => {
-            if (_json !== undefined) return _json
+            if (_jsonFetched) return _json
             
             try {
+                _jsonFetched = true
                 return _json = await request.clone().json()
             } catch (e) {
                 resp(new Response("Invalid JSON", { status: 400 }))
@@ -511,10 +513,10 @@ const errorHandler = middleware(async ({ next, wait, resp }) => {
 ### Add Request ID
 
 ```ts
-const requestId = middleware<{ requestId: string }>(async ({ expectAndRespond }) => {
+const requestId = middleware<{ requestId: string }>(async ({ expectResponse, resp }) => {
     const id = crypto.randomUUID()
     
-    const response = await expectAndRespond({ requestId: id })
+    const response = await expectResponse({ requestId: id })
     
     // Add to response headers
     const headers = new Headers(response.headers)
