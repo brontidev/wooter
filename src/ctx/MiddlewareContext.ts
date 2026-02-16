@@ -93,6 +93,15 @@ export default class MiddlewareContext<
 	}
 
 	/**
+	 * Marks this middleware as blocking error propagation
+	 * Should be called by helper methods that implicitly wait for completion
+	 * @internal
+	 */
+	#markAsBlocking = (): void => {
+		this.#blockCalled = true
+	}
+
+	/**
 	 * @internal
 	 */
 	static useMiddlewareHandler<
@@ -154,12 +163,12 @@ export default class MiddlewareContext<
 		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Response> => {
+		this.#markAsBlocking()
 		const res = await this.next(data, request)
-		const wait = this.wait()
 		if (res.isSome()) {
 			return res.unwrap()
 		} else {
-			throw (await wait).unwrapErr()
+			throw (await this.wait()).unwrapErr()
 		}
 	}
 
@@ -175,12 +184,12 @@ export default class MiddlewareContext<
 		data: TNextData extends undefined ? TEmptyObject : TNextData,
 		request?: Request,
 	): Promise<Response> => {
+		this.#markAsBlocking()
 		const res = await this.relay(data, request)
-		const wait = this.wait()
 		if (res.isSome()) {
 			return res.unwrap()
 		} else {
-			throw (await wait).unwrapErr()
+			throw (await this.wait()).unwrapErr()
 		}
 	}
 }
