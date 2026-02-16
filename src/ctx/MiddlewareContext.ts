@@ -107,32 +107,18 @@ export default class MiddlewareContext<
 		return (data, req) => {
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
-			// const run = async () => {
-			// 	try {
-			// 		await Promise.try(handler, ctx)
-			// 		if (ctx.executeSoon.resolved) return
-			// 		if (!ctx.#nextCtx) return ctx.err(new MiddlewareHandlerDidntCallUpError())
-			// 		if (!ctx.#blockCalled) {
-			// 			return await ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
-			// 		}
-			// 		if (!ctx.respondSoon.resolved) return ctx.err(new HandlerDidntRespondError())
-			// 		ctx.ok()
-			// 	} catch (err) {
-			// 		if (ctx.executeSoon.resolved) return console.error(err)
-			// 		ctx.err(err)
-			// 	}
-			// }
-			//
-			// run()
 
-			const run = Soon.tryable<void, unknown>(async (_) => {
+			const run = Soon.tryable<void, unknown>(async (w) => {
 				await handler(ctx)
+				debugger
 				if (ctx.executeSoon.resolved) return
 				if (!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError()
 				if (!ctx.#blockCalled) {
+					console.log("middleware doesn't call .wait(), so we're force-propagating errors errors")
 					return ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
 				}
 				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
+				w.push(void 0)
 			}, ctx.catchErr)
 
 			run().then((r) => r.match(ctx.ok, ctx.catchErr))
@@ -171,10 +157,11 @@ export default class MiddlewareContext<
 		request?: Request,
 	): Promise<Response> => {
 		const res = await this.next(data, request)
+		const wait = this.wait()
 		if (res.isSome()) {
 			return res.unwrap()
 		} else {
-			throw (await this.wait()).unwrapErr()
+			throw (await wait).unwrapErr()
 		}
 	}
 
@@ -191,10 +178,11 @@ export default class MiddlewareContext<
 		request?: Request,
 	): Promise<Response> => {
 		const res = await this.relay(data, request)
+		const wait = this.wait()
 		if (res.isSome()) {
 			return res.unwrap()
 		} else {
-			throw (await this.wait()).unwrapErr()
+			throw (await wait).unwrapErr()
 		}
 	}
 }

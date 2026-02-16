@@ -1,0 +1,328 @@
+---
+title: 2. Routing
+description: Defining routes with type-safe path matching
+---
+
+# Routing
+
+wooter uses [chemin](https://jsr.io/@dldc/chemin) for type-safe, composable path matching. This guide covers everything from basic routes to complex path patterns.
+
+## Basic Routes
+
+Define routes using `wooter.route()`:
+
+```ts
+import { c, Wooter } from "@bronti/wooter"
+
+const wooter = new Wooter()
+
+wooter.route(c.chemin(), "GET", ({ resp }) => {
+    resp(new Response("Homepage"))
+})
+```
+
+The three arguments are:
+1. **Path** - Built with `c.chemin()`
+2. **Method** - HTTP method(s)
+3. **Handler** - Function that handles the request
+
+## Path Matching
+
+### Static Paths
+
+```ts
+// /about
+wooter.route(c.chemin("about"), "GET", ({ resp }) => {
+    resp(new Response("About page"))
+})
+
+// /api/users
+wooter.route(c.chemin("api", "users"), "GET", ({ resp }) => {
+    resp(Response.json({ users: [] }))
+})
+```
+
+### Dynamic Parameters
+
+Extract values from the URL path:
+
+```ts
+// /user/:id (e.g., /user/123)
+wooter.route(
+    c.chemin("user", c.pNumber("id")),
+    "GET",
+    ({ resp, params }) => {
+        const userId = params.get("id") // Type: number
+        resp(Response.json({ userId }))
+    }
+)
+
+// /posts/:slug (e.g., /posts/hello-world)
+wooter.route(
+    c.chemin("posts", c.pString("slug")),
+    "GET",
+    ({ resp, params }) => {
+        const slug = params.get("slug") // Type: string
+        resp(new Response(`Post: ${slug}`))
+    }
+)
+```
+
+Available parameter types:
+- `c.pNumber(name)` - Parses as number
+- `c.pString(name)` - Any string
+- `c.pRest(name)` - Catch-all for remaining path segments
+
+### Multiple Parameters
+
+```ts
+// /blog/:year/:month/:slug
+wooter.route(
+    c.chemin(
+        "blog",
+        c.pNumber("year"),
+        c.pNumber("month"),
+        c.pString("slug")
+    ),
+    "GET",
+    ({ resp, params }) => {
+        const year = params.get("year")   // Type: number
+        const month = params.get("month") // Type: number
+        const slug = params.get("slug")   // Type: string
+        
+        resp(Response.json({ year, month, slug }))
+    }
+)
+```
+
+### Catch-All Routes
+
+```ts
+// /files/* (e.g., /files/docs/readme.md)
+wooter.route(
+    c.chemin("files", c.pRest("path")),
+    "GET",
+    ({ resp, params }) => {
+        const filePath = params.get("path") // Type: string[]
+        resp(new Response(`File: ${filePath.join("/")}`))
+    }
+)
+```
+
+## HTTP Methods
+
+### Single Method
+
+```ts
+wooter.route(c.chemin("user"), "GET", ({ resp }) => {
+    resp(Response.json({ method: "GET" }))
+})
+```
+
+### Multiple Methods (Array)
+
+```ts
+wooter.route(c.chemin("user"), ["GET", "HEAD"], ({ resp }) => {
+    resp(Response.json({ method: "GET or HEAD" }))
+})
+```
+
+### Multiple Methods (Object)
+
+For different handlers per method:
+
+```ts
+wooter.route(c.chemin("user"), {
+    GET({ resp }) {
+        resp(Response.json({ action: "read" }))
+    },
+    POST({ resp }) {
+        resp(Response.json({ action: "create" }))
+    },
+    PUT({ resp }) {
+        resp(Response.json({ action: "update" }))
+    },
+    DELETE({ resp }) {
+        resp(Response.json({ action: "delete" }))
+    }
+})
+```
+
+### Wildcard Method
+
+Match any HTTP method:
+
+```ts
+wooter.route(c.chemin("echo"), "*", ({ resp, request }) => {
+    resp(new Response(`Method: ${request.method}`))
+})
+```
+
+## Working with Request Data
+
+### Query Parameters
+
+Use the standard URL API:
+
+```ts
+wooter.route(c.chemin("search"), "GET", ({ resp, url }) => {
+    const query = url.searchParams.get("q")
+    const page = url.searchParams.get("page") || "1"
+    
+    resp(Response.json({ query, page }))
+})
+// GET /search?q=wooter&page=2
+```
+
+### Request Body
+
+```ts
+wooter.route(c.chemin("api", "data"), "POST", async ({ resp, request }) => {
+    const body = await request.json()
+    
+    resp(Response.json({
+        received: body
+    }))
+})
+```
+
+### Headers
+
+```ts
+wooter.route(c.chemin("info"), "GET", ({ resp, request }) => {
+    const userAgent = request.headers.get("User-Agent")
+    const auth = request.headers.get("Authorization")
+    
+    resp(Response.json({ userAgent, auth }))
+})
+```
+
+## Nested Routers
+
+Create sub-routers for organizing routes:
+
+```ts
+const wooter = new Wooter()
+
+// API routes under /api
+const api = wooter.router(c.chemin("api"))
+
+api.route(c.chemin("users"), "GET", ({ resp }) => {
+    // Matches: /api/users
+    resp(Response.json({ users: [] }))
+})
+
+api.route(c.chemin("posts"), "GET", ({ resp }) => {
+    // Matches: /api/posts
+    resp(Response.json({ posts: [] }))
+})
+
+// Admin routes under /admin
+const admin = wooter.router(c.chemin("admin"))
+
+admin.route(c.chemin("dashboard"), "GET", ({ resp }) => {
+    // Matches: /admin/dashboard
+    resp(new Response("Admin Dashboard"))
+})
+```
+
+### Nested Parameters
+
+Parameters from parent routers are accessible in child routes:
+
+```ts
+const wooter = new Wooter()
+
+// User routes under /user/:userId
+const userRouter = wooter.router(
+    c.chemin("user", c.pNumber("userId"))
+)
+
+userRouter.route(c.chemin("posts"), "GET", ({ resp, params }) => {
+    const userId = params.get("userId") // From parent router
+    // Matches: /user/123/posts
+    resp(Response.json({ userId }))
+})
+
+userRouter.route(
+    c.chemin("posts", c.pNumber("postId")),
+    "GET",
+    ({ resp, params }) => {
+        const userId = params.get("userId")  // From parent
+        const postId = params.get("postId")  // From this route
+        // Matches: /user/123/posts/456
+        resp(Response.json({ userId, postId }))
+    }
+)
+```
+
+## Custom 404 Handler
+
+Define a custom not-found handler:
+
+```ts
+wooter.notFound(({ resp, request, url }) => {
+    resp(new Response(
+        `Page not found: ${request.method} ${url.pathname}`,
+        { status: 404 }
+    ))
+})
+```
+
+## Common Patterns
+
+### JSON API Endpoint
+
+```ts
+wooter.route(c.chemin("api", "user", c.pNumber("id")), {
+    async GET({ resp, params }) {
+        const user = await db.getUser(params.get("id"))
+        if (!user) {
+            return resp(new Response("Not found", { status: 404 }))
+        }
+        resp(Response.json(user))
+    },
+    
+    async PUT({ resp, params, request }) {
+        const id = params.get("id")
+        const updates = await request.json()
+        const user = await db.updateUser(id, updates)
+        resp(Response.json(user))
+    },
+    
+    async DELETE({ resp, params }) {
+        await db.deleteUser(params.get("id"))
+        resp(new Response("Deleted", { status: 204 }))
+    }
+})
+```
+
+### File Serving
+
+```ts
+wooter.route(
+    c.chemin("static", c.pRest("path")),
+    "GET",
+    async ({ resp, params }) => {
+        const filePath = params.get("path").join("/")
+        
+        try {
+            const file = await Deno.readFile(`./public/${filePath}`)
+            resp(new Response(file))
+        } catch {
+            resp(new Response("File not found", { status: 404 }))
+        }
+    }
+)
+```
+
+## Key Takeaways
+
+1. **Use `c.chemin()`** for building type-safe paths
+2. **Parameters are typed** - `pNumber()` gives you numbers, `pString()` gives strings
+3. **Access params with `params.get()`** - Fully type-safe
+4. **Multiple methods** - Use arrays or objects for flexibility
+5. **Nest routers** - Organize routes hierarchically
+6. **Standard Web APIs** - Use Request/Response/URL directly
+
+Next: [Middleware →](/guide/3-middleware)

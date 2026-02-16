@@ -26,7 +26,8 @@ const wooter = new Wooter()
 	.use(cookies)
 	.use(json)
 	.use<{ parseJson: <TSchema extends z.Schema>(schema: TSchema) => Promise<z.infer<TSchema>> }>(
-		async ({ data: { json }, resp, expectAndRespond }) => {
+		async ({ data: { json }, resp, expectAndRespond, wait }) => {
+			console.log("hi")
 			await expectAndRespond({
 				parseJson: async (schema) => {
 					const result = schema.safeParse(await json())
@@ -34,10 +35,11 @@ const wooter = new Wooter()
 						return result.data
 					} else {
 						resp(Response.json(result.error.issues))
-						throw 0
+						throw void 0
 					}
 				},
 			})
+			console.log("after expectAndResponse")
 		},
 	)
 wooter.route(c.chemin(), "GET", async ({ resp, data: { cookies } }) => {
@@ -135,4 +137,8 @@ wooter.route(c.chemin("book", c.pNumber("id")), {
 	},
 })
 
-Deno.serve({ port: 3000 }, (request) => wooter.fetch(request))
+// Deno.serve({ port: 3000 }, (request) => wooter.fetch(request))
+
+const resp = await wooter.fetch(new Request("http://localhost:3000/book", { method: "POST", body: "This is some Invalid JSON" }))
+
+console.log(resp)
