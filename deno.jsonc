@@ -65,6 +65,6 @@
 		"useTabs": true,
 		"indentWidth": 4,
 		"lineWidth": 130,
-		"exclude": ["./coverage", "./docs/book"]
+		"exclude": ["./coverage"]
 	}
 }

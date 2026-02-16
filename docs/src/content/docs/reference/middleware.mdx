@@ -1,0 +1,563 @@
+---
+title: Middleware Patterns
+description: Common middleware patterns and examples
+---
+
+# Middleware Patterns
+
+A collection of production-ready middleware examples you can use or adapt for your wooter applications.
+
+## Authentication & Authorization
+
+### Basic Authentication
+
+```ts
+import { middleware } from "@bronti/wooter/use"
+
+const basicAuth = middleware<{ username: string }>(async ({ request, resp, expectAndRespond }) => {
+    const auth = request.headers.get("Authorization")
+    
+    if (!auth?.startsWith("Basic ")) {
+        return resp(new Response("Unauthorized", {
+            status: 401,
+            headers: { "WWW-Authenticate": "Basic" }
+        }))
+    }
+    
+    const credentials = atob(auth.slice(6))
+    const [username, password] = credentials.split(":")
+    
+    const valid = await verifyPassword(username, password)
+    
+    if (!valid) {
+        return resp(new Response("Invalid credentials", { status: 401 }))
+    }
+    
+    await expectAndRespond({ username })
+})
+```
+
+### Bearer Token Authentication
+
+```ts
+const bearerAuth = middleware<{ userId: number }>(async ({ request, resp, expectAndRespond }) => {
+    const auth = request.headers.get("Authorization")
+    
+    if (!auth?.startsWith("Bearer ")) {
+        return resp(new Response("Missing token", { status: 401 }))
+    }
+    
+    const token = auth.slice(7)
+    const userId = await validateToken(token)
+    
+    if (!userId) {
+        return resp(new Response("Invalid token", { status: 401 }))
+    }
+    
+    await expectAndRespond({ userId })
+})
+```
+
+### API Key Authentication
+
+```ts
+const apiKeyAuth = middleware<{ apiKey: string }>(async ({ request, resp, expectAndRespond }) => {
+    const apiKey = request.headers.get("X-API-Key")
+    
+    if (!apiKey) {
+        return resp(new Response("API key required", { status: 401 }))
+    }
+    
+    const valid = await validateApiKey(apiKey)
+    
+    if (!valid) {
+        return resp(new Response("Invalid API key", { status: 401 }))
+    }
+    
+    await expectAndRespond({ apiKey })
+})
+```
+
+## Request Parsing
+
+### JSON Body Parser
+
+```ts
+const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, expectAndRespond }) => {
+    let _json: any
+    let _jsonFetched = false
+    
+    await expectAndRespond({
+        json: async () => {
+            if (_jsonFetched) return _json
+            
+            try {
+                _jsonFetched = true
+                return _json = await request.clone().json()
+            } catch (e) {
+                resp(new Response("Invalid JSON", { status: 400 }))
+                throw e
+            }
+        }
+    })
+})
+```
+
+### Form Data Parser
+
+```ts
+const formData = middleware<{ form: () => Promise<FormData> }>(async ({ request, resp, expectAndRespond }) => {
+    let _form: FormData | undefined
+    
+    await expectAndRespond({
+        form: async () => {
+            if (_form) return _form
+            
+            try {
+                return _form = await request.clone().formData()
+            } catch (e) {
+                resp(new Response("Invalid form data", { status: 400 }))
+                throw e
+            }
+        }
+    })
+})
+```
+
+### Query Parameter Parser
+
+```ts
+const queryParams = middleware<{ query: Record<string, string> }>(async ({ url, expectAndRespond }) => {
+    const query = Object.fromEntries(url.searchParams.entries())
+    await expectAndRespond({ query })
+})
+```
+
+## Cookie Handling
+
+### Cookie Parser
+
+```ts
+import { parse, serialize, type SerializeOptions } from "cookie"
+
+type CookieMap = {
+    get(name: string): string | undefined
+    set(name: string, value: string, options?: Partial<SerializeOptions>): void
+    delete(name: string): void
+}
+
+const cookies = middleware<{ cookies: CookieMap }>(async ({ request, resp, expectResponse }) => {
+    const cookieHeader = request.headers.get("cookie") || ""
+    const parsedCookies = parse(cookieHeader)
+    const cookieMap = new Map<string, { value: string; opts?: Partial<SerializeOptions> }>()
+    
+    const cookies: CookieMap = {
+        get: (name) => cookieMap.get(name)?.value ?? parsedCookies[name],
+        set: (name, value, options) => cookieMap.set(name, { value, opts: options }),
+        delete: (name) => cookieMap.set(name, { value: "", opts: { maxAge: 0 } })
+    }
+    
+    const response = await expectResponse({ cookies })
+    
+    // Append Set-Cookie headers
+    const newCookies = Array.from(cookieMap.entries())
+        .map(([name, cookie]) => serialize(name, cookie.value, {
+            httpOnly: true,
+            secure: true,
+            ...cookie.opts
+        }))
+    
+    if (newCookies.length > 0) {
+        const headers = new Headers(response.headers)
+        newCookies.forEach(cookie => headers.append("Set-Cookie", cookie))
+        
+        return resp(new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers
+        }))
+    }
+    
+    resp(response)
+})
+```
+
+## CORS
+
+### Simple CORS
+
+```ts
+const cors = middleware(async ({ expectResponse, resp }) => {
+    const response = await expectResponse({})
+    
+    const headers = new Headers(response.headers)
+    headers.set("Access-Control-Allow-Origin", "*")
+    headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    
+    resp(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+```
+
+### Configurable CORS
+
+```ts
+const createCors = (options: {
+    origin?: string | string[]
+    methods?: string[]
+    headers?: string[]
+    credentials?: boolean
+}) => middleware(async ({ request, expectResponse, resp }) => {
+    const response = await expectResponse({})
+    const headers = new Headers(response.headers)
+    
+    // Handle origin
+    const origin = request.headers.get("Origin")
+    if (Array.isArray(options.origin)) {
+        if (origin && options.origin.includes(origin)) {
+            headers.set("Access-Control-Allow-Origin", origin)
+        }
+    } else {
+        headers.set("Access-Control-Allow-Origin", options.origin || "*")
+    }
+    
+    // Methods
+    if (options.methods) {
+        headers.set("Access-Control-Allow-Methods", options.methods.join(", "))
+    }
+    
+    // Headers
+    if (options.headers) {
+        headers.set("Access-Control-Allow-Headers", options.headers.join(", "))
+    }
+    
+    // Credentials
+    if (options.credentials) {
+        headers.set("Access-Control-Allow-Credentials", "true")
+    }
+    
+    resp(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+```
+
+## Logging
+
+### Request Logger
+
+```ts
+const logger = middleware(async ({ request, url, expectResponse, resp }) => {
+    const start = Date.now()
+    const method = request.method
+    const path = url.pathname
+    
+    console.log(`→ ${method} ${path}`)
+    
+    try {
+        const response = await expectResponse({})
+        const duration = Date.now() - start
+        
+        console.log(`← ${response.status} ${method} ${path} (${duration}ms)`)
+        
+        resp(response)
+    } catch (error) {
+        const duration = Date.now() - start
+        console.error(`✗ ${method} ${path} (${duration}ms)`, error)
+        throw error
+    }
+})
+```
+
+### Detailed Request Logger
+
+```ts
+const detailedLogger = middleware(async ({ request, url, expectResponse, resp }) => {
+    const start = Date.now()
+    const id = crypto.randomUUID().slice(0, 8)
+    
+    console.log(`[${id}] ${request.method} ${url.pathname}`, {
+        headers: Object.fromEntries(request.headers),
+        query: Object.fromEntries(url.searchParams)
+    })
+    
+    try {
+        const response = await expectResponse({})
+        const duration = Date.now() - start
+        
+        console.log(`[${id}] ${response.status} (${duration}ms)`, {
+            headers: Object.fromEntries(response.headers)
+        })
+        
+        resp(response)
+    } catch (error) {
+        console.error(`[${id}] Error:`, error)
+        throw error
+    }
+})
+```
+
+## Rate Limiting
+
+### Token Bucket Rate Limiter
+
+```ts
+const rateLimit = (options: {
+    tokensPerInterval: number
+    interval: number // milliseconds
+    maxTokens?: number
+}) => {
+    const buckets = new Map<string, { tokens: number; lastRefill: number }>()
+    
+    return middleware(async ({ request, resp, relay }) => {
+        const ip = request.headers.get("X-Forwarded-For") || "unknown"
+        
+        const now = Date.now()
+        const bucket = buckets.get(ip) || {
+            tokens: options.maxTokens || options.tokensPerInterval,
+            lastRefill: now
+        }
+        
+        // Refill tokens
+        const elapsed = now - bucket.lastRefill
+        const tokensToAdd = Math.floor(elapsed / options.interval) * options.tokensPerInterval
+        bucket.tokens = Math.min(
+            (bucket.tokens + tokensToAdd),
+            options.maxTokens || options.tokensPerInterval
+        )
+        bucket.lastRefill = now
+        
+        if (bucket.tokens < 1) {
+            return resp(new Response("Too many requests", {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil(options.interval / 1000)) }
+            }))
+        }
+        
+        bucket.tokens -= 1
+        buckets.set(ip, bucket)
+        
+        await relay({})
+    })
+}
+```
+
+## Caching
+
+### In-Memory Cache
+
+```ts
+const cache = new Map<string, { data: string; expires: number }>()
+
+const cacheMiddleware = (ttl: number) => middleware(async ({ request, url, next, resp }) => {
+    const key = `${request.method}:${url.pathname}${url.search}`
+    
+    // Check cache
+    const cached = cache.get(key)
+    if (cached && cached.expires > Date.now()) {
+        return resp(new Response(cached.data, {
+            headers: { "X-Cache": "HIT" }
+        }))
+    }
+    
+    // Get fresh response
+    const responseOption = await next({})
+    
+    await responseOption.inspect(async (response) => {
+        if (response.status === 200) {
+            const data = await response.clone().text()
+            cache.set(key, {
+                data,
+                expires: Date.now() + ttl
+            })
+        }
+        
+        resp(new Response(response.body, {
+            ...response,
+            headers: {
+                ...Object.fromEntries(response.headers),
+                "X-Cache": "MISS"
+            }
+        }))
+    })
+})
+```
+
+## Security
+
+### Security Headers
+
+```ts
+const securityHeaders = middleware(async ({ expectResponse, resp }) => {
+    const response = await expectResponse({})
+    
+    const headers = new Headers(response.headers)
+    headers.set("X-Content-Type-Options", "nosniff")
+    headers.set("X-Frame-Options", "DENY")
+    headers.set("X-XSS-Protection", "1; mode=block")
+    headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+    
+    resp(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+```
+
+### Content Security Policy
+
+```ts
+const csp = (policy: string) => middleware(async ({ expectResponse, resp }) => {
+    const response = await expectResponse({})
+    
+    const headers = new Headers(response.headers)
+    headers.set("Content-Security-Policy", policy)
+    
+    resp(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+
+// Usage
+wooter.use(csp("default-src 'self'; script-src 'self' 'unsafe-inline'"))
+```
+
+## Compression
+
+### GZIP Compression
+
+```ts
+const compress = middleware(async ({ request, expectResponse, resp }) => {
+    const response = await expectResponse({})
+    
+    const acceptEncoding = request.headers.get("Accept-Encoding") || ""
+    
+    if (!acceptEncoding.includes("gzip")) {
+        return resp(response)
+    }
+    
+    const body = await response.arrayBuffer()
+    const compressed = await gzip(body) // Use your compression library
+    
+    const headers = new Headers(response.headers)
+    headers.set("Content-Encoding", "gzip")
+    headers.set("Content-Length", String(compressed.byteLength))
+    
+    resp(new Response(compressed, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+```
+
+## Timing
+
+### Response Time Header
+
+```ts
+const timing = middleware(async ({ expectResponse, resp }) => {
+    const start = performance.now()
+    
+    const response = await expectResponse({})
+    
+    const duration = performance.now() - start
+    const headers = new Headers(response.headers)
+    headers.set("X-Response-Time", `${duration.toFixed(2)}ms`)
+    
+    resp(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+```
+
+## Error Handling
+
+### Global Error Handler
+
+```ts
+const errorHandler = middleware(async ({ next, wait, resp }) => {
+    const responseOption = await next({})
+    
+    if (responseOption.isSome()) {
+        return resp(responseOption.unwrap())
+    }
+    
+    const result = await wait()
+    
+    result.inspectErr((error) => {
+        console.error("Unhandled error:", error)
+        
+        resp(Response.json({
+            error: "Internal server error",
+            message: error instanceof Error ? error.message : String(error)
+        }, { status: 500 }))
+    })
+})
+```
+
+## Request ID
+
+### Add Request ID
+
+```ts
+const requestId = middleware<{ requestId: string }>(async ({ expectResponse, resp }) => {
+    const id = crypto.randomUUID()
+    
+    const response = await expectResponse({ requestId: id })
+    
+    // Add to response headers
+    const headers = new Headers(response.headers)
+    headers.set("X-Request-ID", id)
+    
+    resp(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+```
+
+## Usage Examples
+
+### Full Stack
+
+```ts
+const wooter = new Wooter()
+    .use(requestId)
+    .use(logger)
+    .use(securityHeaders)
+    .use(cors)
+    .use(timing)
+    .use(errorHandler)
+
+wooter.route(c.chemin(), "GET", ({ resp, data }) => {
+    resp(Response.json({ requestId: data.requestId }))
+})
+```
+
+### Conditional Middleware
+
+```ts
+const isDevelopment = Deno.env.get("ENV") === "development"
+
+const wooter = new Wooter()
+
+if (isDevelopment) {
+    wooter.use(detailedLogger)
+} else {
+    wooter.use(logger)
+}
+```

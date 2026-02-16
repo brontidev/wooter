@@ -1,0 +1,568 @@
+---
+title: 3. Middleware
+description: Understanding wooter's explicit, imperative middleware system
+---
+
+# Middleware
+
+**This is the most important section of the documentation.** wooter's middleware system is fundamentally different from most frameworks. It is **explicit, imperative, and requires you to be in complete control of the response lifecycle**.
+
+## The Philosophy
+
+In wooter, middleware is **not magic**. You must explicitly:
+1. Call `next()` to run the next handler
+2. Decide what to do with the response
+3. Call `resp()` to send a response (or let the handler do it)
+
+**There is no automatic passthrough. No implicit response forwarding. No magic.**
+
+## Basic Middleware
+
+Let's start with the simplest example:
+
+```ts
+import { Wooter } from "@bronti/wooter"
+
+const wooter = new Wooter()
+
+wooter.use(async ({ expectAndRespond }) => {
+    // Add data for downstream handlers
+    await expectAndRespond({
+        timestamp: Date.now()
+    })
+})
+
+wooter.route(c.chemin(), "GET", ({ resp, data }) => {
+    // data.timestamp is available here
+    resp(Response.json({ timestamp: data.timestamp }))
+})
+```
+
+## The Middleware Context
+
+Middleware handlers receive a `MiddlewareContext` which extends the route context with additional methods:
+
+### Core Methods (Choose ONE)
+
+You **must** call one of these methods before your middleware exits:
+
+#### `next(data, request?): Promise<Option<Response>>`
+
+Runs the next handler and **waits for it to respond** (but not complete).
+
+```ts
+wooter.use(async ({ next, resp }) => {
+    const responseOption = await next({ addedData: "value" })
+    
+    // responseOption is Some(response) if handler called resp()
+    // responseOption is None if handler threw an error before responding
+    
+    responseOption.match(
+        (response) => resp(response),  // Forward the response
+        () => { /* handler failed before responding */ }
+    )
+})
+```
+
+**Important:** `next()` returns when the handler calls `resp()`, but the handler may still be executing (after-response logic).
+
+#### `wait(): Promise<Result<null, unknown>>`
+
+**Must be called AFTER `next()`**. Waits until the handler completely finishes executing.
+
+```ts
+wooter.use(async ({ next, wait, resp }) => {
+    const responseOption = await next({})
+    
+    // Handler has responded but may still be running
+    responseOption.inspect((r) => resp(r))
+    
+    // Wait for handler to completely finish
+    const result = await wait()
+    
+    result.match(
+        () => console.log("Handler completed successfully"),
+        (error) => console.error("Handler threw error:", error)
+    )
+})
+```
+
+#### `relay(data, request?): Promise<Option<Response>>`
+
+Shorthand for: `(await next(data, request)).map(r => resp(r))`
+
+Runs next handler, gets response, and **immediately calls `resp()` with it**.
+
+```ts
+wooter.use(async ({ relay }) => {
+    // Add data and forward response in one step
+    await relay({ userId: 123 })
+})
+```
+
+**Use this when:** You just want to add data and pass the response through.
+
+#### `expectResponse(data, request?): Promise<Response>`
+
+Runs next handler and **throws if it errors before responding**.
+
+```ts
+wooter.use(async ({ expectResponse, resp }) => {
+    // Get response or throw
+    const response = await expectResponse({ data: "value" })
+    
+    // Modify the response
+    const modified = new Response(response.body, {
+        ...response,
+        headers: {
+            ...Object.fromEntries(response.headers),
+            "X-Custom": "header"
+        }
+    })
+    
+    resp(modified)
+})
+```
+
+**Use this when:** You need to modify the response and errors should propagate.
+
+#### `expectAndRespond(data, request?): Promise<Response>`
+
+Shorthand for: `resp(await expectResponse(data, request))`
+
+Runs handler, gets response, **modifies it if needed, and calls `resp()`**.
+
+```ts
+wooter.use(async ({ expectAndRespond }) => {
+    const response = await expectAndRespond({ data: "value" })
+    // Response is already sent via resp()
+    
+    // Do after-response work
+    await logRequest()
+})
+```
+
+**Use this when:** You want to pass through the response and maybe do work after.
+
+## The Response Lifecycle (Critical!)
+
+Understanding the lifecycle is **essential** for writing correct middleware.
+
+### Timeline
+
+1. Middleware calls `next(data)` → Execution moves to next handler
+2. Next handler calls `resp(response)` → **Response promise resolves**
+3. `next()` returns with `Some(response)`
+4. Next handler continues executing (after-response work)
+5. Next handler's promise resolves → **Execution promise resolves**
+6. `wait()` returns with `Ok(null)` or `Err(error)`
+
+```ts
+wooter.use(async ({ next, wait, resp }) => {
+    console.log("1. Before next")
+    
+    const responseOption = await next({})
+    console.log("2. Handler responded (but may still be running)")
+    
+    responseOption.inspect((r) => resp(r))
+    
+    const result = await wait()
+    console.log("3. Handler completely finished")
+})
+
+wooter.route(c.chemin(), "GET", async ({ resp }) => {
+    console.log("A. Handler start")
+    
+    resp(new Response("OK"))
+    console.log("B. After resp() - still executing!")
+    
+    await delay(100)
+    console.log("C. Handler end")
+})
+```
+
+**Output:**
+```
+1. Before next
+A. Handler start
+B. After resp() - still executing!
+2. Handler responded (but may still be running)
+C. Handler end
+3. Handler completely finished
+```
+
+## You MUST Call One Control Flow Method
+
+**This will throw an error:**
+
+```ts
+wooter.use(async ({ resp }) => {
+    // ❌ MiddlewareHandlerDidntCallUpError
+    // You must call next(), relay(), expectResponse(), or expectAndRespond()!
+    resp(new Response("Blocked"))
+})
+```
+
+**This is correct:**
+
+```ts
+wooter.use(async ({ resp, next }) => {
+    // Early exit is fine, but you must respond
+    if (unauthorized) {
+        return resp(new Response("Unauthorized", { status: 401 }))
+    }
+    
+    // Otherwise, call next
+    await relay({ user })
+})
+```
+
+## Practical Examples
+
+### Authentication Middleware
+
+```ts
+import { middleware } from "@bronti/wooter/use"
+
+const auth = middleware<{ user: User }>(async ({ request, resp, expectAndRespond }) => {
+    const token = request.headers.get("Authorization")
+    
+    if (!token) {
+        return resp(new Response("Unauthorized", { status: 401 }))
+    }
+    
+    const user = await validateToken(token)
+    
+    if (!user) {
+        return resp(new Response("Invalid token", { status: 401 }))
+    }
+    
+    // Pass user to next handler
+    await expectAndRespond({ user })
+})
+
+wooter.use(auth)
+
+wooter.route(c.chemin("profile"), "GET", ({ resp, data }) => {
+    // data.user is available and typed!
+    resp(Response.json(data.user))
+})
+```
+
+### Logging Middleware
+
+```ts
+const logger = middleware(async ({ request, url, expectResponse, resp }) => {
+    const start = Date.now()
+    
+    console.log(`→ ${request.method} ${url.pathname}`)
+    
+    try {
+        const response = await expectResponse({})
+        const duration = Date.now() - start
+        
+        console.log(`← ${response.status} ${request.method} ${url.pathname} (${duration}ms)`)
+        
+        resp(response)
+    } catch (error) {
+        const duration = Date.now() - start
+        console.error(`✗ ${request.method} ${url.pathname} (${duration}ms)`, error)
+        throw error
+    }
+})
+```
+
+### CORS Middleware
+
+```ts
+const cors = middleware(async ({ expectResponse, resp }) => {
+    const response = await expectResponse({})
+    
+    const headers = new Headers(response.headers)
+    headers.set("Access-Control-Allow-Origin", "*")
+    headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+    
+    resp(new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers
+    }))
+})
+```
+
+### Cookie Parsing Middleware
+
+This is a real example from the wooter codebase:
+
+```ts
+import { middleware } from "@bronti/wooter/use"
+import { parse, serialize } from "cookie"
+
+const cookies = middleware<{ cookies: CookieMap }>(async ({ request, resp, expectResponse }) => {
+    const cookieHeader = request.headers.get("cookie") || ""
+    const parsedCookies = parse(cookieHeader)
+    const cookieMap = new Map()
+    
+    const cookies = {
+        get: (name) => cookieMap.get(name) ?? parsedCookies[name],
+        set: (name, value, options) => cookieMap.set(name, { value, opts: options }),
+        delete: (name) => cookieMap.set(name, { value: "", opts: { maxAge: 0 } })
+    }
+    
+    // Run handler with cookies available
+    const response = await expectResponse({ cookies })
+    
+    // Add Set-Cookie headers for any cookies that were set
+    const newCookies = Array.from(cookieMap.entries())
+        .map(([name, cookie]) => serialize(name, cookie.value, cookie.opts))
+    
+    if (newCookies.length > 0) {
+        const headers = new Headers(response.headers)
+        newCookies.forEach(cookie => headers.append("Set-Cookie", cookie))
+        
+        return resp(new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers
+        }))
+    }
+    
+    resp(response)
+})
+```
+
+### JSON Body Parser
+
+```ts
+import { middleware } from "@bronti/wooter/use"
+
+const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, expectAndRespond }) => {
+    let _json: any
+    
+    await expectAndRespond({
+        json: async () => {
+            if (_json) return _json
+            
+            try {
+                return _json = await request.clone().json()
+            } catch (e) {
+                resp(new Response("Invalid JSON", { status: 400 }))
+                throw e
+            }
+        }
+    })
+})
+
+wooter.use(json)
+
+wooter.route(c.chemin("api"), "POST", async ({ resp, data }) => {
+    const body = await data.json()
+    resp(Response.json({ received: body }))
+})
+```
+
+## Composing Middleware
+
+Middleware is applied in order:
+
+```ts
+wooter
+    .use(logger)        // Runs first
+    .use(cors)          // Runs second
+    .use(auth)          // Runs third
+    .use(cookies)       // Runs fourth
+
+wooter.route(c.chemin(), "GET", ({ resp }) => {
+    // All middleware data is available here
+    resp(new Response("OK"))
+})
+```
+
+### Type-Safe Data Injection
+
+TypeScript tracks middleware data through the chain:
+
+```ts
+const wooter = new Wooter()
+    .use(middleware<{ userId: number }>(/* ... */))
+    .use(middleware<{ userName: string }>(/* ... */))
+
+wooter.route(c.chemin(), "GET", ({ resp, data }) => {
+    // data.userId is number ✓
+    // data.userName is string ✓
+    resp(Response.json({ userId: data.userId, userName: data.userName }))
+})
+```
+
+## Per-Route Middleware
+
+Apply middleware to a single route using the `use()` function:
+
+```ts
+import { use, middleware } from "@bronti/wooter/use"
+
+const adminAuth = middleware<{ admin: Admin }>(async ({ expectAndRespond }) => {
+    const admin = await checkAdmin()
+    if (!admin) throw new Error("Not admin")
+    await expectAndRespond({ admin })
+})
+
+wooter.route(
+    c.chemin("admin"),
+    "GET",
+    use(adminAuth, ({ resp, data }) => {
+        // data.admin is available
+        resp(Response.json(data.admin))
+    })
+)
+```
+
+## Error Handling in Middleware
+
+### Catching Errors
+
+```ts
+wooter.use(async ({ next, resp }) => {
+    const responseOption = await next({})
+    
+    // If None, an error occurred before responding
+    if (responseOption.isNone()) {
+        return resp(new Response("Something went wrong", { status: 500 }))
+    }
+    
+    resp(responseOption.unwrap())
+})
+```
+
+### Propagating Errors
+
+```ts
+wooter.use(async ({ expectAndRespond }) => {
+    // If handler throws, error propagates up
+    await expectAndRespond({})
+})
+```
+
+### Responding on Error
+
+```ts
+wooter.use(async ({ next, wait, resp }) => {
+    const responseOption = await next({})
+    
+    responseOption.match(
+        (response) => resp(response),
+        async () => {
+            // Handler errored, wait to see what happened
+            const result = await wait()
+            result.inspectErr((error) => {
+                console.error("Handler error:", error)
+                resp(new Response("Internal error", { status: 500 }))
+            })
+        }
+    )
+})
+```
+
+## Common Patterns
+
+### Short-circuit on Condition
+
+```ts
+wooter.use(async ({ request, resp, relay }) => {
+    if (request.headers.get("X-Internal") !== "true") {
+        return resp(new Response("Forbidden", { status: 403 }))
+    }
+    await relay({})
+})
+```
+
+### Modify Request
+
+```ts
+wooter.use(async ({ request, expectAndRespond }) => {
+    const modifiedRequest = new Request(request.url, {
+        ...request,
+        headers: {
+            ...Object.fromEntries(request.headers),
+            "X-Custom": "value"
+        }
+    })
+    
+    await expectAndRespond({}, modifiedRequest)
+})
+```
+
+### Modify Response Headers
+
+```ts
+wooter.use(async ({ expectResponse, resp }) => {
+    const response = await expectResponse({})
+    
+    const headers = new Headers(response.headers)
+    headers.set("Cache-Control", "public, max-age=3600")
+    
+    resp(new Response(response.body, {
+        ...response,
+        headers
+    }))
+})
+```
+
+### Timing and Analytics
+
+```ts
+wooter.use(async ({ request, expectAndRespond }) => {
+    const start = Date.now()
+    
+    const response = await expectAndRespond({})
+    
+    // After response is sent, log metrics
+    const duration = Date.now() - start
+    await analytics.log({
+        path: request.url,
+        method: request.method,
+        status: response.status,
+        duration
+    })
+})
+```
+
+## Helper: Creating Typed Middleware
+
+Use the `middleware()` helper for better TypeScript inference:
+
+```ts
+import { middleware } from "@bronti/wooter/use"
+
+// Without helper - types are verbose
+const m1: MiddlewareHandler<{}, undefined, { value: string }> = async ({ expectAndRespond }) => {
+    await expectAndRespond({ value: "test" })
+}
+
+// With helper - cleaner
+const m2 = middleware<{ value: string }>(async ({ expectAndRespond }) => {
+    await expectAndRespond({ value: "test" })
+})
+```
+
+## Critical Rules (Summary)
+
+1. **Always call a control flow method** - `next()`, `relay()`, `expectResponse()`, or `expectAndRespond()`
+2. **OR respond early** - Call `resp()` to short-circuit
+3. **Understand the lifecycle** - Response ≠ Completion
+4. **Use `wait()` carefully** - Only after `next()`
+5. **Errors don't auto-handle** - You decide what happens
+6. **No magic** - Everything is explicit
+
+## Key Takeaways
+
+- Middleware is **imperative and explicit**
+- You **must** control the response flow
+- **`next()`** = wait for response (handler may still run)
+- **`wait()`** = wait for complete execution
+- **`relay()`** = pass through response
+- **`expectResponse()`** / **`expectAndRespond()`** = throw on error
+- **No automatic passthrough** - you decide what happens
+- **Response lifecycle** - understand response vs execution
+
+Next: [Advanced Patterns →](/guide/4-advanced-patterns)

@@ -1,0 +1,166 @@
+---
+title: 0. quick start
+description: Installing wooter and setting up a router
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+# 1. installing
+Wooter can be installed from JSR.io
+
+<Tabs>
+    <TabItem label="deno">
+        ```
+        deno add jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="bun">
+        ```
+        bunx jsr add @bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="npm">
+        ```
+        npx jsr add @bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="vlt">
+        ```
+        vlt add jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="pnpm">
+        ```
+        pnpm i jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="yarn">
+        ```
+        yarn add jsr:@bronti/wooter
+        ```
+        ```ts
+        import { /* ... */ } from "@bronti/wooter";
+        ```
+    </TabItem>
+    <TabItem label="browser">
+        ```ts
+        import { /* ... */ } from "https://esm.sh/jsr/@bronti/wooter@3";
+        ```
+    </TabItem>
+</Tabs>
+
+# hello world!
+Define routes using `.route()`
+
+```ts
+import { c, Wooter } from "@bronti/wooter"
+const wooter = new Wooter()
+
+wooter.route(c.chemin(), "GET", (ctx) => {
+    ctx.resp("Hello world!")
+})
+```
+
+# serving
+Wooter does not implement an HTTP server, instead it exposes a single entry point: `.fetch(request: Request): Promise<Response>`. Anywhere that expects a function with the same signature as `.fetch` works out of the box
+
+## 1. export pattern
+
+```ts
+export default wooter;
+// or
+const { fetch } = wooter;
+export default { fetch };
+```
+
+This pattern works for environments like:
+ * Cloudflare
+ * Vercel
+ * Bun
+ * Deno (with `deno serve`)
+ * Deno Deploy
+
+## 2. `serve({ fetch })` pattern
+
+```ts
+const { fetch } = wooter;
+serve({ fetch, port: 300 })
+```
+
+Examples include:
+ * `Deno.serve`
+ * `Bun.serve`
+ * `@hono/node-server`
+
+
+## 3. node bridge
+
+In environments that do not use the fetch standard, you may need to find or write your own bridge.
+
+`node:http` is an example of an environment that does not use the fetch standard. Node.js does implement the fetch standard, but `node:http` came before. In order to use a traditional node HTTP server with wooter (or any other router that uses fetch standard), you must convert the incoming request and outgoing response:
+
+```ts
+import http from "node:http";
+import { Readable } from "node:stream";
+import { c, Wooter } from "@bronti/wooter";
+
+const wooter = new Wooter();
+/*
+Implement routes...
+*/
+
+const server = http.createServer(async (req, res) => {
+  try {
+    // Build full URL
+    const origin = `http://${req.headers.host}`;
+    const url = new URL(req.url, origin);
+
+    // Convert Node request to Web Request
+    const request = new Request(url, {
+      method: req.method,
+      headers: req.headers,
+      body:
+        req.method !== "GET" && req.method !== "HEAD"
+          ? Readable.toWeb(req)
+          : undefined,
+      // required when streaming body in Node
+      duplex: "half",
+    });
+
+    // fetch!
+    const response = await wooter.fetch(request);
+
+    // Set status
+    res.writeHead(response.status, Object.fromEntries(response.headers));
+
+    // Send body
+    if (response.body) {
+      Readable.fromWeb(response.body).pipe(res);
+    } else {
+      res.end();
+    }
+  } catch (err) {
+    res.statusCode = 500;
+    res.end("Internal Server Error");
+  }
+});
+
+server.listen(3000, () => {
+  console.log("Server running at http://localhost:3000");
+});
+```

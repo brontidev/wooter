@@ -1,0 +1,28 @@
+---
+title: "🖲️ @bronti/wooter"
+description: "Lightweight web standard router library"
+---
+
+[![JSR](https://jsr.io/badges/@bronti/wooter)](https://jsr.io/@bronti/wooter)
+[![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
+
+**wooter** is a lightweight TypeScript router library inspired by Rust, Oak, and Hono.
+
+ * 🔌 **runtime agnostic**: works anywhere the Fetch API exists
+ * 🧭 **type-safe & composable path matching**: powered by [`@dldc/chemin`](https://jsr.io/@dldc/chemin)
+ * 🎯 **strict response lifecycle**: imperative route handlers
+ * 🧩 **composable middleware pipeline**: fully typed data injection
+ * 🏎 **response-first pipeline**: finalize response ASAP, run side effects afterward
+
+
+```ts
+import { c, Wooter } from "jsr:@bronti/wooter"
+
+const wooter = new Wooter();
+
+wooter.route(c.chemin(), "GET", ({ resp }) => {
+    resp(new Response("Hello!"))
+})
+
+Deno.serve(wooter.fetch)
+```
