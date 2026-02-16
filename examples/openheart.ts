@@ -182,4 +182,4 @@ wooter.route(c.chemin(c.pString("domain"), c.pMultiple(c.pString("uid"))), {
 
 // const { fetch } = wooter
 // export default { fetch }
-export default wooter;
+export default wooter
