@@ -95,6 +95,33 @@ export default class MiddlewareContext<
 
 	/**
 	 * @internal
+	 * Override catchErr to handle control-flow throws after resp()
+	 */
+	protected override catchErr = (e: unknown): void => {
+		if (this.executeSoon.resolved) {
+			console.error(e)
+			return
+		}
+		// If a response was already sent and the error is a primitive (control-flow throw),
+		// silently ignore it. Only propagate real Error instances.
+		if (this.respondSoon.resolved) {
+			// Ignore primitive throws (control-flow) after response
+			if (!(e instanceof Error)) {
+				// Silently ignore control-flow throws - treat as success
+				this.executeSoon.push(ok(null))
+				return
+			}
+			// Log real errors but still treat as success after response
+			console.error("Error after response:", e)
+			this.executeSoon.push(ok(null))
+			return
+		}
+		// Normal error handling
+		this.err(e)
+	}
+
+	/**
+	 * @internal
 	 */
 	static useMiddlewareHandler<
 		TParams extends Params = Params,
@@ -131,23 +158,7 @@ export default class MiddlewareContext<
 				if (ctx.executeSoon.resolved) return
 				if (!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError()
 				if (!ctx.#blockCalled) {
-					return ctx.#nextCtx[RouteContext__execution].map((r) => {
-						// If a response was already sent and the error is a primitive (control-flow throw),
-						// silently ignore it. Only propagate real Error instances or errors when no response.
-						if (r.isErr() && ctx.respondSoon.resolved) {
-							const error = r.unwrapErr()
-							// Ignore primitive throws (control-flow) after response
-							if (!(error instanceof Error)) {
-								// Silently ignore control-flow throws
-								return ctx.executeSoon.push(ok(null))
-							}
-							// Log real errors but still ignore them after response
-							console.error("Error after response:", error)
-							return ctx.executeSoon.push(ok(null))
-						}
-						// Normal error propagation when no response yet
-						ctx.executeSoon.push(r)
-					})
+					return ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
 				}
 				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
 			}, ctx.catchErr)

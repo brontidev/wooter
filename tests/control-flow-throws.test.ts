@@ -28,7 +28,9 @@ Deno.test("Control-flow throw after resp() does not crash", async () => {
 	const wooter = new Wooter()
 		.use(parseJsonMiddleware)
 
-	wooter.route(c.chemin("test"), "POST", (ctx) => {
+	wooter.route(c.chemin("test"), "POST", async (ctx) => {
+		// Try to parse JSON - this should fail and respond with error
+		await ctx.data.json()
 		// This should never be reached because parseJson responds with error
 		ctx.resp(new Response("OK"))
 	})
@@ -50,7 +52,7 @@ Deno.test("Control-flow throw after resp() does not crash", async () => {
 
 Deno.test("Real Error after resp() is still logged", async () => {
 	// Test that actual Error instances after resp() are still surfaced
-	const errorAfterRespMiddleware = middleware(async ({ resp, expectAndRespond }) => {
+	const errorAfterRespMiddleware = middleware<{ getData: () => Promise<void> }>(async ({ resp, expectAndRespond }) => {
 		await expectAndRespond({
 			getData: async () => {
 				// Respond first
@@ -64,7 +66,10 @@ Deno.test("Real Error after resp() is still logged", async () => {
 	const wooter = new Wooter()
 		.use(errorAfterRespMiddleware)
 
-	wooter.route(c.chemin("test"), "GET", (ctx) => {
+	wooter.route(c.chemin("test"), "GET", async (ctx) => {
+		// Call getData which will respond and throw
+		await ctx.data.getData()
+		// This should never be reached
 		ctx.resp(new Response("OK"))
 	})
 
@@ -78,7 +83,7 @@ Deno.test("Real Error after resp() is still logged", async () => {
 })
 
 Deno.test("Primitive throw (string) after resp() is silenced", async () => {
-	const throwStringMiddleware = middleware(async ({ resp, expectAndRespond }) => {
+	const throwStringMiddleware = middleware<{ check: () => Promise<void> }>(async ({ resp, expectAndRespond }) => {
 		await expectAndRespond({
 			check: async () => {
 				resp(new Response("Check failed", { status: 403 }))
@@ -90,7 +95,10 @@ Deno.test("Primitive throw (string) after resp() is silenced", async () => {
 	const wooter = new Wooter()
 		.use(throwStringMiddleware)
 
-	wooter.route(c.chemin("test"), "GET", (ctx) => {
+	wooter.route(c.chemin("test"), "GET", async (ctx) => {
+		// Call check which will respond and throw
+		await ctx.data.check()
+		// This should never be reached
 		ctx.resp(new Response("OK"))
 	})
 
@@ -101,7 +109,7 @@ Deno.test("Primitive throw (string) after resp() is silenced", async () => {
 })
 
 Deno.test("Primitive throw (undefined) after resp() is silenced", async () => {
-	const throwUndefinedMiddleware = middleware(async ({ resp, expectAndRespond }) => {
+	const throwUndefinedMiddleware = middleware<{ validate: () => Promise<void> }>(async ({ resp, expectAndRespond }) => {
 		await expectAndRespond({
 			validate: async () => {
 				resp(new Response("Validation failed", { status: 422 }))
@@ -113,7 +121,10 @@ Deno.test("Primitive throw (undefined) after resp() is silenced", async () => {
 	const wooter = new Wooter()
 		.use(throwUndefinedMiddleware)
 
-	wooter.route(c.chemin("test"), "POST", (ctx) => {
+	wooter.route(c.chemin("test"), "POST", async (ctx) => {
+		// Call validate which will respond and throw
+		await ctx.data.validate()
+		// This should never be reached
 		ctx.resp(new Response("OK"))
 	})
 
