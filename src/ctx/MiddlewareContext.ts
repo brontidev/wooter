@@ -11,6 +11,7 @@ import { ok } from "@@/result.ts"
 import WooterError from "@/WooterError.ts"
 import type { TEmptyObject } from "@@/chemin.ts"
 import { Soon } from "@bronti/robust/Soon"
+import { ControlFlowBreak } from "@/ControlFlowBreak.ts"
 
 /**
  * The middleware handler must call ctx.next() before exiting
@@ -95,24 +96,16 @@ export default class MiddlewareContext<
 
 	/**
 	 * @internal
-	 * Override catchErr to handle control-flow throws after resp()
+	 * Override catchErr to handle control-flow breaks after resp()
 	 */
 	protected override catchErr = (e: unknown): void => {
 		if (this.executeSoon.resolved) {
 			console.error(e)
 			return
 		}
-		// If a response was already sent and the error is a primitive (control-flow throw),
-		// silently ignore it. Only propagate real Error instances.
-		if (this.respondSoon.resolved) {
-			// Ignore primitive throws (control-flow) after response
-			if (!(e instanceof Error)) {
-				// Silently ignore control-flow throws - treat as success
-				this.executeSoon.push(ok(null))
-				return
-			}
-			// Log real errors but still treat as success after response
-			console.error("Error after response:", e)
+		// If the error is ControlFlowBreak and a response was already sent,
+		// treat it as success (this is intentional control flow, not an error)
+		if (e === ControlFlowBreak && this.respondSoon.resolved) {
 			this.executeSoon.push(ok(null))
 			return
 		}
