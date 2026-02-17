@@ -7,6 +7,7 @@ import RouteContext, {
 	RouteContext__respond,
 } from "./RouteContext.ts"
 import type { Result } from "@@/result.ts"
+import { ok } from "@@/result.ts"
 import WooterError from "@/WooterError.ts"
 import type { TEmptyObject } from "@@/chemin.ts"
 import { Soon } from "@bronti/robust/Soon"
@@ -130,7 +131,23 @@ export default class MiddlewareContext<
 				if (ctx.executeSoon.resolved) return
 				if (!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError()
 				if (!ctx.#blockCalled) {
-					return ctx.#nextCtx[RouteContext__execution].map((r) => ctx.executeSoon.push(r))
+					return ctx.#nextCtx[RouteContext__execution].map((r) => {
+						// If a response was already sent and the error is a primitive (control-flow throw),
+						// silently ignore it. Only propagate real Error instances or errors when no response.
+						if (r.isErr() && ctx.respondSoon.resolved) {
+							const error = r.unwrapErr()
+							// Ignore primitive throws (control-flow) after response
+							if (!(error instanceof Error)) {
+								// Silently ignore control-flow throws
+								return ctx.executeSoon.push(ok(null))
+							}
+							// Log real errors but still ignore them after response
+							console.error("Error after response:", error)
+							return ctx.executeSoon.push(ok(null))
+						}
+						// Normal error propagation when no response yet
+						ctx.executeSoon.push(r)
+					})
 				}
 				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
 			}, ctx.catchErr)
