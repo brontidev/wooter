@@ -7,9 +7,11 @@ import RouteContext, {
 	RouteContext__respond,
 } from "./RouteContext.ts"
 import type { Result } from "@@/result.ts"
+import { ok } from "@@/result.ts"
 import WooterError from "@/WooterError.ts"
 import type { TEmptyObject } from "@@/chemin.ts"
 import { Soon } from "@bronti/robust/Soon"
+import { ControlFlowBreak } from "@/ControlFlowBreak.ts"
 
 /**
  * The middleware handler must call ctx.next() before exiting
@@ -90,6 +92,27 @@ export default class MiddlewareContext<
 		}
 		this.#blockCalled = true
 		return await this.#nextCtx[RouteContext__execution].promise
+	}
+
+	/**
+	 * @internal
+	 * Override catchErr to handle control-flow breaks after resp()
+	 */
+	protected override catchErr = (e: unknown): void => {
+		// If execution is already resolved, we can only log the error
+		// (this follows the parent's behavior - errors after resolution are not propagated)
+		if (this.executeSoon.resolved) {
+			console.error(e)
+			return
+		}
+		// If the error is ControlFlowBreak and a response was already sent,
+		// treat it as success (this is intentional control flow, not an error)
+		if (e === ControlFlowBreak && this.respondSoon.resolved) {
+			this.executeSoon.push(ok(null))
+			return
+		}
+		// Normal error handling
+		this.err(e)
 	}
 
 	/**
