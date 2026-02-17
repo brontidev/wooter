@@ -78,7 +78,7 @@ Deno.test("Only ControlFlowBreak is silenced after resp()", async () => {
 	assertEquals(await resp.text(), "Check completed")
 })
 
-Deno.test("Multiple ControlFlowBreak throws work correctly", async () => {
+Deno.test("ControlFlowBreak with validation middleware works correctly", async () => {
 	const throwUndefinedMiddleware = middleware<{ validate: () => Promise<void> }>(async ({ resp, expectAndRespond }) => {
 		await expectAndRespond({
 			validate: async () => {

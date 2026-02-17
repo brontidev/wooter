@@ -99,6 +99,8 @@ export default class MiddlewareContext<
 	 * Override catchErr to handle control-flow breaks after resp()
 	 */
 	protected override catchErr = (e: unknown): void => {
+		// If execution is already resolved, we can only log the error
+		// (this follows the parent's behavior - errors after resolution are not propagated)
 		if (this.executeSoon.resolved) {
 			console.error(e)
 			return
