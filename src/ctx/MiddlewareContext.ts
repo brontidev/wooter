@@ -24,18 +24,6 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
 }
 
 /**
- * The middleware handler must call ctx.next() before being able to call ctx.wait()
- */
-export class MiddlewareCalledWaitBeforeNextError extends WooterError {
-	/** name */
-	override name: string = "MiddlewareCalledWaitBeforeNextError"
-
-	constructor() {
-		super("The middleware handler must call ctx.next() before being able to call ctx.wait()")
-	}
-}
-
-/**
  * Context class passed into middleware handlers
  */
 export default class MiddlewareContext<
@@ -43,8 +31,7 @@ export default class MiddlewareContext<
 	TData extends Data | undefined = undefined,
 	TNextData extends Data | undefined = undefined,
 > extends RouteContext<TParams, TData> {
-	#nextCtx?: RouteContext
-	#blockCalled: boolean = false
+	private calledNext = false
 
 	/**
 	 * @internal
@@ -58,48 +45,22 @@ export default class MiddlewareContext<
 		super(request, data, params)
 	}
 
-	/**
-	 * Runs the next handler
-	 * resolves after handler responds
-	 * (the handler may still be executing after this resolves)
-	 *
-	 * @param data - middleware data
-	 * @param request - new request object
-	 * @returns Response Option
-	 */
-	readonly next = (
-		data: TNextData extends undefined ? TEmptyObject : TNextData,
-		request?: Request,
-	): Promise<Option<Response>> => {
-		const ctx = this.nextHandler(
-			data,
-			request || this.request,
-		)
-		this.#nextCtx = ctx
-		return ctx[RouteContext__respond].promise
+	readonly next = (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> => {
+		const { promise, reject, resolve } = Promise.withResolvers<Response>()
+		this.calledNext = true;
+		const ctx = this.nextHandler(data, request || this.request)
+		ctx[RouteContext__respond].then((response) => {
+			resolve(response)
+		})
+		ctx[RouteContext__execution].then((v) => {
+			v.inspect((e) => {
+				reject(e)
+			})
+		})
+		return promise
 	}
 
-	/**
-	 * must be called AFTER .next()
-	 * Waits until the handler is done executing
-	 * @returns Result containing nothing, or an error
-	 */
-	readonly wait = async (): Promise<Result<null, unknown>> => {
-		if (!this.#nextCtx) {
-			throw new MiddlewareCalledWaitBeforeNextError()
-		}
-		this.#blockCalled = true
-		return await this.#nextCtx[RouteContext__execution].promise
-	}
-
-	/**
-	 * Marks this middleware as blocking error propagation
-	 * Should be called by helper methods that implicitly wait for completion
-	 * @internal
-	 */
-	#markAsBlocking = (): void => {
-		this.#blockCalled = true
-	}
+	readonly forward = (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> => this.next(data, request).then(this.resp)
 
 	/**
 	 * @internal
@@ -117,79 +78,18 @@ export default class MiddlewareContext<
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
 
-			const run = Soon.tryable<void, unknown>(async (w) => {
-				await handler(ctx)
-				if (ctx.errSoon.resolved) return
-				if (!ctx.#nextCtx) throw new MiddlewareHandlerDidntCallUpError()
-				if (!ctx.#blockCalled) {
-					return ctx.#nextCtx[RouteContext__execution].map((r) => ctx.errSoon.push(r))
-				}
-				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
-				w.push(void 0)
-			}, ctx.catchErr)
-
-			run().then((r) => r.match(ctx.ok, ctx.catchErr))
+			Promise.try(handler, ctx)
+				.then(() => {
+					if (!ctx.respondSoon.resolved) {
+						if (!ctx.calledNext) return ctx.catchErr(new MiddlewareHandlerDidntCallUpError())
+						return ctx.catchErr(new HandlerDidntRespondError())
+					}
+					ctx.ok()
+				}, (e) => {
+					ctx.catchErr(e)
+				})
 
 			return ctx as unknown as MiddlewareContext
-		}
-	}
-
-	///
-	/// EXTRA FUNCTIONS
-	///
-
-	/**
-	 * Runs the next handler, and sends the response once it's done
-	 *
-	 * shorthand for `(await ctx.next(data, request)).map(r => ctx.resp(r))`
-	 * @param data - middleware data
-	 * @param request - new request object
-	 * @returns Response option
-	 */
-	readonly relay = async (
-		data: TNextData extends undefined ? TEmptyObject : TNextData,
-		request?: Request,
-	): Promise<Option<Response>> => (await this.next(data, request)).map((r) => this.resp(r))
-
-	/**
-	 * Runs handler, waits for response and re-throws any errors
-	 *
-	 * shorthand for `(await ctx.next(data, request)).unwrapOrElse(async () => { throw (await ctx.wait()).unwrapErr() }) `
-	 * @param data - middleware data
-	 * @param request - new request object
-	 * @returns Response
-	 */
-	readonly expectResponse = async (
-		data: TNextData extends undefined ? TEmptyObject : TNextData,
-		request?: Request,
-	): Promise<Response> => {
-		this.#markAsBlocking()
-		const res = await this.next(data, request)
-		if (res.isSome()) {
-			return res.unwrap()
-		} else {
-			throw (await this.wait()).unwrapErr()
-		}
-	}
-
-	/**
-	 * Runs handler, waits for response, sends it and re-throws any errors
-	 *
-	 * shorthand for `(await ctx.pass(data, request)).unwrapOrElse(async () => { throw (await ctx.wait()).unwrapErr() }) `
-	 * @param data - middleware data
-	 * @param request - new request object
-	 * @returns Response
-	 */
-	readonly expectAndRespond = async (
-		data: TNextData extends undefined ? TEmptyObject : TNextData,
-		request?: Request,
-	): Promise<Response> => {
-		this.#markAsBlocking()
-		const res = await this.relay(data, request)
-		if (res.isSome()) {
-			return res.unwrap()
-		} else {
-			throw (await this.wait()).unwrapErr()
 		}
 	}
 }

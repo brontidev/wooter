@@ -21,18 +21,17 @@ export class Redirect {
 }
 
 const wooter = new Wooter()
-	.use<{ redirect: (...args: ConstructorParameters<typeof Redirect>) => never }>(async ({ request, resp, expectResponse }) => {
+	.use<{ redirect: (...args: ConstructorParameters<typeof Redirect>) => never }>(async ({ request, resp, forward }) => {
 		try {
-			resp(
-				await expectResponse({
-					redirect: (...args) => {
-						throw new Redirect(...args)
-					},
-				}, request),
-			)
+			await forward({
+				redirect: (...args) => {
+					throw new Redirect(...args)
+				},
+			}, request)
 		} catch (e) {
 			// doing err(new Redirect(...)) will run this
 			if (e instanceof Redirect) {
+				console.log('redireting ')
 				return resp(makeRedirect(
 					e.location,
 					{
@@ -44,16 +43,16 @@ const wooter = new Wooter()
 		}
 	})
 	.use(cookies)
-	.use<{ username: string }>(async ({ request, resp, expectAndRespond }) => {
-		let username = request.headers.get("x-username")
-		if (!username) return resp(makeError(402, "Missing username"))
-		await expectAndRespond({ username })
-	})
+	// .use<{ username: string }>(async ({ request, resp, pass }) => {
+	// 	let username = request.headers.get("x-username")
+	// 	if (!username) return resp(makeError(402, "Missing username"))
+	// 	await pass({ username })
+	// })
 
 {
 	const authWooter = wooter.router(c.chemin("auth"))
 
-	authWooter.route(c.chemin("auth"), "GET", async ({ request, resp, data: { cookies, redirect } }) => {
+	authWooter.route(c.chemin(), "POST", async ({ request, resp, data: { cookies, redirect } }) => {
 		let json = await request.json()
 		if (!json.username || !json.password) {
 			return resp(
@@ -87,5 +86,4 @@ const wooter = new Wooter()
 	})
 }
 
-const { fetch } = wooter
-Deno.serve({ port: 3000 }, fetch)
+export default wooter;

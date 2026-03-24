@@ -5,6 +5,7 @@ import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } fro
 import type { Merge } from "@/types.ts"
 import c from "@@/chemin.ts"
 import RouteContext from "@/ctx/RouteContext.ts"
+import { Wooter__catchStrayErrorsStore } from "./Wooter.symbols.ts"
 
 type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : never
 
@@ -26,7 +27,12 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	/**
 	 * Router class
 	 */
-	constructor(private basePath: TChemin<TParentParams> = c.chemin() as unknown as TChemin<TParentParams>) {
+	constructor(
+		private basePath: TChemin<TParentParams> = c.chemin() as unknown as TChemin<TParentParams>,
+		protected catchStrayErrors: (e: unknown) => void = (e) => {
+			throw e
+		},
+	) {
 		this.graph = new RouterGraph()
 	}
 
@@ -165,6 +171,6 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 			)
 		}
 
-		return RouterGraph.runHandler(handler, request)
+		return Wooter__catchStrayErrorsStore.run(this.catchStrayErrors, () => RouterGraph.runHandler(handler, request))
 	}
 }

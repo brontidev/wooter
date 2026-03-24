@@ -2,7 +2,7 @@
 import type { TChemin } from "@dldc/chemin"
 import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@@/types.ts"
 import { CheminGraph } from "./CheminGraph.ts"
-import { type InternalHandler, RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
+import RouteContext, { type InternalHandler, RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 
 /**
@@ -115,11 +115,12 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 				const { done, value: currentMiddleware } = middleware.next()
 				let currentHandler: InternalHandler
 				if (done) {
-					currentHandler = MiddlewareContext.useRouteHandler(
+					currentHandler = RouteContext.useRouteHandler(
 						handler,
 						params,
 					)
 				} else {
+					// console.error("middleware is disabled")
 					currentHandler = MiddlewareContext.useMiddlewareHandler(
 						currentMiddleware,
 						params,
@@ -180,21 +181,14 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
 		const { promise, resolve, reject } = Promise.withResolvers<Response>()
 		const ctx = handler({}, request)
-		const block = ctx[RouteContext__execution]
+		const execution = ctx[RouteContext__execution]
 		const respond = ctx[RouteContext__respond]
 
-		respond.then((v) => v.inspect(resolve))
-		block.then((blockResult) => {
-			blockResult.inspectErr((err) => {
-				respond.value.inspect((v) => {
-					v.match((_) => {
-						// there was a response THEN an error, which means we throw
-						throw err
-					}, () => {
-						// error came before a response (this is the intended path from ctx.err())
-						reject(err)
-					})
-				})
+		respond.then(resolve)
+		execution.then((result) => {
+			result.inspect((err) => {
+				// no stray error should make it past this
+				reject(err)
 			})
 		})
 

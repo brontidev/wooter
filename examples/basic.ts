@@ -1,7 +1,10 @@
 import { delay } from "jsr:@std/async"
 import { c, Wooter } from "@@/index.ts"
+import cookies from "./middleware/cookies.ts"
 
-const wooter = new Wooter()
+const wooter = new Wooter(undefined, (e) => {
+	console.error(e)
+}).use(cookies)
 
 wooter.route(c.chemin(), "GET", async ({ resp }) => {
 	resp(new Response("hi"))
@@ -74,4 +77,5 @@ wooter.route(c.chemin("takes-a-while"), "GET", async ({ resp }) => {
 })
 
 const { fetch } = wooter
-Deno.serve({ port: 3000 }, fetch)
+
+export default wooter;

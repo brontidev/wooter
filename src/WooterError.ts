@@ -1,3 +1,5 @@
+import { ControlFlowBreak } from "./ctx/RouteContext.ts"
+
 /**
  * Internal wooter error class
  * All dev-facing errors extend from this class
@@ -9,5 +11,5 @@ export default class WooterError extends Error {}
  * @param v - Value to check
  */
 export function isWooterError(v: unknown): v is WooterError {
-	return v instanceof WooterError
+	return v instanceof WooterError || v == ControlFlowBreak
 }

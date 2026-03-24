@@ -1,10 +1,11 @@
 import { err, ok, type Result } from "@@/result.ts"
 import { none, type Option, some } from "@@/option.ts"
-import { Soon } from "@bronti/robust/Soon"
+import { pair, Soon } from "@bronti/robust/Soon"
 import type { Data, Params } from "@@/types.ts"
 import WooterError from "@/WooterError.ts"
 import { TypedMap } from "@bronti/robust/TypedMap"
 import type { TEmptyObject } from "@@/chemin.ts"
+import { Wooter__catchStrayErrorsStore } from "../Wooter.symbols.ts"
 
 /**
  * The handler must respond before exiting
@@ -64,20 +65,20 @@ export default class RouteContext<
 	 * none = handler exited without erroring
 	 * some(Error) = handler threw
 	 */
-	protected errSoon: Soon<Option<unknown>> = new Soon()
+	protected executionSoon: Soon<Option<unknown>> = new Soon()
 
 	/**
 	 * @internal
 	 * none = handler did not call resp()
 	 * some(Response) = handler called resp() with Response
 	 */
-	protected respondSoon: Soon<Option<Response>> = new Soon()
+	protected respondSoon: Soon<Response> = new Soon()
 
 	/**
 	 * @internal
 	 */
-	get [RouteContext__execution](): RouteContext["errSoon"] {
-		return this.errSoon
+	get [RouteContext__execution](): RouteContext["executionSoon"] {
+		return this.executionSoon
 	}
 
 	/**
@@ -112,8 +113,7 @@ export default class RouteContext<
 	 * @internal
 	 */
 	protected err(e: unknown) {
-		this.respondSoon.push(none())
-		this.errSoon.push(some(e))
+		this.executionSoon.push(some(e))
 	}
 
 	/**
@@ -123,7 +123,7 @@ export default class RouteContext<
 	 * This is the equivalent of resolving the handler promise
 	 */
 	readonly ok = (): void => {
-		this.errSoon.push(none())
+		this.executionSoon.push(none())
 	}
 
 	/**
@@ -134,13 +134,16 @@ export default class RouteContext<
 		(response: Response): Response
 		(body?: BodyInit | null, init?: ResponseInit): Response
 	} = (responseOrBody: Response | BodyInit | null | undefined, init?: ResponseInit): Response => {
+		const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
+		if (this.executionSoon.resolved) {
+			console.warn("responding after execution is misuse of the library")
+			return response
+		}
 		if (this.respondSoon.resolved) {
 			throw new HandlerRespondedTwiceError()
 		}
 
-		const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
-
-		this.respondSoon.push(some(response))
+		this.respondSoon.push(response)
 		return response
 	}
 
@@ -154,14 +157,9 @@ export default class RouteContext<
 	 * @param e error
 	 */
 	protected catchErr = (e: unknown): void => {
-		if (this.errSoon.resolved) {
-			console.error(e)
-			return
-		}
-
-		if (e === ControlFlowBreak && this.respondSoon.resolved) {
-			this.errSoon.push(none())
-			return
+		if (this.respondSoon.resolved) {
+			if (e !== ControlFlowBreak) Wooter__catchStrayErrorsStore.getStore()!(e)
+			return this.ok()
 		}
 
 		this.err(e)
@@ -178,14 +176,13 @@ export default class RouteContext<
 			// @ts-expect-error: InternalHandler ignores generics
 			const ctx = new RouteContext<TParams, TData>(req, data, params)
 
-			const run = Soon.tryable<void, unknown>(async (w) => {
-				await handler(ctx)
-				if (ctx.errSoon.resolved) return
-				if (!ctx.respondSoon.resolved) throw new HandlerDidntRespondError()
-				w.push(void 0)
-			}, ctx.catchErr)
-
-			run().then((r) => r.match(ctx.ok, ctx.catchErr))
+			Promise.try(handler, ctx)
+				.then(() => {
+					if (!ctx.respondSoon.resolved) return ctx.catchErr(new HandlerDidntRespondError())
+					ctx.ok()
+				}, (e) => {
+					ctx.catchErr(e)
+				})
 
 			return ctx as unknown as RouteContext
 		}

@@ -9,7 +9,7 @@ type CookieMap = {
 	set(name: string, value: string, options?: Partial<SerializeOptions>): void
 }
 
-const cookies = middleware<{ cookies: CookieMap }>(async ({ request, resp, expectResponse }) => {
+const cookies = middleware<{ cookies: CookieMap }>(async ({ request, resp, next }) => {
 	const cookieHeader = request.headers.get("cookie") || ""
 	const parsedCookies = parse(cookieHeader)
 	const cookieMap: Map<
@@ -41,7 +41,7 @@ const cookies = middleware<{ cookies: CookieMap }>(async ({ request, resp, expec
 		},
 	}
 
-	const response = await expectResponse({ cookies })
+	const response = await next({ cookies })
 
 	// Get all cookies that were set during request handling
 	const newCookies = cookieMap.entries().toArray()

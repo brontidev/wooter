@@ -1,9 +1,9 @@
 import { makeError } from "@@/index.ts"
 import { middleware } from "@@/use.ts"
 
-const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, expectAndRespond }) => {
+const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, forward, safeExit }) => {
 	let _json: any
-	await expectAndRespond({
+	await forward({
 		json: async () => {
 			if (_json) return _json
 			try {
@@ -12,7 +12,7 @@ const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, ex
 				resp(
 					makeError(400, "Invalid JSON"),
 				)
-				throw 0
+				safeExit()
 			}
 		},
 	})
