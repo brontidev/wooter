@@ -142,7 +142,7 @@ export default class RouteContext<
 	}
 
 	/**
-	 * safely exists the handler
+	 * safely exits the handler
 	 * use this in any case where you need to quietly exit the handler lifecycle
 	 */
 	readonly safeExit = (): never => {
