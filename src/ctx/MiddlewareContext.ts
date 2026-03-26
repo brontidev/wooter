@@ -7,6 +7,7 @@ import RouteContext, {
 } from "@/ctx/RouteContext.ts"
 import WooterError from "@/WooterError.ts"
 import type { TEmptyObject } from "@@/chemin.ts"
+import { err, ok, type Result } from "@@/result.ts"
 
 /**
  * The middleware handler must call ctx.next() before exiting
@@ -42,22 +43,51 @@ export default class MiddlewareContext<
 		super(request, data, params)
 	}
 
-	readonly next = (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> => {
-		const { promise, reject, resolve } = Promise.withResolvers<Response>()
-		this.calledNext = true;
+	/**
+	 * Makes a call to the next handler in the chain, returning a promise that resolves to either the Response or rejects with any error the handler throws
+	 */
+	readonly next = async (
+		data: TNextData extends undefined ? TEmptyObject : TNextData,
+		request?: Request,
+	): Promise<Response> => {
+		const opt = await this.tryNext(data, request)
+		return opt.match((c) => {
+			return c
+		}, (e) => {
+			throw e
+		})
+	}
+
+	/**
+	 * @see MiddlewareContext.next
+	 *
+	 * calls .next & maps to a result
+	 */
+	readonly tryNext = (
+		data: TNextData extends undefined ? TEmptyObject : TNextData,
+		request?: Request,
+	): Promise<Result<Response, unknown>> => {
+		const { promise, resolve } = Promise.withResolvers<Result<Response, unknown>>()
+		this.calledNext = true
 		const ctx = this.nextHandler(data, request || this.request)
 		ctx[RouteContext__respond].then((response) => {
-			resolve(response)
+			resolve(ok(response))
 		})
 		ctx[RouteContext__execution].then((v) => {
 			v.inspect((e) => {
-				reject(e)
+				resolve(err(e))
 			})
 		})
 		return promise
 	}
 
-	readonly forward = (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> => this.next(data, request).then(this.resp)
+	readonly forward = (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> =>
+		this.next(data, request).then(this.resp)
+
+	readonly tryForward = (
+		data: TNextData extends undefined ? TEmptyObject : TNextData,
+		request?: Request,
+	): Promise<Result<Response, unknown>> => this.tryNext(data, request).then((o) => o.map(this.resp))
 
 	/**
 	 * @internal

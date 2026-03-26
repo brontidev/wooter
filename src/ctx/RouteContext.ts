@@ -58,15 +58,13 @@ export default class RouteContext<
 
 	/**
 	 * @internal
-	 * none = handler exited without erroring
+	 * none = handler returned
 	 * some(Error) = handler threw
 	 */
 	protected executionSoon: Soon<Option<unknown>> = new Soon()
 
 	/**
 	 * @internal
-	 * none = handler did not call resp()
-	 * some(Response) = handler called resp() with Response
 	 */
 	protected respondSoon: Soon<Response> = new Soon()
 
@@ -143,6 +141,10 @@ export default class RouteContext<
 		return response
 	}
 
+	/**
+	 * safely exists the handler
+	 * use this in any case where you need to quietly exit the handler lifecycle
+	 */
 	readonly safeExit = (): never => {
 		throw ControlFlowBreak
 	}

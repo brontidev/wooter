@@ -3,51 +3,28 @@
 import { c, makeError, makeRedirect, Wooter } from "@@/index.ts"
 import cookies from "./middleware/cookies.ts"
 
-export class Redirect {
-	status: number
-	location: string
-
-	/**
-	 * @param {300 | 301 | 302 | 303 | 304 | 305 | 306 | 307 | 308} status
-	 * @param {string} location
-	 */
-	constructor(
-		status: 300 | 301 | 302 | 303 | 304 | 305 | 306 | 307 | 308,
-		location: string,
-	) {
-		this.status = status
-		this.location = location
-	}
-}
-
 const wooter = new Wooter()
-	.use<{ redirect: (...args: ConstructorParameters<typeof Redirect>) => never }>(async ({ request, resp, forward }) => {
-		try {
+	.use<{ redirect: (status: 300 | 301 | 302 | 303 | 304 | 305 | 306 | 307 | 308, location: string) => never }>(
+		async ({ request, resp, forward, safeExit }) => {
 			await forward({
-				redirect: (...args) => {
-					throw new Redirect(...args)
+				redirect: (status, location) => {
+					resp(makeRedirect(
+						location,
+						{
+							status,
+						} satisfies ResponseInit,
+					))
+					return safeExit()
 				},
 			}, request)
-		} catch (e) {
-			// doing err(new Redirect(...)) will run this
-			if (e instanceof Redirect) {
-				console.log('redireting ')
-				return resp(makeRedirect(
-					e.location,
-					{
-						status: e.status,
-					} satisfies ResponseInit,
-				))
-			}
-			throw e
-		}
-	})
+		},
+	)
 	.use(cookies)
-	// .use<{ username: string }>(async ({ request, resp, pass }) => {
-	// 	let username = request.headers.get("x-username")
-	// 	if (!username) return resp(makeError(402, "Missing username"))
-	// 	await pass({ username })
-	// })
+// .use<{ username: string }>(async ({ request, resp, pass }) => {
+// 	let username = request.headers.get("x-username")
+// 	if (!username) return resp(makeError(402, "Missing username"))
+// 	await pass({ username })
+// })
 
 {
 	const authWooter = wooter.router(c.chemin("auth"))
@@ -86,4 +63,4 @@ const wooter = new Wooter()
 	})
 }
 
-export default wooter;
+export default wooter

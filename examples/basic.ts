@@ -78,4 +78,4 @@ wooter.route(c.chemin("takes-a-while"), "GET", async ({ resp }) => {
 
 const { fetch } = wooter
 
-export default wooter;
+export default wooter

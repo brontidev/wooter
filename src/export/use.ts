@@ -29,8 +29,8 @@ export default function use<
 
 		const new_ctx = internalHandler(data, request)
 
-		new_ctx[RouteContext__respond].promise.then((v) => v.map((r) => resp(r)))
-		return (await new_ctx[RouteContext__execution].promise).inspectErr((e) => {
+		new_ctx[RouteContext__respond].promise.then((r) => resp(r))
+		return (await new_ctx[RouteContext__execution].promise).inspect((e) => {
 			throw e
 		})
 	}
