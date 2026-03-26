@@ -5,10 +5,11 @@ import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 
 /**
- * Applies a middleware directly to a handler, returning a new handler
- * @param middlewareHandler - Middleware to apply
- * @param handler - Handler to apply middleware to
- * @returns Handler - Handler that wraps the handler in the middleware
+ * Applies middleware directly to a route handler and returns a wrapped handler.
+ *
+ * @param middlewareHandler Middleware to apply before the handler.
+ * @param handler Route handler to wrap.
+ * @returns Route handler that executes middleware and then delegates to `handler`.
  */
 export default function use<
 	NextData extends Data | undefined = undefined,
@@ -37,16 +38,18 @@ export default function use<
 }
 
 /**
- * Creates & Types a middleware handler
- * @param handler Middleware handler
+ * Identity helper used to type middleware declarations.
+ *
+ * @param handler Middleware handler.
+ * @returns The same middleware handler with preserved generic inference.
  *
  * @example
  * ```ts
- * const userAgent = middleware<{ userAgent: string | null }>(async ({ request, unwrapAndRespond }) => {
- *     await unwrapAndRespond({ userAgent: request.headers.get('User-Agent') })
+ * const userAgent = middleware<{ userAgent: string | null }>(async ({ request, next }) => {
+ *   await next({ userAgent: request.headers.get("User-Agent") })
  * })
  *
- * wooter.use(userAgent)
+ * router.use(userAgent)
  * ```
  */
 export function middleware<

@@ -1,4 +1,6 @@
 /**
+ * Result utility exports.
+ *
  * @module
  */
 

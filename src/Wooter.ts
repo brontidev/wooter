@@ -10,13 +10,18 @@ import { strayErrorStore } from "@/WooterError.ts"
 type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : never
 
 /**
- * Router class
+ * Typed HTTP router with composable middleware and nested route namespaces.
+ *
+ * @typeParam TData Middleware-provided data available on every handler context.
+ * @typeParam TParentParams Params inherited from parent routers.
  */
 export default class Wooter<TData extends Data | undefined = undefined, TParentParams extends Params | undefined = undefined> {
 	private graph: RouterGraph
 	#notFoundHandler?: RouteHandler<TEmptyObject>
 
 	/**
+	 * Returns the registered 404 handler, or a default fallback when none is set.
+	 *
 	 * @internal
 	 */
 	private get notFoundHandler(): RouteHandler<TEmptyObject> {
@@ -25,7 +30,10 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	}
 
 	/**
-	 * Router class
+	 * Creates a new router instance.
+	 *
+	 * @param basePath Optional base path prepended to all routes registered on this instance.
+	 * @param catchStrayErrors Error sink used for asynchronous errors that occur after a response was already sent.
 	 */
 	constructor(
 		private basePath: TChemin<TParentParams> = c.chemin() as unknown as TChemin<TParentParams>,
@@ -37,19 +45,22 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	}
 
 	/**
-	 * Defines a route with a single path and a method or multiple methods
+	 * Registers one handler for one method, many methods, or all methods (`"*"`) on a path.
 	 *
 	 * @example
 	 * ```ts
-	 * wooter.route(c.chemin(), "GET", ctx => ...)
+	 * router.route(c.chemin("/users"), "GET", (ctx) => ctx.resp("ok"))
 	 * ```
+	 *
 	 * @example
 	 * ```ts
-	 * wooter.route(c.chemin(), ["GET", "POST"], ctx => ...)
+	 * router.route(c.chemin("/users"), ["GET", "POST"], (ctx) => ctx.resp("ok"))
 	 * ```
-	 * @param path Path
-	 * @param method HTTP method
-	 * @param handler Handler
+	 *
+	 * @param path Typed route path.
+	 * @param method Allowed method, methods, or `"*"` wildcard.
+	 * @param handler Route handler invoked for matching requests.
+	 * @returns The current router instance for chaining.
 	 */
 	route<TParams extends Params>(
 		path: TChemin<TParams>,
@@ -57,24 +68,28 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 		handler: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TData>,
 	): this
 	/**
-	 * Defines multiple routes for one path with different methods
+	 * Registers per-method handlers for a single path.
 	 *
 	 * @example
 	 * ```ts
-	 * wooter.route(c.chemin(), { GET: ctx => ..., POST: ctx => ... })
-	 * // wet throat
+	 * router.route(c.chemin("/users"), {
+	 *   GET: (ctx) => ctx.resp("list"),
+	 *   POST: (ctx) => ctx.resp("create"),
+	 * })
 	 * ```
 	 *
-	 * @param path Path
-	 * @param handlers Map of method -> handler
+	 * @param path Typed route path.
+	 * @param handlers Map of method names to handlers.
+	 * @returns The current router instance for chaining.
 	 */
 	route<TParams extends Params>(path: TChemin<TParams>, handlers: MethodDefinitions<Merge<TParams, TParentParams>, TData>): this
 	/**
-	 * Defines a route
+	 * Registers a route definition on this router.
 	 *
-	 * @param path Path
-	 * @param methodOrHandlers
-	 * @param handler Handler
+	 * @param path Typed route path.
+	 * @param methodOrHandlers Method selector(s) or method-to-handler map.
+	 * @param handler Handler used when `methodOrHandlers` is method-based.
+	 * @returns The current router instance for chaining.
 	 */
 	route<TParams extends Params>(
 		path: TChemin<TParams>,
@@ -100,9 +115,10 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	}
 
 	/**
-	 * Applies middleware to a wooter
-	 * @param handler middleware to apply
-	 * @return wooter with new types
+	 * Adds middleware that can enrich context data for downstream handlers.
+	 *
+	 * @param handler Middleware to run before route handlers.
+	 * @returns A typed router view whose `data` reflects middleware output.
 	 *
 	 * @ignore
 	 */
@@ -111,9 +127,10 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
 
 	/**
-	 * Applies middleware to a wooter
-	 * @param handler middleware to apply
-	 * @return wooter with new types
+	 * Adds middleware authored against a narrower input data shape.
+	 *
+	 * @param handler Middleware to run before route handlers.
+	 * @returns A typed router view whose `data` reflects middleware output.
 	 *
 	 * @ignore
 	 */
@@ -126,9 +143,10 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	): Wooter<OptionalMerge<Data, TData, TNextData>, TParentParams>
 
 	/**
-	 * Applies middleware to a wooter
-	 * @param handler middleware to apply
-	 * @return wooter with new types
+	 * Adds middleware to this router.
+	 *
+	 * @param handler Middleware to run before matching route handlers.
+	 * @returns A typed router view whose `data` includes middleware output.
 	 */
 	use<TNextData extends Data | undefined = undefined>(
 		handler: MiddlewareHandler<Params, TData, TNextData>,
@@ -138,9 +156,12 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	}
 
 	/**
-	 * Returns Wooter with basePath
-	 * > Any routes applied to the new wooter are
-	 * > routed through this one
+	 * Creates a child router mounted under the current router.
+	 *
+	 * Routes registered on the returned router are reachable through this router.
+	 *
+	 * @param basePath Path prefix for the child router.
+	 * @returns A new router instance scoped to `basePath`.
 	 */
 	router<TParams extends Params>(basePath: TChemin<TParams>): Wooter<TData, Merge<TParams, TParentParams>> {
 		const router = new Wooter<TData, Merge<TParams, TParentParams>>(
@@ -151,7 +172,10 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	}
 
 	/**
-	 * Registers notFound handler
+	 * Registers a fallback handler used when no route matches.
+	 *
+	 * @param handler Route handler for unmatched requests.
+	 * @returns The current router instance for chaining.
 	 */
 	notFound(handler: RouteHandler<TEmptyObject>): this {
 		this.#notFoundHandler = handler
@@ -159,7 +183,10 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 	}
 
 	/**
-	 * Sends a request to the wooter
+	 * Dispatches a request through route matching and middleware execution.
+	 *
+	 * @param request Incoming request.
+	 * @returns Handler response.
 	 */
 	readonly fetch = (request: Request): Promise<Response> => {
 		const url = new URL(request.url)

@@ -1,3 +1,8 @@
+/**
+ * Main public API exports.
+ *
+ * @module
+ */
 export * from "@@/error.ts"
 export * from "@@/response.ts"
 export { default as use, middleware } from "@@/use.ts"

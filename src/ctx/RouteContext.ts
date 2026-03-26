@@ -7,10 +7,10 @@ import type { TEmptyObject } from "@@/chemin.ts"
 import { strayErrorStore } from "@/WooterError.ts"
 
 /**
- * The handler must respond before exiting
+ * Error thrown when a handler exits without calling `resp()`.
  */
 export class HandlerDidntRespondError extends WooterError {
-	/** name */
+	/** Error name used for identification. */
 	override name: string = "HandlerDidntRespondError"
 
 	constructor() {
@@ -19,10 +19,10 @@ export class HandlerDidntRespondError extends WooterError {
 }
 
 /**
- * The handler called resp() multiple times
+ * Error thrown when a handler attempts to respond more than once.
  */
 export class HandlerRespondedTwiceError extends WooterError {
-	/** name */
+	/** Error name used for identification. */
 	override name: string = "HandlerRespondedTwiceError"
 
 	constructor() {
@@ -30,45 +30,72 @@ export class HandlerRespondedTwiceError extends WooterError {
 	}
 }
 
+/**
+ * Internal symbol for reading a context's execution state.
+ */
 export const RouteContext__execution = Symbol("RouteContext__execution")
+
+/**
+ * Internal symbol for reading a context's response state.
+ */
 export const RouteContext__respond = Symbol("RouteContext__respond")
 /**
- * Context class passed into route handlers
+ * Context passed to route handlers.
+ *
+ * @typeParam TParams Route param shape.
+ * @typeParam TData Data shape accumulated from middleware.
  */
 export default class RouteContext<
 	TParams extends Params | undefined = undefined,
 	TData extends Data | undefined = undefined,
 > {
+	/**
+	 * Backing store for context data.
+	 */
 	private readonly _data: TData extends undefined ? TEmptyObject : TData
+
+	/**
+	 * Backing store for route params.
+	 */
 	private readonly _params: TypedMap<TParams extends undefined ? TEmptyObject : TParams>
 
 	/**
-	 * Middleware data
+	 * Middleware data available to the current handler.
+	 *
+	 * @returns The typed context data object.
 	 */
 	get data(): TData extends undefined ? TEmptyObject : TData {
 		return this._data
 	}
 
 	/**
-	 * Route parameters
+	 * Route params captured from path matching.
+	 *
+	 * @returns Typed map of route params.
 	 */
 	get params(): TypedMap<TParams extends undefined ? TEmptyObject : TParams> {
 		return this._params
 	}
 
 	/**
+	 * Tracks handler completion state.
+	 *
+	 * `none()` means successful completion, `some(error)` means failure.
+	 *
 	 * @internal
-	 * none = handler returned
-	 * some(Error) = handler threw
 	 */
 	protected executionSoon: Soon<Option<unknown>> = new Soon()
 
 	/**
+	 * Tracks the first response emitted by this context.
+	 *
 	 * @internal
 	 */
 	protected respondSoon: Soon<Response> = new Soon()
 
 	/**
+	 * Exposes {@link executionSoon} through a symbol-based internal API.
+	 *
 	 * @internal
 	 */
 	get [RouteContext__execution](): RouteContext["executionSoon"] {
@@ -76,6 +103,8 @@ export default class RouteContext<
 	}
 
 	/**
+	 * Exposes {@link respondSoon} through a symbol-based internal API.
+	 *
 	 * @internal
 	 */
 	get [RouteContext__respond](): RouteContext["respondSoon"] {
@@ -83,17 +112,21 @@ export default class RouteContext<
 	}
 
 	/**
-	 * Request URL
+	 * Parsed request URL.
 	 */
 	readonly url: URL
 
 	/**
+	 * Creates a route context.
+	 *
+	 * @param request Incoming request.
+	 * @param data Context data from middleware.
+	 * @param params Route params captured by path matching.
+	 *
 	 * @internal
 	 */
 	constructor(
-		/**
-		 * Request object
-		 */
+		/** Request object. */
 		readonly request: Request,
 		data: TData extends undefined ? TEmptyObject : TData,
 		params: TParams extends undefined ? TEmptyObject : TParams,
@@ -104,6 +137,10 @@ export default class RouteContext<
 	}
 
 	/**
+	 * Marks execution as failed with an error.
+	 *
+	 * @param e Error value.
+	 *
 	 * @internal
 	 */
 	protected err(e: unknown) {
@@ -111,18 +148,23 @@ export default class RouteContext<
 	}
 
 	/**
-	 * [advanced]
+	 * Marks the handler as successfully completed.
 	 *
-	 * Ends the handler (stops error catching)
-	 * This is the equivalent of resolving the handler promise
+	 * This is typically called by the internal runtime after handler execution settles.
+	 *
+	 * @returns `void`.
 	 */
 	readonly ok = (): void => {
 		this.executionSoon.push(none())
 	}
 
 	/**
-	 * Responds to the request
-	 * @returns Response
+	 * Responds to the request.
+	 *
+	 * @param response A fully constructed response.
+	 * @param init Optional response init when the first argument is body-like.
+	 * @returns The response that was sent.
+	 * @throws HandlerRespondedTwiceError If called after a previous response.
 	 */
 	readonly resp: {
 		(response: Response): Response
@@ -142,17 +184,22 @@ export default class RouteContext<
 	}
 
 	/**
-	 * safely exits the handler
-	 * use this in any case where you need to quietly exit the handler lifecycle
+	 * Safely exits handler execution without surfacing a framework error.
+	 *
+	 * Call this when you intentionally stop processing after sending a response.
+	 *
+	 * @throws ControlFlowBreak Always throws to abort current control flow.
 	 */
 	readonly safeExit = (): never => {
 		throw ControlFlowBreak
 	}
 
 	/**
+	 * Captures an internal handler error and routes it to the appropriate sink.
+	 *
+	 * @param e Error value.
+	 *
 	 * @internal
-	 * Used for useRouteHandler & useMiddlewareHandler to handle any errors that happen within the handler
-	 * @param e error
 	 */
 	protected catchErr = (e: unknown): void => {
 		if (this.respondSoon.resolved) {
@@ -164,6 +211,12 @@ export default class RouteContext<
 	}
 
 	/**
+	 * Adapts a user route handler into the internal runtime handler signature.
+	 *
+	 * @param handler Route handler to wrap.
+	 * @param params Route params for the current match.
+	 * @returns Internal handler that manages lifecycle success/error state.
+	 *
 	 * @internal
 	 */
 	static useRouteHandler<TParams extends Params | undefined = Params, TData extends Data | undefined = Data>(
@@ -187,15 +240,19 @@ export default class RouteContext<
 	}
 }
 
+/**
+ * Internal route handler signature used by the execution pipeline.
+ */
 export type InternalHandler = (
 	data: Data,
 	request: Request,
 ) => RouteContext
 
 /**
- * Route handler
+ * Route handler function.
  *
- * @param ctx - Route context
+ * @param ctx Route context.
+ * @returns Optional promise for async handlers.
  */
 export type RouteHandler<
 	TParams extends Params | undefined = Params,

@@ -6,11 +6,15 @@ import RouteContext, { type InternalHandler, RouteContext__execution, RouteConte
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 
 /**
+ * Method definition accepted by `route` overloads.
+ *
  * @internal
  */
 export type MethodDefinitionInput = Methods | Uppercase<string> | Methods[] | Uppercase<string>[] | "*"
 
 /**
+ * Map of HTTP methods to handlers for a route.
+ *
  * @internal
  */
 export type MethodDefinitions<
@@ -37,9 +41,19 @@ type Node =
 	| { t: NodeType.HandlerWithMethods; handler: RouteHandler; methods: Set<string> }
 
 export default class RouterGraph extends CheminGraph<Node, [method: string]> {
+	/**
+	 * Middleware chain attached to this router namespace.
+	 */
 	private middleware = new Set<MiddlewareHandler>()
+
+	/**
+	 * Child router namespaces mounted under this graph.
+	 */
 	private namespaces = new Set<RouterGraph>()
 
+	/**
+	 * Creates a router graph with method-aware node matching.
+	 */
 	constructor() {
 		super((node, [method]) => {
 			if (node.t === NodeType.MethodsToHandlers) {
@@ -53,12 +67,21 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		})
 	}
 
+	/**
+	 * Adds middleware to this namespace.
+	 *
+	 * @param middleware Middleware handler.
+	 */
 	addMiddleware(middleware: MiddlewareHandler<any, any, any>): void {
 		this.middleware.add(middleware)
 	}
 
 	/**
-	 * Assign Multiple Methods & Handlers on a particular route
+	 * Registers a per-method handler map for a path.
+	 *
+	 * @param path Route path.
+	 * @param handlers Method-to-handler map.
+	 *
 	 * @internal
 	 */
 	addRoute_withMethodMap(
@@ -74,7 +97,11 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 	}
 
 	/**
-	 * Assign One handler for any method on a particular route
+	 * Registers one handler for all methods on a path.
+	 *
+	 * @param path Route path.
+	 * @param handler Route handler.
+	 *
 	 * @internal
 	 */
 	addRoute_wildcardMethod(
@@ -88,7 +115,12 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 	}
 
 	/**
-	 * Assign One handler for a list of methods on a particular route
+	 * Registers one handler for a finite method set.
+	 *
+	 * @param path Route path.
+	 * @param handler Route handler.
+	 * @param methods Allowed methods.
+	 *
 	 * @internal
 	 */
 	addRoute_withMethodSet(
@@ -103,10 +135,23 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		})
 	}
 
+	/**
+	 * Mounts a child namespace.
+	 *
+	 * @param routerGraph Child graph.
+	 */
 	addNamespace(routerGraph: RouterGraph) {
 		this.namespaces.add(routerGraph)
 	}
 
+	/**
+	 * Composes middleware and route handler into an executable internal handler.
+	 *
+	 * @param handler Final route handler.
+	 * @param params Route params.
+	 * @param middlewareSet Middleware chain.
+	 * @returns Internal handler.
+	 */
 	protected static compose(handler: RouteHandler, params: Params, middlewareSet: Set<MiddlewareHandler>): InternalHandler {
 		const middleware = middlewareSet.values()
 		return (data, req) => {
@@ -134,6 +179,13 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		}
 	}
 
+	/**
+	 * Resolves a route handler from a matched node and HTTP method.
+	 *
+	 * @param node Matched node.
+	 * @param method Uppercase HTTP method.
+	 * @returns Route handler.
+	 */
 	protected static getHandlerFromNode(node: Node, method: string): RouteHandler {
 		if (node.t === 0) {
 			return node.handlers.get(method)!
@@ -146,6 +198,13 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		throw new TypeError("critical error loading routes")
 	}
 
+	/**
+	 * Looks up handlers from child namespaces.
+	 *
+	 * @param pathname Request pathname.
+	 * @param method Uppercase HTTP method.
+	 * @returns Namespace handler tuple when found.
+	 */
 	protected getNamespaceHandler(pathname: string, method: string): ReturnType<RouterGraph["internalGetHandler"]> | undefined {
 		for (const namespace of this.namespaces.values()) {
 			const handler = namespace.internalGetHandler(pathname, method)
@@ -153,6 +212,13 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		}
 	}
 
+	/**
+	 * Internal route lookup that includes inherited middleware context.
+	 *
+	 * @param pathname Request pathname.
+	 * @param method Uppercase HTTP method.
+	 * @returns Route handler, node metadata, and effective middleware chain.
+	 */
 	protected internalGetHandler(
 		pathname: string,
 		method: string,
@@ -170,6 +236,13 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		}
 	}
 
+	/**
+	 * Resolves an executable handler for a request target.
+	 *
+	 * @param pathname Request pathname.
+	 * @param method HTTP method.
+	 * @returns Internal handler, if a route matches.
+	 */
 	getHandler(pathname: string, method: string): InternalHandler | undefined {
 		method = method.toUpperCase()
 		const data = this.internalGetHandler(pathname, method)
@@ -178,6 +251,13 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		return RouterGraph.compose(handler, params as Params, middleware)
 	}
 
+	/**
+	 * Executes an internal handler and returns its response promise.
+	 *
+	 * @param handler Internal handler.
+	 * @param request Incoming request.
+	 * @returns Promise resolving to the produced response.
+	 */
 	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
 		const { promise, resolve, reject } = Promise.withResolvers<Response>()
 		const ctx = handler({}, request)

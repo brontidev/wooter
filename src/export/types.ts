@@ -1,12 +1,12 @@
 import type { Merge } from "@/types.ts"
 
 /**
- * Type representing route parameters
+ * Generic route-parameter object shape.
  */
 export type Params = Record<string, unknown>
 
 /**
- * Type representing router context data
+ * Generic context-data object shape.
  */
 export type Data = Record<string, unknown>
 
@@ -17,12 +17,14 @@ export type { MethodDefinitionInput, MethodDefinitions } from "@/graph/RouterGra
 export type { TypedMap } from "@bronti/robust/TypedMap"
 
 /**
+ * Conditionally merges two data/params types when either side may be undefined.
+ *
  * @internal
  */
 export type OptionalMerge<OR, A extends OR | undefined, B extends OR | undefined> = A extends undefined ? B
 	: (B extends undefined ? A : Merge<A, B>)
 
 /**
- * valid HTTP methods
+ * Supported HTTP methods for typed route declarations.
  */
 export type Methods = "GET" | "PUT" | "POST" | "PATCH" | "DELETE" | "OPTIONS"

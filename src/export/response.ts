@@ -1,7 +1,9 @@
 /**
- * Creates a redirect Response
- * @param location Location to redirect to
- * @param init Request init object
+ * Creates a redirect response.
+ *
+ * @param location Redirect destination.
+ * @param init Optional response init. `status` defaults to `307`.
+ * @returns Redirect response with `Location` header set.
  */
 export function makeRedirect(location: string | URL, init?: ResponseInit): Response {
 	const headers = new Headers(init?.headers)
@@ -14,10 +16,12 @@ export function makeRedirect(location: string | URL, init?: ResponseInit): Respo
 }
 
 /**
- * Creates an error Response
- * @param status status code
- * @param message Error message
- * @param headers Request headers
+ * Creates an error response with an optional body message.
+ *
+ * @param status HTTP status code.
+ * @param message Optional error message for body and status text.
+ * @param headers Optional response headers.
+ * @returns Error response.
  */
 export function makeError(status: number, message?: string, headers?: HeadersInit): Response {
 	return new Response(message, {
