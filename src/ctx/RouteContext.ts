@@ -30,6 +30,12 @@ export class HandlerRespondedTwiceError extends WooterError {
 	}
 }
 
+type Resp = {
+	(response: Response): Response
+	(body?: BodyInit | null, init?: ResponseInit): Response
+	json: typeof Response.json
+}
+
 /**
  * Internal symbol for reading a context's execution state.
  */
@@ -155,7 +161,27 @@ export default class RouteContext<
 	 * @returns `void`.
 	 */
 	readonly ok = (): void => {
+		if (!this.respondSoon.resolved) return this.err(new HandlerDidntRespondError())
 		this.executionSoon.push(none())
+	}
+
+	static createResp<R extends Params | undefined, D extends Data | undefined>(self: RouteContext<R, D>): Resp {
+		const resp: Resp = (responseOrBody, init?: ResponseInit): Response => {
+			const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
+			if (self.executionSoon.resolved) {
+				console.warn("responding after execution is misuse of the library")
+				return response
+			}
+			if (self.respondSoon.resolved) {
+				throw new HandlerRespondedTwiceError()
+			}
+
+			self.respondSoon.push(response)
+			return response
+		}
+
+		resp.json = (data, init) => resp(Response.json(data, init))
+		return resp
 	}
 
 	/**
@@ -169,19 +195,8 @@ export default class RouteContext<
 	readonly resp: {
 		(response: Response): Response
 		(body?: BodyInit | null, init?: ResponseInit): Response
-	} = (responseOrBody: Response | BodyInit | null | undefined, init?: ResponseInit): Response => {
-		const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
-		if (this.executionSoon.resolved) {
-			console.warn("responding after execution is misuse of the library")
-			return response
-		}
-		if (this.respondSoon.resolved) {
-			throw new HandlerRespondedTwiceError()
-		}
-
-		this.respondSoon.push(response)
-		return response
-	}
+		json: typeof Response.json
+	} = RouteContext.createResp(this)
 
 	/**
 	 * Safely exits handler execution without surfacing a framework error.
@@ -202,8 +217,9 @@ export default class RouteContext<
 	 * @internal
 	 */
 	protected catchErr = (e: unknown): void => {
+		if(e == ControlFlowBreak) return this.ok()
 		if (this.respondSoon.resolved) {
-			if (e !== ControlFlowBreak) strayErrorStore.getStore()!(e)
+			strayErrorStore.getStore()!(e)
 			return this.ok()
 		}
 
@@ -229,7 +245,6 @@ export default class RouteContext<
 
 			Promise.try(handler, ctx)
 				.then(() => {
-					if (!ctx.respondSoon.resolved) return ctx.catchErr(new HandlerDidntRespondError())
 					ctx.ok()
 				}, (e) => {
 					ctx.catchErr(e)

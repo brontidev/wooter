@@ -55,12 +55,4 @@ const wooter = new Wooter()
 	})
 }
 
-{
-	const apiWooter = wooter.router(c.chemin("api", c.pNumber("asd")))
-
-	apiWooter.route(c.chemin("gateway"), "GET", async ({ resp, data: { username } }) => {
-		resp(Response.json({ ok: true, msg: `Hello, ${username}` }))
-	})
-}
-
 export default wooter

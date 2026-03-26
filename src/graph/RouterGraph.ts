@@ -2,7 +2,7 @@
 import type { TChemin } from "@dldc/chemin"
 import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@@/types.ts"
 import { CheminGraph } from "./CheminGraph.ts"
-import RouteContext, { type InternalHandler, RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
+import RouteContext, { type InternalHandler } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 
 /**

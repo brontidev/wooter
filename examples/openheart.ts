@@ -80,12 +80,10 @@ db.listenQueue(
 )
 const wooter = new Wooter().use(async ({ next, resp }) => {
 	const response = await next({})
-	response.map((response) => {
-		response.headers.set("Access-Control-Allow-Origin", "*")
-		response.headers.set("Access-Control-Allow-Methods", "GET,POST")
-		response.headers.set("Access-Control-Max-Age", "86400")
-		resp(response)
-	})
+	response.headers.set("Access-Control-Allow-Origin", "*")
+	response.headers.set("Access-Control-Allow-Methods", "GET,POST")
+	response.headers.set("Access-Control-Max-Age", "86400")
+	resp(response)
 })
 
 function ensureEmoji(emoji: string) {
@@ -100,7 +98,7 @@ function ensureEmoji(emoji: string) {
 }
 
 wooter.route(c.chemin(), "GET", async ({ resp }) => {
-	resp(new Response(doc))
+	resp(doc)
 })
 
 wooter.route(c.chemin(c.pString("domain"), c.pMultiple(c.pString("uid"))), {
@@ -112,19 +110,17 @@ wooter.route(c.chemin(c.pString("domain"), c.pMultiple(c.pString("uid"))), {
 			prefix: uid.length ? keys.uid(domain, uid.join("/")) : keys.domain(domain),
 		})
 
-		resp(
-			Response.json(
-				Object.fromEntries(
-					(await Array.fromAsync(kvList)).reduce(
-						(map, entry) => {
-							const key = entry.key[2]
-							const value = map.get(key) ?? 0
-							map.set(key, value + (entry.value ?? 0))
-							return map
-						},
-						new Map(),
-					).entries(),
-				),
+		resp.json(
+			Object.fromEntries(
+				(await Array.fromAsync(kvList)).reduce(
+					(map, entry) => {
+						const key = entry.key[2]
+						const value = map.get(key) ?? 0
+						map.set(key, value + (entry.value ?? 0))
+						return map
+					},
+					new Map(),
+				).entries(),
 			),
 		)
 	},
@@ -168,14 +164,15 @@ wooter.route(c.chemin(c.pString("domain"), c.pMultiple(c.pString("uid"))), {
 		const doRedirect = url.searchParams.get("redirect") ??
 			request.headers.get("Referrer") ?? undefined
 		resp(
-			new Response("recorded", {
+			"recorded",
+			{
 				status: doRedirect ? 303 : 201,
 				headers: doRedirect
 					? {
 						"Location": doRedirect,
 					}
 					: {},
-			}),
+			},
 		)
 	},
 })
