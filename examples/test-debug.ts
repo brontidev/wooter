@@ -2,16 +2,16 @@ import { c, Wooter } from "@@/index.ts"
 import { z } from "npm:zod"
 
 const wooter = new Wooter()
-    .use<{ parseJson: () => Promise<void> }>(async ({ resp, expectAndRespond, safeExit }) => {
+    .use<{ parseJson: () => Promise<void> }>(async ({ resp, forward, safeExit }) => {
         console.log('[parseJson middleware] Starting')
-        await expectAndRespond({
+        await forward({
             parseJson: async () => {
                 console.log('[parseJson] About to respond and throw')
-                resp(new Response("error"))
+                resp(new Response("error", { status: 400 }))
                 safeExit()
             },
         })
-        console.log('[parseJson middleware] After expectAndRespond')
+        console.log('[parseJson middleware] After forward')
     })
 
 wooter.route(c.chemin("test"), "POST", async ({ data: { parseJson }, resp }) => {

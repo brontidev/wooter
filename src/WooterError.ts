@@ -1,4 +1,9 @@
-import { ControlFlowBreak } from "./ctx/RouteContext.ts"
+import { AsyncLocalStorage } from "node:async_hooks"
+export const ControlFlowBreak = Symbol("ControlFlowBreak")
+export type ControlFlowBreak = typeof ControlFlowBreak
+
+
+export const strayErrorStore = new AsyncLocalStorage<(e: unknown) => void>()
 
 /**
  * Internal wooter error class

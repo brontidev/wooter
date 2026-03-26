@@ -1,15 +1,12 @@
-import type { Option } from "@@/option.ts"
 import type { Data, Params } from "@@/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
 	RouteContext__execution,
 	RouteContext__respond,
-} from "./RouteContext.ts"
-import type { Result } from "@@/result.ts"
+} from "@/ctx/RouteContext.ts"
 import WooterError from "@/WooterError.ts"
 import type { TEmptyObject } from "@@/chemin.ts"
-import { Soon } from "@bronti/robust/Soon"
 
 /**
  * The middleware handler must call ctx.next() before exiting

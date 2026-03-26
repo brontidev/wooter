@@ -1,11 +1,11 @@
-import type { TChemin, TEmptyObject } from "@dldc/chemin"
+import type { TChemin, TEmptyObject } from "@@/chemin.ts"
 import RouterGraph, { type MethodDefinitionInput, type MethodDefinitions } from "@/graph/RouterGraph.ts"
 import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@@/types.ts"
 
 import type { Merge } from "@/types.ts"
 import c from "@@/chemin.ts"
 import RouteContext from "@/ctx/RouteContext.ts"
-import { Wooter__catchStrayErrorsStore } from "./Wooter.symbols.ts"
+import { strayErrorStore } from "@/WooterError.ts"
 
 type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : never
 
@@ -171,6 +171,6 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 			)
 		}
 
-		return Wooter__catchStrayErrorsStore.run(this.catchStrayErrors, () => RouterGraph.runHandler(handler, request))
+		return strayErrorStore.run(this.catchStrayErrors, () => RouterGraph.runHandler(handler, request))
 	}
 }

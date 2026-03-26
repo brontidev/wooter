@@ -1,11 +1,10 @@
-import { err, ok, type Result } from "@@/result.ts"
 import { none, type Option, some } from "@@/option.ts"
-import { pair, Soon } from "@bronti/robust/Soon"
+import { Soon } from "@bronti/robust/Soon"
 import type { Data, Params } from "@@/types.ts"
-import WooterError from "@/WooterError.ts"
+import WooterError, { ControlFlowBreak } from "@/WooterError.ts"
 import { TypedMap } from "@bronti/robust/TypedMap"
 import type { TEmptyObject } from "@@/chemin.ts"
-import { Wooter__catchStrayErrorsStore } from "../Wooter.symbols.ts"
+import { strayErrorStore } from "@/WooterError.ts"
 
 /**
  * The handler must respond before exiting
@@ -18,9 +17,6 @@ export class HandlerDidntRespondError extends WooterError {
 		super("The handler must respond before exiting")
 	}
 }
-
-export const ControlFlowBreak = Symbol("ControlFlowBreak")
-export type ControlFlowBreak = typeof ControlFlowBreak
 
 /**
  * The handler called resp() multiple times
@@ -158,7 +154,7 @@ export default class RouteContext<
 	 */
 	protected catchErr = (e: unknown): void => {
 		if (this.respondSoon.resolved) {
-			if (e !== ControlFlowBreak) Wooter__catchStrayErrorsStore.getStore()!(e)
+			if (e !== ControlFlowBreak) strayErrorStore.getStore()!(e)
 			return this.ok()
 		}
 
