@@ -4,7 +4,7 @@ import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } fro
 
 import type { Merge } from "@/types.ts"
 import c from "@@/chemin.ts"
-import RouteContext from "@/ctx/RouteContext.ts"
+import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import { strayErrorStore } from "@/WooterError.ts"
 
 type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : never
@@ -198,6 +198,18 @@ export default class Wooter<TData extends Data | undefined = undefined, TParentP
 			)
 		}
 
-		return strayErrorStore.run(this.catchStrayErrors, () => RouterGraph.runHandler(handler, request))
+		const { promise, resolve, reject } = Promise.withResolvers<Response>()
+		const ctx = strayErrorStore.run(this.catchStrayErrors, () => handler({}, request))
+		const execution = ctx[RouteContext__execution]
+		const respond = ctx[RouteContext__respond]
+
+		respond.then(resolve)
+		execution.then((result) => {
+			result.inspect((err) => {
+				reject(err)
+			})
+		})
+
+		return promise
 	}
 }

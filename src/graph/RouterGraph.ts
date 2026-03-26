@@ -250,28 +250,4 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 		const [handler, { params }, middleware] = data
 		return RouterGraph.compose(handler, params as Params, middleware)
 	}
-
-	/**
-	 * Executes an internal handler and returns its response promise.
-	 *
-	 * @param handler Internal handler.
-	 * @param request Incoming request.
-	 * @returns Promise resolving to the produced response.
-	 */
-	static runHandler(handler: InternalHandler, request: Request): Promise<Response> {
-		const { promise, resolve, reject } = Promise.withResolvers<Response>()
-		const ctx = handler({}, request)
-		const execution = ctx[RouteContext__execution]
-		const respond = ctx[RouteContext__respond]
-
-		respond.then(resolve)
-		execution.then((result) => {
-			result.inspect((err) => {
-				// no stray error should make it past this
-				reject(err)
-			})
-		})
-
-		return promise
-	}
 }
