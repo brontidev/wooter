@@ -15,8 +15,6 @@ jobs:
             - uses: denoland/setup-deno@v1
               with:
                   deno-version: v2
-            - name: Emit deno version
-              run: deno -v
             - name: Install dependencies
               run: deno install
             - name: Check
