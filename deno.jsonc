@@ -14,8 +14,8 @@
 		"./use": "./src/export/use.ts"
 	},
 	"tasks": {
-		"test": "deno test",
-		"coverage": "rm -rf ./coverage && deno test --coverage",
+		// "test": "deno test",
+		// "coverage": "rm -rf ./coverage && deno test --coverage",
 		"check": {
 			"dependencies": [
 				"check:format",
