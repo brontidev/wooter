@@ -1,10 +1,9 @@
 import { none, type Option, some } from "@@/option.ts"
 import { Soon } from "@bronti/robust/Soon"
 import type { Data, Params } from "@@/types.ts"
-import WooterError, { ControlFlowBreak } from "@/WooterError.ts"
+import WooterError, { catchStrayError, ControlFlowBreak } from "@/WooterError.ts"
 import { TypedMap } from "@bronti/robust/TypedMap"
 import type { TEmptyObject } from "@@/chemin.ts"
-import { strayErrorStore } from "@/WooterError.ts"
 
 /**
  * Error thrown when a handler exits without calling `resp()`.
@@ -220,9 +219,8 @@ export default class RouteContext<
 	 * @internal
 	 */
 	protected catchErr = (e: unknown): void => {
-		if (e == ControlFlowBreak) return this.ok()
 		if (this.respondSoon.resolved) {
-			strayErrorStore.getStore()!(e)
+			if(e != ControlFlowBreak) catchStrayError(e)
 			return this.ok()
 		}
 

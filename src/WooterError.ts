@@ -17,6 +17,10 @@ export type ControlFlowBreak = typeof ControlFlowBreak
  */
 export const strayErrorStore = new AsyncLocalStorage<(e: unknown) => void>()
 
+export function catchStrayError(e: unknown) {
+	strayErrorStore.getStore()!(e)
+}
+
 /**
  * Base error class for framework-level errors.
  */
