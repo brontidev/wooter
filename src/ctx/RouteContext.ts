@@ -165,7 +165,10 @@ export default class RouteContext<
 		this.executionSoon.push(none())
 	}
 
-	static createResp<R extends Params | undefined, D extends Data | undefined>(self: RouteContext<R, D>): Resp {
+	/**
+	 * @internal
+	 */
+	private static createResp<R extends Params | undefined, D extends Data | undefined>(self: RouteContext<R, D>): Resp {
 		const resp: Resp = (responseOrBody, init?: ResponseInit): Response => {
 			const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
 			if (self.executionSoon.resolved) {
@@ -217,7 +220,7 @@ export default class RouteContext<
 	 * @internal
 	 */
 	protected catchErr = (e: unknown): void => {
-		if(e == ControlFlowBreak) return this.ok()
+		if (e == ControlFlowBreak) return this.ok()
 		if (this.respondSoon.resolved) {
 			strayErrorStore.getStore()!(e)
 			return this.ok()

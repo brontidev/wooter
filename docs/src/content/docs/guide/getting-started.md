@@ -2,7 +2,7 @@
 title: Getting Started
 description: Install wooter, register routes, and serve requests through fetch.
 sidebar:
-  order: 1
+    order: 1
 ---
 
 wooter is runtime-agnostic. You define routes and call `fetch`.
@@ -24,7 +24,7 @@ npx jsr add @bronti/wooter
 ### ESM URL via esm.sh
 
 ```ts
-import { Wooter, c } from "https://esm.sh/jsr/@bronti/wooter"
+import { c, Wooter } from "https://esm.sh/jsr/@bronti/wooter"
 ```
 
 ## First Router

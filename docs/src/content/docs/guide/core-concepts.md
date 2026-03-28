@@ -2,15 +2,14 @@
 title: Core Concepts
 description: Mental model for routing, response timing, and error boundaries.
 sidebar:
-  order: 3
+    order: 3
 ---
 
 ## Structural Routing
 
 wooter uses `chemin` route patterns, not string templates.
 
-Example path idea:
-`/admin/post/:postId/delete?`
+Example path idea: `/admin/post/:postId/delete?`
 
 Pattern form:
 
@@ -27,7 +26,8 @@ wooter tracks two async states for each request:
 - Handler execution state (did the handler finish successfully or fail)
 - Response resolution state (did a response get resolved)
 
-A handler must resolve exactly one response with `ctx.resp()` before handler completion. If no response is resolved in time, the request fails.
+A handler must resolve exactly one response with `ctx.resp()` before handler completion. If no response is resolved in time, the
+request fails.
 
 ## Timing Defines Error Ownership
 

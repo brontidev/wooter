@@ -4,7 +4,8 @@
 [![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
 > [!WARNING]
-> wooter is beta and WIP. Core ideas are implemented, but rough edges still exist. Avoid high-impact production usage until `v100.0.0`.
+> wooter is beta and WIP. Core ideas are implemented, but rough edges still exist. Avoid high-impact production usage until
+> `v100.0.0`.
 
 > [!NOTE]
 > wooter uses [epoch semver](https://antfu.me/posts/epoch-semver).
@@ -44,17 +45,17 @@ export default router
 
 ## Core Concepts
 
-1. Structural routing with `chemin`:
-Route definitions are composed from typed path pieces. Matching and parameter typing come from the pattern itself.
+1. Structural routing with `chemin`: Route definitions are composed from typed path pieces. Matching and parameter typing come
+   from the pattern itself.
 
-2. Execution and response are separate:
-A handler must resolve exactly one response with `ctx.resp()` before completion. You can still perform work after response resolution.
+2. Execution and response are separate: A handler must resolve exactly one response with `ctx.resp()` before completion. You can
+   still perform work after response resolution.
 
-3. Middleware must be cooperative:
-Middleware should call `.next()` or `.forward()` unless it resolves a response itself. It should not swallow errors it does not handle.
+3. Middleware must be cooperative: Middleware should call `.next()` or `.forward()` unless it resolves a response itself. It
+   should not swallow errors it does not handle.
 
-4. `safeExit()` is a control-flow signal:
-Use `ctx.safeExit()` only after `ctx.resp()` when you intentionally want to stop execution immediately.
+4. `safeExit()` is a control-flow signal: Use `ctx.safeExit()` only after `ctx.resp()` when you intentionally want to stop
+   execution immediately.
 
 ## Lifecycle And Error Timing
 

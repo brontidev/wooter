@@ -2,7 +2,7 @@
 title: Control Flow
 description: Understand safeExit, ControlFlowBreak, and timing-sensitive failures.
 sidebar:
-  order: 6
+    order: 6
 ---
 
 ## `safeExit()`
@@ -31,7 +31,8 @@ Errors and `safeExit()` are different tools:
 
 ## Stray Errors
 
-If an async operation throws after response resolution, it cannot reject `router.fetch()` anymore. It is routed to `catchStrayErrors`.
+If an async operation throws after response resolution, it cannot reject `router.fetch()` anymore. It is routed to
+`catchStrayErrors`.
 
 Default behavior rethrows stray errors, which can become unhandled rejections.
 

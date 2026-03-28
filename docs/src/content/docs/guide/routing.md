@@ -2,7 +2,7 @@
 title: Routing
 description: Define paths with chemin patterns, methods, and nested routers.
 sidebar:
-	order: 5
+    order: 5
 ---
 
 ## Pattern-Based Paths

@@ -2,10 +2,11 @@
 title: Hosting And Runtimes
 description: Mount wooter on Deno, Bun, edge runtimes, browsers, and Node adapters.
 sidebar:
-  order: 2
+    order: 2
 ---
 
-wooter is a Fetch-native router. It does not ship a server implementation, so you mount `router.fetch` into whatever runtime you use.
+wooter is a Fetch-native router. It does not ship a server implementation, so you mount `router.fetch` into whatever runtime you
+use.
 
 ## Runtime Pattern
 
@@ -13,7 +14,7 @@ Define routes once, export the router, then mount `router.fetch` in each environ
 
 ```ts
 // router.ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const wooter = new Wooter()
 
@@ -83,7 +84,8 @@ This pattern lets you build local APIs in-browser and call them with normal `fet
 
 ## Node.js Notes
 
-Node's built-in `node:http` request/response objects are not Web `Request`/`Response` objects, so `wooter.fetch` cannot be plugged in directly.
+Node's built-in `node:http` request/response objects are not Web `Request`/`Response` objects, so `wooter.fetch` cannot be plugged
+in directly.
 
 You have two options:
 

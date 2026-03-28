@@ -63,5 +63,4 @@ Handler wrapper helper:
 use(middlewareHandler, routeHandler)
 ```
 
-For full API symbols and signatures, see the hosted API docs:
-https://jsr.io/@bronti/wooter/doc
+For full API symbols and signatures, see the hosted API docs: https://jsr.io/@bronti/wooter/doc

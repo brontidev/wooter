@@ -2,7 +2,7 @@
 title: Middleware
 description: Compose route behavior with next, forward, and Result-based flow.
 sidebar:
-  order: 4
+    order: 4
 ---
 
 ## Middleware Context Methods
