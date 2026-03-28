@@ -2,7 +2,7 @@
 title: Middleware
 description: Compose route behavior with next, forward, and Result-based flow.
 sidebar:
-	order: 4
+  order: 4
 ---
 
 ## Middleware Context Methods
@@ -26,7 +26,7 @@ Hoarding errors means catching errors but not rethrowing when they are not actua
 ## Pass Data Forward
 
 ```ts
-import { middleware } from "jsr:@bronti/wooter"
+import { middleware } from "@bronti/wooter"
 
 const withRequestId = middleware<{ requestId: string }>(async (ctx) => {
 	await ctx.forward({ requestId: crypto.randomUUID() })
@@ -52,7 +52,7 @@ Use `try*` variants when middleware wants to inspect and branch on downstream fa
 ## Safe Exit Pattern
 
 ```ts
-import { makeError, middleware } from "jsr:@bronti/wooter"
+import { makeError, middleware } from "@bronti/wooter"
 
 const json = middleware<{ json: () => Promise<unknown> }>(async ({ request, resp, forward, safeExit }) => {
 	let parsed: unknown

@@ -7,17 +7,30 @@ sidebar:
 
 wooter is runtime-agnostic. You define routes and call `fetch`.
 
-## Install
+## Install Or Import
+
+### JSR (recommended)
 
 ```sh
-# JSR
 deno add jsr:@bronti/wooter
+```
+
+### npm projects (via JSR CLI)
+
+```sh
+npx jsr add @bronti/wooter
+```
+
+### ESM URL via esm.sh
+
+```ts
+import { Wooter, c } from "https://esm.sh/jsr/@bronti/wooter"
 ```
 
 ## First Router
 
 ```ts
-import { c, Wooter } from "jsr:@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const router = new Wooter()
 
@@ -30,14 +43,6 @@ router.route(c.chemin("posts", c.pNumber("id")), "GET", ({ params, resp }) => {
 })
 
 export default router
-```
-
-## Serve It (Deno)
-
-```ts
-import router from "./router.ts"
-
-Deno.serve((request) => router.fetch(request))
 ```
 
 ## Method Maps

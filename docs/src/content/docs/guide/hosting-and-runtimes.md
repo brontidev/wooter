@@ -7,37 +7,13 @@ sidebar:
 
 wooter is a Fetch-native router. It does not ship a server implementation, so you mount `router.fetch` into whatever runtime you use.
 
-## Install Or Import
-
-### JSR (recommended)
-
-```sh
-deno add jsr:@bronti/wooter
-```
-
-### npm projects (via JSR CLI)
-
-```sh
-npx jsr add @bronti/wooter
-```
-
-```ts
-import { Wooter, c } from "@bronti/wooter"
-```
-
-### ESM URL via esm.sh
-
-```ts
-import { Wooter, c } from "https://esm.sh/jsr/@bronti/wooter"
-```
-
 ## Runtime Pattern
 
 Define routes once, export the router, then mount `router.fetch` in each environment.
 
 ```ts
 // router.ts
-import { Wooter, c } from "jsr:@bronti/wooter"
+import { Wooter, c } from "@bronti/wooter"
 
 const wooter = new Wooter()
 
