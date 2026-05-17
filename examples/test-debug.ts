@@ -14,7 +14,7 @@ const wooter = new Wooter()
 		console.log("[parseJson middleware] After forward")
 	})
 
-wooter.route(c.chemin("test"), "POST", async ({ data: { parseJson }, resp }) => {
+wooter.route(c.chemin("test"), "POST", async ({ state: { parseJson }, resp }) => {
 	console.log("[route handler] Calling parseJson")
 	await parseJson()
 	throw new Error("something happened")

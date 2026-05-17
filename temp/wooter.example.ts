@@ -32,10 +32,10 @@ app.route(c.chemin("complex"), {
 	},
 })
 
-const api = app.router(c.chemin("api"))
+const api = app.branch(c.chemin("api"))
 
 api.route(c.chemin("user", "@me"), "GET", async (ctx) => {
-	const auth = ctx.data.get("auth")
+	const auth = ctx.state.get("auth")
 
 	ctx.resp(Response.json(auth.user))
 })

@@ -1,4 +1,4 @@
-import type { Data, Params } from "@@/types.ts"
+import type { Params, State as State } from "@@/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
@@ -27,14 +27,14 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
  * Extends {@link RouteContext} with flow-control helpers for composing middleware chains.
  *
  * @typeParam TParams Route param shape.
- * @typeParam TData Data currently available on the context.
- * @typeParam TNextData Data shape that this middleware can pass to the next handler.
+ * @typeParam TState Data currently available on the context.
+ * @typeParam TNextState Data shape that this middleware can pass to the next handler.
  */
 export default class MiddlewareContext<
 	TParams extends Params | undefined = undefined,
-	TData extends Data | undefined = undefined,
-	TNextData extends Data | undefined = undefined,
-> extends RouteContext<TParams, TData> {
+	TState extends State | undefined = undefined,
+	TNextState extends State | undefined = undefined,
+> extends RouteContext<TParams, TState> {
 	/**
 	 * @internal
 	 * Internal marker that tracks whether `next()` or `tryNext()` has been called.
@@ -46,17 +46,17 @@ export default class MiddlewareContext<
 	 * Creates a middleware context instance.
 	 *
 	 * @param request Current request.
-	 * @param data Context data.
+	 * @param state Context data.
 	 * @param params Route params.
 	 * @param nextHandler Internal continuation handler.
 	 */
 	constructor(
 		override readonly request: Request,
-		data: TData extends undefined ? TEmptyObject : TData,
+		state: TState extends undefined ? TEmptyObject : TState,
 		params: TParams extends undefined ? TEmptyObject : TParams,
 		private readonly nextHandler: InternalHandler,
 	) {
-		super(request, data, params)
+		super(request, state, params)
 	}
 
 	/**
@@ -67,7 +67,7 @@ export default class MiddlewareContext<
 	 * @returns The downstream response, or throws the downstream error.
 	 */
 	readonly next = async (
-		data: TNextData extends undefined ? TEmptyObject : TNextData,
+		data: TNextState extends undefined ? TEmptyObject : TNextState,
 		request?: Request,
 	): Promise<Response> => {
 		const opt = await this.tryNext(data, request)
@@ -86,7 +86,7 @@ export default class MiddlewareContext<
 	 * @returns `ok(response)` on success or `err(error)` on failure.
 	 */
 	readonly tryNext = (
-		data: TNextData extends undefined ? TEmptyObject : TNextData,
+		data: TNextState extends undefined ? TEmptyObject : TNextState,
 		request?: Request,
 	): Promise<Result<Response, unknown>> => {
 		const { promise, resolve } = Promise.withResolvers<Result<Response, unknown>>()
@@ -110,7 +110,7 @@ export default class MiddlewareContext<
 	 * @param request Optional request override.
 	 * @returns The response sent by `resp`.
 	 */
-	readonly forward = (data: TNextData extends undefined ? TEmptyObject : TNextData, request?: Request): Promise<Response> =>
+	readonly forward = (data: TNextState extends undefined ? TEmptyObject : TNextState, request?: Request): Promise<Response> =>
 		this.next(data, request).then(this.resp)
 
 	/**
@@ -121,7 +121,7 @@ export default class MiddlewareContext<
 	 * @returns Result containing the response or captured error.
 	 */
 	readonly tryForward = (
-		data: TNextData extends undefined ? TEmptyObject : TNextData,
+		data: TNextState extends undefined ? TEmptyObject : TNextState,
 		request?: Request,
 	): Promise<Result<Response, unknown>> => this.tryNext(data, request).then((o) => o.map(this.resp))
 
@@ -137,16 +137,20 @@ export default class MiddlewareContext<
 	 */
 	static useMiddlewareHandler<
 		TParams extends Params = Params,
-		TData extends Data | undefined = undefined,
-		TNextData extends Data | undefined = undefined,
+		TState extends State | undefined = undefined,
+		TNextState extends State | undefined = undefined,
 	>(
-		handler: MiddlewareHandler<TParams, TData, TNextData>,
+		handler: MiddlewareHandler<TParams, TState, TNextState>,
 		params: Params,
 		next: InternalHandler,
 	): InternalHandler {
 		return (data, req) => {
-			// @ts-expect-error: InternalHandler ignores generics
-			const ctx = new MiddlewareContext<TParams, TData, TNextData>(req, data, params, next)
+			const ctx = new MiddlewareContext<TParams, TState, TNextState>(
+				req,
+				data as TState extends undefined ? TEmptyObject : TState,
+				params as TParams extends undefined ? TEmptyObject : TParams,
+				next,
+			)
 
 			Promise.try(handler, ctx)
 				.then(() => {
@@ -171,6 +175,6 @@ export default class MiddlewareContext<
  */
 export type MiddlewareHandler<
 	TParams extends Params = Params,
-	TData extends Data | undefined = undefined,
-	TNextData extends Data | undefined = undefined,
-> = (ctx: MiddlewareContext<TParams, TData, TNextData>) => Promise<unknown> | unknown
+	TState extends State | undefined = undefined,
+	TNextState extends State | undefined = undefined,
+> = (ctx: MiddlewareContext<TParams, TState, TNextState>) => Promise<unknown> | unknown

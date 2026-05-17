@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import type { TChemin } from "@dldc/chemin"
-import type { Data, Methods, MiddlewareHandler, Params, RouteHandler } from "@@/types.ts"
+import type { Methods, MiddlewareHandler, Params, RouteHandler, State } from "@@/types.ts"
 import { CheminGraph } from "./CheminGraph.ts"
 import RouteContext, { type InternalHandler } from "@/ctx/RouteContext.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
@@ -19,12 +19,12 @@ export type MethodDefinitionInput = Methods | Uppercase<string> | Methods[] | Up
  */
 export type MethodDefinitions<
 	TParams extends Params,
-	TData extends
-		| Data
+	TState extends
+		| State
 		| undefined = undefined,
 > =
-	& Partial<Record<Methods, RouteHandler<TParams, TData extends undefined ? Data : TData>>>
-	& Record<Uppercase<string>, RouteHandler<TParams, TData extends undefined ? Data : TData>>
+	& Partial<Record<Methods, RouteHandler<TParams, TState extends undefined ? State : TState>>>
+	& Record<Uppercase<string>, RouteHandler<TParams, TState extends undefined ? State : TState>>
 
 enum NodeType {
 	MethodsToHandlers,
@@ -154,9 +154,9 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 	 */
 	protected static compose(handler: RouteHandler, params: Params, middlewareSet: Set<MiddlewareHandler>): InternalHandler {
 		const middleware = middlewareSet.values()
-		return (data, req) => {
-			const createNext = (): InternalHandler => (nextData, req) => {
-				Object.assign(data, nextData)
+		return (state, req) => {
+			const createNext = (): InternalHandler => (nextState, req) => {
+				Object.assign(state, nextState)
 				const { done, value: currentMiddleware } = middleware.next()
 				let currentHandler: InternalHandler
 				if (done) {
@@ -165,7 +165,6 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 						params,
 					)
 				} else {
-					// console.error("middleware is disabled")
 					currentHandler = MiddlewareContext.useMiddlewareHandler(
 						currentMiddleware,
 						params,
@@ -173,9 +172,9 @@ export default class RouterGraph extends CheminGraph<Node, [method: string]> {
 					)
 				}
 
-				return currentHandler(data, req)
+				return currentHandler(state, req)
 			}
-			return createNext()(data, req)
+			return createNext()(state, req)
 		}
 	}
 

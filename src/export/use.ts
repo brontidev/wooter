@@ -1,6 +1,6 @@
 // TODO: Create a function that transforms a handler by applying middleware to it on the spot
 
-import type { Data, MiddlewareHandler, OptionalMerge, Params, RouteHandler } from "@@/types.ts"
+import type { MiddlewareHandler, OptionalMerge, Params, RouteHandler, State } from "@@/types.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
 import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 
@@ -12,19 +12,19 @@ import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/
  * @returns Route handler that executes middleware and then delegates to `handler`.
  */
 export default function use<
-	NextData extends Data | undefined = undefined,
-	BaseData extends Data | undefined = undefined,
+	NextState extends State | undefined = undefined,
+	BaseState extends State | undefined = undefined,
 	// deno-lint-ignore ban-types
 	TParams extends Params = {},
 >(
-	middlewareHandler: MiddlewareHandler<TParams, BaseData, NextData>,
-	handler: RouteHandler<TParams, OptionalMerge<Data, BaseData, NextData>>,
-): RouteHandler<TParams, BaseData> {
-	return async ({ params: _params, request, data: _data, resp }) => {
+	middlewareHandler: MiddlewareHandler<TParams, BaseState, NextState>,
+	handler: RouteHandler<TParams, OptionalMerge<State, BaseState, NextState>>,
+): RouteHandler<TParams, BaseState> {
+	return async ({ params: _params, request, state: _data, resp }) => {
 		let data = Object.fromEntries(Object.entries(_data))
 		const params = Object.fromEntries(_params.entries())
-		const internalHandler = MiddlewareContext.useMiddlewareHandler(middlewareHandler, params, (nextData, request) => {
-			data = Object.assign(data, nextData)
+		const internalHandler = MiddlewareContext.useMiddlewareHandler(middlewareHandler, params, (nextState, request) => {
+			data = Object.assign(data, nextState)
 			return RouteContext.useRouteHandler(handler, params)(data, request)
 		})
 
@@ -53,11 +53,11 @@ export default function use<
  * ```
  */
 export function middleware<
-	TNextData extends Data | undefined = undefined,
-	TData extends Data | undefined = undefined, // deno-lint-ignore ban-types
+	TNextState extends State | undefined = undefined,
+	TState extends State | undefined = undefined, // deno-lint-ignore ban-types
 	TParams extends Params = {},
 >(
-	handler: MiddlewareHandler<TParams, TData, TNextData>,
-): MiddlewareHandler<TParams, TData, TNextData> {
+	handler: MiddlewareHandler<TParams, TState, TNextState>,
+): MiddlewareHandler<TParams, TState, TNextState> {
 	return handler
 }

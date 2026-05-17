@@ -27,9 +27,9 @@ const wooter = new Wooter()
 // })
 
 {
-	const authWooter = wooter.router(c.chemin("auth"))
+	const authWooter = wooter.branch(c.chemin("auth"))
 
-	authWooter.route(c.chemin(), "POST", async ({ request, resp, data: { cookies, redirect } }) => {
+	authWooter.route(c.chemin(), "POST", async ({ request, resp, state: { cookies, redirect } }) => {
 		let json = await request.json()
 		if (!json.username || !json.password) {
 			return resp(

@@ -26,7 +26,7 @@ const wooter = new Wooter()
 	.use(cookies)
 	.use(json)
 	.use<{ parseJson: <TSchema extends z.Schema>(schema: TSchema) => Promise<z.infer<TSchema>> }>(
-		async ({ data: { json }, resp, forward }) => {
+		async ({ state: { json }, resp, forward, safeExit }) => {
 			await forward({
 				parseJson: async (schema) => {
 					const result = schema.safeParse(await json())
@@ -34,13 +34,13 @@ const wooter = new Wooter()
 						return result.data
 					} else {
 						resp(Response.json(result.error.issues))
-						throw void 0
+						return safeExit()
 					}
 				},
 			})
 		},
 	)
-wooter.route(c.chemin(), "GET", async ({ resp, data: { cookies } }) => {
+wooter.route(c.chemin(), "GET", async ({ resp, state: { cookies } }) => {
 	const count = Option.from(cookies.get("count")).map((x) => parseInt(x)).unwrapOr(0) + 1
 	cookies.set("count", count.toString())
 	resp(Response.json({
@@ -63,7 +63,8 @@ wooter.route(c.chemin("book"), {
 		resp(Response.json((await Array.fromAsync(db.list<Book>({ prefix: ["books"] })))
 			.filter(({ key }) => key[1] !== "id")))
 	},
-	async POST({ resp, data: { parseJson }, url }) {
+	async POST({ resp, state: { parseJson }, url }) {
+		console.log("post book")
 		const body = await parseJson(book)
 		const idEntry = await db.get<number>(["books", "id"])
 		const id = (idEntry.value ?? 0) + 1
@@ -94,7 +95,7 @@ wooter.route(c.chemin("book", c.pNumber("id")), {
 				.match((v) => Response.json(v), () => makeError(404, "Book not found")),
 		)
 	},
-	async PUT({ params, data: { parseJson }, resp }) {
+	async PUT({ params, state: { parseJson }, resp }) {
 		const id = params.get("id")
 		const body = await parseJson(book)
 		const bookEntry = await db.get<Book>(["books", id])
@@ -110,7 +111,7 @@ wooter.route(c.chemin("book", c.pNumber("id")), {
 		}
 		resp(Response.json(body))
 	},
-	async PATCH({ params, data: { parseJson }, resp }) {
+	async PATCH({ params, state: { parseJson }, resp }) {
 		const id = params.get("id")
 		const body = await parseJson(bookPatch)
 		const bookEntry = await db.get<Book>(["books", id])

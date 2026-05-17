@@ -1,6 +1,6 @@
 import { none, type Option, some } from "@@/option.ts"
 import { Soon } from "@bronti/robust/Soon"
-import type { Data, Params } from "@@/types.ts"
+import type { Params, State } from "@@/types.ts"
 import WooterError, { catchStrayError, ControlFlowBreak } from "@/WooterError.ts"
 import { TypedMap } from "@bronti/robust/TypedMap"
 import type { TEmptyObject } from "@@/chemin.ts"
@@ -32,7 +32,6 @@ export class HandlerRespondedTwiceError extends WooterError {
 type Resp = {
 	(response: Response): Response
 	(body?: BodyInit | null, init?: ResponseInit): Response
-	json: typeof Response.json
 }
 
 /**
@@ -48,16 +47,16 @@ export const RouteContext__respond = Symbol("RouteContext__respond")
  * Context passed to route handlers.
  *
  * @typeParam TParams Route param shape.
- * @typeParam TData Data shape accumulated from middleware.
+ * @typeParam TState Data shape accumulated from middleware.
  */
 export default class RouteContext<
 	TParams extends Params | undefined = undefined,
-	TData extends Data | undefined = undefined,
+	TState extends State | undefined = undefined,
 > {
 	/**
 	 * Backing store for context data.
 	 */
-	private readonly _data: TData extends undefined ? TEmptyObject : TData
+	private readonly _state: TState extends undefined ? TEmptyObject : TState
 
 	/**
 	 * Backing store for route params.
@@ -69,8 +68,8 @@ export default class RouteContext<
 	 *
 	 * @returns The typed context data object.
 	 */
-	get data(): TData extends undefined ? TEmptyObject : TData {
-		return this._data
+	get state(): TState extends undefined ? TEmptyObject : TState {
+		return this._state
 	}
 
 	/**
@@ -133,11 +132,11 @@ export default class RouteContext<
 	constructor(
 		/** Request object. */
 		readonly request: Request,
-		data: TData extends undefined ? TEmptyObject : TData,
+		data: TState extends undefined ? TEmptyObject : TState,
 		params: TParams extends undefined ? TEmptyObject : TParams,
 	) {
 		this.url = new URL(request.url)
-		this._data = data
+		this._state = data
 		this._params = new TypedMap(params)
 	}
 
@@ -165,28 +164,6 @@ export default class RouteContext<
 	}
 
 	/**
-	 * @internal
-	 */
-	private static createResp<R extends Params | undefined, D extends Data | undefined>(self: RouteContext<R, D>): Resp {
-		const resp: Resp = (responseOrBody, init?: ResponseInit): Response => {
-			const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
-			if (self.executionSoon.resolved) {
-				console.warn("responding after execution is misuse of the library")
-				return response
-			}
-			if (self.respondSoon.resolved) {
-				throw new HandlerRespondedTwiceError()
-			}
-
-			self.respondSoon.push(response)
-			return response
-		}
-
-		resp.json = (data, init) => resp(Response.json(data, init))
-		return resp
-	}
-
-	/**
 	 * Responds to the request.
 	 *
 	 * @param response A fully constructed response.
@@ -197,8 +174,28 @@ export default class RouteContext<
 	readonly resp: {
 		(response: Response): Response
 		(body?: BodyInit | null, init?: ResponseInit): Response
-		json: typeof Response.json
-	} = RouteContext.createResp(this)
+	} = (responseOrBody, init?: ResponseInit): Response => {
+		const response = responseOrBody instanceof Response ? responseOrBody : new Response(responseOrBody, init)
+		if (this.executionSoon.resolved) {
+			console.warn("responding after execution is misuse of the wooter library")
+			return response
+		}
+		if (this.respondSoon.resolved) {
+			throw new HandlerRespondedTwiceError()
+		}
+
+		this.respondSoon.push(response)
+		return response
+	}
+
+	/**
+	 * Responds with a JSON body.
+	 *
+	 * @param data JSON-serializable response body.
+	 * @param init Optional response init.
+	 * @returns The response that was sent.
+	 */
+	readonly json: typeof Response.json = (data, init) => this.resp(Response.json(data, init))
 
 	/**
 	 * Safely exits handler execution without surfacing a framework error.
@@ -220,7 +217,7 @@ export default class RouteContext<
 	 */
 	protected catchErr = (e: unknown): void => {
 		if (this.respondSoon.resolved) {
-			if(e != ControlFlowBreak) catchStrayError(e)
+			if (e != ControlFlowBreak) catchStrayError(e)
 			return this.ok()
 		}
 
@@ -236,13 +233,16 @@ export default class RouteContext<
 	 *
 	 * @internal
 	 */
-	static useRouteHandler<TParams extends Params | undefined = Params, TData extends Data | undefined = Data>(
-		handler: RouteHandler<TParams, TData>,
+	static useRouteHandler<TParams extends Params | undefined = Params, TState extends State | undefined = State>(
+		handler: RouteHandler<TParams, TState>,
 		params: Params,
 	): InternalHandler {
 		return (data, req) => {
-			// @ts-expect-error: InternalHandler ignores generics
-			const ctx = new RouteContext<TParams, TData>(req, data, params)
+			const ctx = new RouteContext<TParams, TState>(
+				req,
+				data as TState extends undefined ? TEmptyObject : TState,
+				params as TParams extends undefined ? TEmptyObject : TParams,
+			)
 
 			Promise.try(handler, ctx)
 				.then(() => {
@@ -260,7 +260,7 @@ export default class RouteContext<
  * Internal route handler signature used by the execution pipeline.
  */
 export type InternalHandler = (
-	data: Data,
+	data: State,
 	request: Request,
 ) => RouteContext
 
@@ -272,5 +272,5 @@ export type InternalHandler = (
  */
 export type RouteHandler<
 	TParams extends Params | undefined = Params,
-	TData extends Data | undefined = Data,
-> = (ctx: RouteContext<TParams, TData>) => Promise<unknown> | unknown
+	TState extends State | undefined = State,
+> = (ctx: RouteContext<TParams, TState>) => Promise<unknown> | unknown

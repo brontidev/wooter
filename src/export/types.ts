@@ -6,9 +6,9 @@ import type { Merge } from "@/types.ts"
 export type Params = Record<string, unknown>
 
 /**
- * Generic context-data object shape.
+ * Generic context state object shape.
  */
-export type Data = Record<string, unknown>
+export type State = Record<string, unknown>
 
 export type { default as MiddlewareContext, MiddlewareHandler } from "@/ctx/MiddlewareContext.ts"
 export type { default as RouteContext, RouteHandler } from "@/ctx/RouteContext.ts"
@@ -25,6 +25,6 @@ export type OptionalMerge<OR, A extends OR | undefined, B extends OR | undefined
 	: (B extends undefined ? A : Merge<A, B>)
 
 /**
- * Supported HTTP methods for typed route declarations.
+ * HTTP methods for typed route declarations.
  */
-export type Methods = "GET" | "PUT" | "POST" | "PATCH" | "DELETE" | "OPTIONS"
+export type Methods = "GET" | "PUT" | "POST" | "PATCH" | "DELETE" | "OPTIONS" | "QUERY"
