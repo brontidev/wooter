@@ -3,81 +3,275 @@
 [![JSR](https://jsr.io/badges/@bronti/wooter)](https://jsr.io/@bronti/wooter)
 [![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
-> [!WARNING]
-> wooter is beta and WIP. Core ideas are implemented, but rough edges still exist. Avoid high-impact production usage until
-> `v100.0.0`.
+A **fetch-native, type-safe HTTP router** for JavaScript/TypeScript with **explicit middleware composition** and **zero runtime dependencies**.
 
-> [!NOTE]
-> wooter uses [epoch semver](https://antfu.me/posts/epoch-semver).
+```ts
+import { Wooter, c } from "@bronti/wooter"
 
-wooter is a TypeScript router with a different mental model than Express-like routers.
+const app = new Wooter()
+  .use(cors)
+  .use(auth)
+  .route(c.chemin("users", c.pNumber("id")), "GET", async ({ params, resp }) => {
+    resp(Response.json({ userId: params.get("id") }))
+  })
 
-## Why Wooter
+export default app.fetch
+```
 
-- Promise-separated response lifecycle: your handler execution and the request response are tracked separately.
-- Fetch-native runtime model: use `router.fetch(request)` anywhere the Fetch API exists.
-- Structural routing with `chemin`: routes are patterns, not path strings.
-- Cooperative middleware pipeline: middleware composition is explicit and type-safe.
+## Philosophy
+
+Wooter is built on a single principle: **every request must produce a response before the lifecycle completes.**
+
+This invariant ensures predictable behavior. Combined with explicit middleware composition, it makes data flow visible and error handling straightforward.
+
+**Learn more:** [Wooter Philosophy](./PHILOSOPHY.MD)
+
+## Key Features
+
+- ✅ **Type-Safe by Default** — Full TypeScript inference for routes, middleware, and parameters
+- ✅ **Fetch-Native** — Works with Deno, Node.js, Bun, Cloudflare Workers, and any Fetch API runtime
+- ✅ **Explicit Design** — No hidden behavior; response propagation is clear and intentional
+- ✅ **Composable Middleware** — State accumulates through middleware chains with type preservation
+- ✅ **Lightweight** — Zero runtime dependencies; ~5KB gzipped
+- ✅ **Flexible Error Handling** — Use exceptions, Result types, or custom patterns
+- ✅ **Zero Magic** — Understand exactly what your code does
 
 ## Quick Start
 
+### Installation
+
+```bash
+# Deno
+deno add @bronti/wooter
+
+# or via jsr
+npx jsr add @bronti/wooter
+```
+
+### Your First Router
+
 ```ts
-import { c, Wooter } from "@bronti/wooter"
+import { Wooter, c } from "@bronti/wooter"
 
-const router = new Wooter()
+const app = new Wooter()
 
-router.route(c.chemin(), "GET", ({ resp }) => {
-	resp(new Response("hi"))
+// GET /hello
+app.route(c.chemin("hello"), "GET", ({ resp }) => {
+  resp(new Response("Hello, Wooter!"))
 })
 
-router.route(c.chemin("user", c.pNumber("id")), "GET", ({ params, resp }) => {
-	resp.json({ id: params.get("id") })
+// GET /users/{id}
+app.route(c.chemin("users", c.pNumber("id")), "GET", ({ params, resp }) => {
+  resp(Response.json({ id: params.get("id") }))
 })
 
-router.route(c.chemin("after"), "GET", async ({ resp }) => {
-	resp(new Response("sent"))
-	await Promise.resolve()
-	console.log("this runs after responding")
+// POST /users
+app.route(c.chemin("users"), "POST", ({ request, resp }) => {
+  resp(new Response("Created", { status: 201 }))
 })
 
-export default router
+export default app.fetch
+```
+
+### Run with Deno
+
+```bash
+deno serve app.ts
 ```
 
 ## Core Concepts
 
-1. Structural routing with `chemin`: Route definitions are composed from typed path pieces. Matching and parameter typing come
-   from the pattern itself.
+### Response-First Lifecycle
 
-2. Execution and response are separate: A handler must resolve exactly one response with `ctx.resp()` before completion. You can
-   still perform work after response resolution.
+Every request must produce a response. This is Wooter's core guarantee.
 
-3. Middleware must be cooperative: Middleware should call `.next()` or `.forward()` unless it resolves a response itself. It
-   should not swallow errors it does not handle.
+```ts
+app.route(c.chemin("example"), "GET", ({ resp }) => {
+  // ✅ This works
+  resp(new Response("OK"))
+  
+  // ❌ Forgetting resp() throws HandlerDidntRespondError
+})
+```
 
-4. `safeExit()` is a control-flow signal: Use `ctx.safeExit()` only after `ctx.resp()` when you intentionally want to stop
-   execution immediately.
+### Middleware Composition
 
-## Lifecycle And Error Timing
+Middleware accumulates state for downstream handlers:
 
-Errors before response resolution reject `router.fetch()` and belong to the request lifecycle.
+```ts
+const app = new Wooter()
+  .use(async ({ next }) => {
+    // Add user to state
+    await next({ user: { id: 1, name: "Alice" } })
+  })
+  .use(async ({ state: { user }, next }) => {
+    // Access user from previous middleware
+    await next({ 
+      permissions: getPermissions(user)
+    })
+  })
+  .route(c.chemin("admin"), "GET", async ({ state, resp }) => {
+    // Access all accumulated state
+    resp(Response.json({ user: state.user, perms: state.permissions }))
+  })
+```
 
-Errors after response resolution cannot be attached to the request anymore and are routed to the router `catchStrayErrors` sink.
+### Explicit Response Propagation
 
-By default, stray errors are rethrown, which may crash your process if unhandled.
+Middleware chooses how to handle responses:
 
-## Middleware Rules Of Thumb
+```ts
+// forward() — Pass through without modification
+await forward({ userId: 123 })
 
-- Do not drop the chain: call `.next()` or `.forward()`, or respond explicitly.
-- Do not hoard errors: if you catch an error and do not fully handle it, rethrow it.
-- Prefer `ctx.safeExit()` over throwing `ControlFlowBreak` directly in middleware libraries.
+// next() — Inspect or modify response
+const response = await next({ userId: 123 })
+resp(modifyHeaders(response))
 
-## Read Next
+// tryNext() — Capture errors as Result
+const result = await tryNext()
+result.match(
+  (response) => resp(response),
+  (error) => resp(new Response("Error", { status: 500 }))
+)
+```
 
-- [Getting Started](docs/src/content/docs/guide/getting-started.md)
-- [Hosting And Runtimes](docs/src/content/docs/guide/hosting-and-runtimes.md)
-- [Core Concepts](docs/src/content/docs/guide/core-concepts.md)
-- [Middleware](docs/src/content/docs/guide/middleware.md)
-- [Routing](docs/src/content/docs/guide/routing.md)
-- [Control Flow](docs/src/content/docs/guide/control-flow.md)
-- [API Overview](docs/src/content/docs/reference/api-overview.md)
-- Hosted API docs: https://jsr.io/@bronti/wooter/doc
+## Core Topics
+
+- **[Getting Started](./docs/pages/quick-start.md)** — 5-minute setup
+- **[Installation](./docs/pages/installation.md)** — JSR, npm, Bun, esm.sh
+- **[Core Concepts](./docs/pages/core-concepts.md)** — Response-first lifecycle
+- **[Routing](./docs/pages/routing.md)** — Type-safe paths and parameters
+- **[Middleware](./docs/pages/middleware.md)** — Building middleware chains
+- **[Control Flow](./docs/pages/control-flow.md)** — next(), forward(), tryNext()
+- **[API Reference](./docs/pages/api-reference.md)** — Complete API documentation
+- **[Examples](./docs/pages/examples/basic-routes.md)** — Practical code examples
+- **[FAQ](./docs/pages/faq.md)** — Common questions
+
+## Examples
+
+### CRUD API
+
+```ts
+import { Wooter, c, middleware } from "@bronti/wooter"
+
+const db = new Map()
+
+const app = new Wooter()
+  .route(c.chemin("items"), {
+    GET: async ({ resp }) => {
+      resp(Response.json(Array.from(db.values())))
+    },
+    POST: async ({ request, resp }) => {
+      const item = await request.json()
+      db.set(item.id, item)
+      resp(Response.json(item), { status: 201 })
+    },
+  })
+  .route(c.chemin("items", c.pNumber("id")), {
+    GET: async ({ params, resp }) => {
+      const item = db.get(params.get("id"))
+      resp(item ? Response.json(item) : 
+           new Response("Not found", { status: 404 }))
+    },
+    PUT: async ({ params, request, resp }) => {
+      const item = await request.json()
+      db.set(params.get("id"), item)
+      resp(Response.json(item))
+    },
+    DELETE: async ({ params, resp }) => {
+      db.delete(params.get("id"))
+      resp(null, { status: 204 })
+    },
+  })
+
+export default app.fetch
+```
+
+### Middleware
+
+```ts
+// Authentication
+const auth = middleware<{ user: User }>(
+  async ({ request, next, resp }) => {
+    const token = request.headers.get("Authorization")
+    if (!token) return resp(new Response("Unauthorized", { status: 401 }))
+    
+    const user = verifyToken(token)
+    await next({ user })
+  }
+)
+
+// JSON parsing
+const json = middleware<{ json: () => Promise<any> }>(
+  async ({ request, forward, resp, safeExit }) => {
+    let cached: any
+    await forward({
+      json: async () => {
+        if (cached) return cached
+        try {
+          return cached = await request.json()
+        } catch {
+          resp(new Response("Invalid JSON", { status: 400 }))
+          safeExit()
+        }
+      },
+    })
+  }
+)
+
+const app = new Wooter()
+  .use(json)
+  .use(auth)
+  .route(c.chemin("users"), "POST", async ({ state: { json }, resp }) => {
+    const body = await json()
+    resp(Response.json(body), { status: 201 })
+  })
+```
+
+## Runtimes
+
+Wooter works with any Fetch API-compatible runtime:
+
+| Runtime | Version | Status |
+|---------|---------|--------|
+| Deno | 1.20+ | ✅ Fully supported |
+| Node.js | 18+ | ✅ Fully supported |
+| Bun | 0.1.0+ | ✅ Fully supported |
+| Cloudflare Workers | Any | ✅ Fully supported |
+| Deno Deploy | Any | ✅ Fully supported |
+| Fastly Compute | Any | ✅ Fully supported |
+| Modern Browsers | - | ✅ Supported (limited use cases) |
+
+## Status
+
+Wooter follows **[epoch semver](https://antfu.me/posts/epoch-semver)**. The core API is stable, but the library hasn't reached v100 yet. Consider it production-ready for non-critical applications.
+
+| Aspect | Status |
+|--------|--------|
+| Core Routing | ✅ Stable |
+| Middleware | ✅ Stable |
+| API Surface | ✅ Stable |
+| Public Release | In progress (aiming for v100) |
+
+## Contributing
+
+Contributions are welcome! Areas for improvement:
+
+- Documentation and examples
+- Performance optimizations
+- Bug reports and fixes
+- Feature ideas (with discussion first)
+- Community middleware
+
+## License
+
+MIT
+
+## Learn More
+
+- **[Full Documentation](./docs/pages/index.md)** — Complete guides and references
+- **[PHILOSOPHY.MD](./PHILOSOPHY.MD)** — Design principles and rationale
+- **[Examples Directory](./examples/)** — Real-world code examples
+- **[JSR Package](https://jsr.io/@bronti/wooter)** — Package details and usage
+- **[Chemin Router](https://jsr.io/@dldc/chemin)** — Path matching library
