@@ -27,8 +27,8 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
  * Extends {@link RouteContext} with flow-control helpers for composing middleware chains.
  *
  * @typeParam TParams Route param shape.
- * @typeParam TState Data currently available on the context.
- * @typeParam TNextState Data shape that this middleware can pass to the next handler.
+ * @typeParam TState State currently available on the context.
+ * @typeParam TNextState State shape that this middleware can pass to the next handler.
  */
 export default class MiddlewareContext<
 	TParams extends Params | undefined = undefined,
@@ -46,7 +46,7 @@ export default class MiddlewareContext<
 	 * Creates a middleware context instance.
 	 *
 	 * @param request Current request.
-	 * @param state Context data.
+	 * @param state Context state.
 	 * @param params Route params.
 	 * @param nextHandler Internal continuation handler.
 	 */
@@ -62,15 +62,15 @@ export default class MiddlewareContext<
 	/**
 	 * Invokes the next handler in the middleware chain.
 	 *
-	 * @param data Data to merge into downstream context.
+	 * @param state State to merge into downstream context.
 	 * @param request Optional request override.
 	 * @returns The downstream response, or throws the downstream error.
 	 */
 	readonly next = async (
-		data: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? TEmptyObject : TNextState,
 		request?: Request,
 	): Promise<Response> => {
-		const opt = await this.tryNext(data, request)
+		const opt = await this.tryNext(state, request)
 		return opt.match((c) => {
 			return c
 		}, (e) => {
@@ -81,17 +81,17 @@ export default class MiddlewareContext<
 	/**
 	 * Like {@link next}, but captures failures in a `Result`.
 	 *
-	 * @param data Data to merge into downstream context.
+	 * @param state State to merge into downstream context.
 	 * @param request Optional request override.
 	 * @returns `ok(response)` on success or `err(error)` on failure.
 	 */
 	readonly tryNext = (
-		data: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? TEmptyObject : TNextState,
 		request?: Request,
 	): Promise<Result<Response, unknown>> => {
 		const { promise, resolve } = Promise.withResolvers<Result<Response, unknown>>()
 		this.calledNext = true
-		const ctx = this.nextHandler(data, request || this.request)
+		const ctx = this.nextHandler(state, request || this.request)
 		ctx[RouteContext__respond].then((response) => {
 			resolve(ok(response))
 		})
@@ -106,24 +106,24 @@ export default class MiddlewareContext<
 	/**
 	 * Invokes {@link next} and immediately responds with the downstream response.
 	 *
-	 * @param data Data to merge into downstream context.
+	 * @param state State to merge into downstream context.
 	 * @param request Optional request override.
 	 * @returns The response sent by `resp`.
 	 */
-	readonly forward = (data: TNextState extends undefined ? TEmptyObject : TNextState, request?: Request): Promise<Response> =>
-		this.next(data, request).then(this.resp)
+	readonly forward = (state: TNextState extends undefined ? TEmptyObject : TNextState, request?: Request): Promise<Response> =>
+		this.next(state, request).then(this.resp)
 
 	/**
 	 * Invokes {@link tryNext} and maps successful responses through `resp`.
 	 *
-	 * @param data Data to merge into downstream context.
+	 * @param state State to merge into downstream context.
 	 * @param request Optional request override.
 	 * @returns Result containing the response or captured error.
 	 */
 	readonly tryForward = (
-		data: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? TEmptyObject : TNextState,
 		request?: Request,
-	): Promise<Result<Response, unknown>> => this.tryNext(data, request).then((o) => o.map(this.resp))
+	): Promise<Result<Response, unknown>> => this.tryNext(state, request).then((o) => o.map(this.resp))
 
 	/**
 	 * Adapts a middleware handler into the router's internal handler signature.
@@ -144,10 +144,10 @@ export default class MiddlewareContext<
 		params: Params,
 		next: InternalHandler,
 	): InternalHandler {
-		return (data, req) => {
+		return (state, req) => {
 			const ctx = new MiddlewareContext<TParams, TState, TNextState>(
 				req,
-				data as TState extends undefined ? TEmptyObject : TState,
+				state as TState extends undefined ? TEmptyObject : TState,
 				params as TParams extends undefined ? TEmptyObject : TParams,
 				next,
 			)
