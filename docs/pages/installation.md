@@ -4,7 +4,8 @@ title: Installation
 
 # Installation
 
-Wooter is published to [JSR](https://jsr.io/@bronti/wooter), the JavaScript Registry. Install using your preferred package manager.
+Wooter is published to [JSR](https://jsr.io/@bronti/wooter), the JavaScript Registry. Install using your preferred package
+manager.
 
 ## Deno
 
@@ -43,19 +44,20 @@ For browser or direct URL imports, use a CDN that supports JSR:
 ### esm.sh
 
 ```ts
-import { Wooter, c } from "https://esm.sh/jsr/@bronti/wooter"
+import { c, Wooter } from "https://esm.sh/jsr/@bronti/wooter"
 ```
+
 ## Verify Installation
 
 Create a test file to verify installation:
 
 ```ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
-  .route(c.chemin(), "GET", ({ resp }) => {
-    resp(new Response("Hello, Wooter!"))
-  })
+	.route(c.chemin(), "GET", ({ resp }) => {
+		resp(new Response("Hello, Wooter!"))
+	})
 
 export default app
 ```
@@ -78,13 +80,13 @@ Wooter also provides focused exports for specific concerns:
 
 ```ts
 // Main export
-import { Wooter, c, middleware } from "@bronti/wooter"
+import { c, middleware, Wooter } from "@bronti/wooter"
 
 // Specific exports
-import * as c from "@bronti/wooter/chemin"           // Chemin routing
-import { Option, some, none } from "@bronti/wooter/option"  // Option type
-import { Result, ok, err } from "@bronti/wooter/result"     // Result type
-import { WooterError } from "@bronti/wooter/error"          // Errors
+import * as c from "@bronti/wooter/chemin" // Chemin routing
+import { none, Option, some } from "@bronti/wooter/option" // Option type
+import { err, ok, Result } from "@bronti/wooter/result" // Result type
+import { WooterError } from "@bronti/wooter/error" // Errors
 import { makeError, makeRedirect } from "@bronti/wooter/response" // Response helpers
 ```
 

@@ -14,12 +14,13 @@ title: Wooter
 > [!NOTE]
 > wooter uses [epoch semver](https://antfu.me/posts/epoch-semver).
 
-
-A fetch-native, type-safe routing and middleware framework for JavaScript/TypeScript built on explicit guarantees and implementation freedom.
+A fetch-native, type-safe routing and middleware framework for JavaScript/TypeScript built on explicit guarantees and
+implementation freedom.
 
 ## What is Wooter?
 
-Wooter is a lightweight router designed for modern JavaScript runtimes (Deno, Node.js, edge functions, browsers) that treats HTTP routing as a composition of middleware and route handlers around a single core principle:
+Wooter is a lightweight router designed for modern JavaScript runtimes (Deno, Node.js, edge functions, browsers) that treats HTTP
+routing as a composition of middleware and route handlers around a single core principle:
 
 > **Every request must produce a response before the lifecycle completes.**
 
@@ -29,7 +30,8 @@ This invariant drives all design decisions, while giving developers complete fre
 
 ### Response-First Lifecycle
 
-Unlike many frameworks that are route-first, Wooter is **response-first**. A request is considered successfully handled when a response has been produced—regardless of whether it came from middleware, a route handler, or error handling logic.
+Unlike many frameworks that are route-first, Wooter is **response-first**. A request is considered successfully handled when a
+response has been produced—regardless of whether it came from middleware, a route handler, or error handling logic.
 
 ```
 Request
@@ -62,10 +64,10 @@ Each middleware layer can add capabilities that downstream handlers consume:
 
 ```ts
 app
-  .use(authentication)      // Adds state.user
-  .use(json)               // Adds state.parseJson
-  .use(validation)         // Adds state.validate
-  
+	.use(authentication) // Adds state.user
+	.use(json) // Adds state.parseJson
+	.use(validation) // Adds state.validate
+
 // Routes now have access to all contributed state
 ```
 
@@ -81,26 +83,26 @@ This explicitness prevents hidden behavior and makes data flow visible.
 ## Quick Example
 
 ```ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 import jsonMiddleware from "./middleware/json.ts"
 
 const app = new Wooter()
-  .use(jsonMiddleware)
-  .route(c.chemin("books"), {
-    GET: async ({ resp }) => {
-      resp(Response.json(["Book 1", "Book 2"]))
-    },
-    POST: async ({ state: { parseJson }, resp }) => {
-      const book = await parseJson(bookSchema)
-      // Save book...
-      resp(Response.json(book), { status: 201 })
-    },
-  })
-  .route(c.chemin("books", c.pNumber("id")), "GET", async ({ params, resp }) => {
-    const id = params.get("id")
-    const book = await getBook(id)
-    resp(Response.json(book))
-  })
+	.use(jsonMiddleware)
+	.route(c.chemin("books"), {
+		GET: async ({ resp }) => {
+			resp(Response.json(["Book 1", "Book 2"]))
+		},
+		POST: async ({ state: { parseJson }, resp }) => {
+			const book = await parseJson(bookSchema)
+			// Save book...
+			resp(Response.json(book), { status: 201 })
+		},
+	})
+	.route(c.chemin("books", c.pNumber("id")), "GET", async ({ params, resp }) => {
+		const id = params.get("id")
+		const book = await getBook(id)
+		resp(Response.json(book))
+	})
 
 export default app
 ```
@@ -130,7 +132,8 @@ export default app
 
 ## Status
 
-Wooter is published to [JSR](https://jsr.io/@bronti/wooter) and actively maintained. The core API is stable, but the library follows [epoch semver](https://antfu.me/posts/epoch-semver)—it won't reach v100 until public stability is guaranteed.
+Wooter is published to [JSR](https://jsr.io/@bronti/wooter) and actively maintained. The core API is stable, but the library
+follows [epoch semver](https://antfu.me/posts/epoch-semver)—it won't reach v100 until public stability is guaranteed.
 
 ## Why Wooter?
 

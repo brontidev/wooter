@@ -4,7 +4,8 @@ title: Path Building with Chemin
 
 # Path Building with Chemin
 
-Wooter uses [Chemin](https://jsr.io/@dldc/chemin) for type-safe path routing. This guide covers Wooter-specific patterns; for complete Chemin documentation, see [the Chemin repository](https://jsr.io/@dldc/chemin).
+Wooter uses [Chemin](https://jsr.io/@dldc/chemin) for type-safe path routing. This guide covers Wooter-specific patterns; for
+complete Chemin documentation, see [the Chemin repository](https://jsr.io/@dldc/chemin).
 
 ## Basic Paths
 
@@ -36,7 +37,7 @@ Add dynamic segments with parameter builders:
 c.pString("id")
 
 app.route(c.chemin("users", c.pString("id")), "GET", ({ params }) => {
-  const id = params.get("id")  // type: string
+	const id = params.get("id") // type: string
 })
 ```
 
@@ -46,7 +47,7 @@ app.route(c.chemin("users", c.pString("id")), "GET", ({ params }) => {
 c.pNumber("postId")
 
 app.route(c.chemin("posts", c.pNumber("postId")), "GET", ({ params }) => {
-  const postId = params.get("postId")  // type: number
+	const postId = params.get("postId") // type: number
 })
 ```
 
@@ -59,21 +60,21 @@ Use `.p()` for custom regex patterns:
 const uuid = c.p("id", /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 
 app.route(c.chemin("items", uuid), "GET", ({ params }) => {
-  const id = params.get("id")
+	const id = params.get("id")
 })
 
 // Slug pattern
 const slug = c.p("slug", /^[a-z0-9-]+$/)
 
 app.route(c.chemin("posts", slug), "GET", ({ params }) => {
-  const slug = params.get("slug")
+	const slug = params.get("slug")
 })
 
 // Hex color
 const color = c.p("color", /^[0-9a-f]{6}$/i)
 
 app.route(c.chemin("colors", color), "GET", ({ params }) => {
-  const color = params.get("color")
+	const color = params.get("color")
 })
 ```
 
@@ -89,12 +90,12 @@ const userIdPath = c.chemin(userPath, c.pString("id"))
 
 // In routes
 app.route(c.chemin(basePath, "posts"), "GET", ({ resp }) => {
-  resp(Response.json([]))
+	resp(Response.json([]))
 })
 
 // Equivalent to
 app.route(c.chemin("api", "v1", "posts"), "GET", ({ resp }) => {
-  resp(Response.json([]))
+	resp(Response.json([]))
 })
 ```
 
@@ -107,18 +108,18 @@ const api = app.branch(c.chemin("api"))
 
 // Routes on api are prefixed with /api/
 api.route(c.chemin("users"), "GET", ({ resp }) => {
-  resp(Response.json([]))  // GET /api/users
+	resp(Response.json([])) // GET /api/users
 })
 
 api.route(c.chemin("posts", c.pNumber("id")), "GET", ({ params, resp }) => {
-  resp(Response.json({ id: params.get("id") }))  // GET /api/posts/{id}
+	resp(Response.json({ id: params.get("id") })) // GET /api/posts/{id}
 })
 
 // Nested branch
 const v1 = api.branch(c.chemin("v1"))
 
 v1.route(c.chemin("users"), "GET", ({ resp }) => {
-  resp(Response.json([]))  // GET /api/v1/users
+	resp(Response.json([])) // GET /api/v1/users
 })
 ```
 
@@ -128,10 +129,10 @@ Use `params.get()` to access captured parameters:
 
 ```ts
 app.route(c.chemin("users", c.pString("userId"), "posts", c.pNumber("postId")), "GET", ({ params }) => {
-  const userId = params.get("userId")    // type: string
-  const postId = params.get("postId")    // type: number
-  
-  resp(Response.json({ userId, postId }))
+	const userId = params.get("userId") // type: string
+	const postId = params.get("postId") // type: number
+
+	resp(Response.json({ userId, postId }))
 })
 ```
 
@@ -144,19 +145,19 @@ Chemin provides compile-time type safety. TypeScript will catch mismatches:
 const path = c.chemin("users", c.pString("userId"))
 
 app.route(path, "GET", ({ params }) => {
-  // ✅ Correct
-  params.get("userId")
-  
-  // ❌ Error: 'postId' doesn't exist
-  params.get("postId")
+	// ✅ Correct
+	params.get("userId")
+
+	// ❌ Error: 'postId' doesn't exist
+	params.get("postId")
 })
 
 // Different path
 const path2 = c.chemin("posts", c.pNumber("postId"))
 
 app.route(path2, "GET", ({ params }) => {
-  // ❌ Error: can't access userId
-  params.get("userId")
+	// ❌ Error: can't access userId
+	params.get("userId")
 })
 ```
 
@@ -167,27 +168,27 @@ app.route(path2, "GET", ({ params }) => {
 ```ts
 // List
 app.route(c.chemin("items"), "GET", ({ resp }) => {
-  resp(Response.json([]))
+	resp(Response.json([]))
 })
 
 // Get one
 app.route(c.chemin("items", c.pNumber("id")), "GET", ({ params, resp }) => {
-  resp(Response.json({ id: params.get("id") }))
+	resp(Response.json({ id: params.get("id") }))
 })
 
 // Create
 app.route(c.chemin("items"), "POST", ({ request, resp }) => {
-  resp(Response.json({}), { status: 201 })
+	resp(Response.json({}), { status: 201 })
 })
 
 // Update
 app.route(c.chemin("items", c.pNumber("id")), "PUT", ({ params, request, resp }) => {
-  resp(Response.json({ id: params.get("id") }))
+	resp(Response.json({ id: params.get("id") }))
 })
 
 // Delete
 app.route(c.chemin("items", c.pNumber("id")), "DELETE", ({ params, resp }) => {
-  resp(null, { status: 204 })
+	resp(null, { status: 204 })
 })
 ```
 
@@ -196,14 +197,14 @@ app.route(c.chemin("items", c.pNumber("id")), "DELETE", ({ params, resp }) => {
 ```ts
 // /users/{userId}/posts/{postId}
 app.route(
-  c.chemin("users", c.pNumber("userId"), "posts", c.pNumber("postId")),
-  "GET",
-  ({ params, resp }) => {
-    resp(Response.json({
-      userId: params.get("userId"),
-      postId: params.get("postId"),
-    }))
-  }
+	c.chemin("users", c.pNumber("userId"), "posts", c.pNumber("postId")),
+	"GET",
+	({ params, resp }) => {
+		resp(Response.json({
+			userId: params.get("userId"),
+			postId: params.get("postId"),
+		}))
+	},
 )
 ```
 
@@ -214,11 +215,11 @@ const v1 = app.branch(c.chemin("api", "v1"))
 const v2 = app.branch(c.chemin("api", "v2"))
 
 v1.route(c.chemin("users"), "GET", ({ resp }) => {
-  resp(Response.json([], { headers: { "API-Version": "1" } }))
+	resp(Response.json([], { headers: { "API-Version": "1" } }))
 })
 
 v2.route(c.chemin("users"), "GET", ({ resp }) => {
-  resp(Response.json([{ id: 1, name: "Alice" }], { headers: { "API-Version": "2" } }))
+	resp(Response.json([{ id: 1, name: "Alice" }], { headers: { "API-Version": "2" } }))
 })
 ```
 
@@ -228,11 +229,11 @@ v2.route(c.chemin("users"), "GET", ({ resp }) => {
 const admin = app.branch(c.chemin("admin")).use(requireAdmin)
 
 admin.route(c.chemin("users"), "GET", ({ resp }) => {
-  resp(Response.json([]))
+	resp(Response.json([]))
 })
 
 admin.route(c.chemin("settings"), "GET", ({ resp }) => {
-  resp(Response.json({}))
+	resp(Response.json({}))
 })
 ```
 
@@ -243,9 +244,9 @@ Chemin supports optional segments. This is less common in HTTP routing, but avai
 ```ts
 // Query params are better for optional filtering
 app.route(c.chemin("users"), "GET", ({ request, resp }) => {
-  const url = new URL(request.url)
-  const page = url.searchParams.get("page") || "1"
-  resp(Response.json({}))
+	const url = new URL(request.url)
+	const page = url.searchParams.get("page") || "1"
+	resp(Response.json({}))
 })
 ```
 
@@ -255,11 +256,11 @@ Query parameters are separate from path parameters. Access via `URL`:
 
 ```ts
 app.route(c.chemin("users"), "GET", ({ request, resp }) => {
-  const url = new URL(request.url)
-  const search = url.searchParams.get("q")
-  const page = url.searchParams.get("page")
-  
-  resp(Response.json([]))
+	const url = new URL(request.url)
+	const search = url.searchParams.get("q")
+	const page = url.searchParams.get("page")
+
+	resp(Response.json([]))
 })
 
 // GET /users?q=alice&page=2
@@ -271,16 +272,16 @@ Parameters are accessed through a `TypedMap`:
 
 ```ts
 app.route(c.chemin("posts", c.pNumber("id")), "GET", ({ params, resp }) => {
-  // params is a TypedMap with 'id' property
-  const id = params.get("id")
-  
-  // Can also check existence
-  const exists = params.has("id")  // true
-  
-  // Can iterate
-  for (const [key, value] of params.entries()) {
-    console.log(key, value)
-  }
+	// params is a TypedMap with 'id' property
+	const id = params.get("id")
+
+	// Can also check existence
+	const exists = params.has("id") // true
+
+	// Can iterate
+	for (const [key, value] of params.entries()) {
+		console.log(key, value)
+	}
 })
 ```
 
@@ -290,12 +291,12 @@ Use empty `c.chemin()` for the root:
 
 ```ts
 app.route(c.chemin(), "GET", ({ resp }) => {
-  resp(new Response("Home"))
+	resp(new Response("Home"))
 })
 
 // Equivalent to:
 app.route(c.chemin(""), "GET", ({ resp }) => {
-  resp(new Response("Home"))
+	resp(new Response("Home"))
 })
 ```
 

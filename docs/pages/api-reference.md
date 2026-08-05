@@ -21,13 +21,15 @@ new Wooter(basePath?, catchStrayErrors?)
 ```
 
 **Parameters:**
+
 - `basePath` (optional) — Base path for this router instance
 - `catchStrayErrors` (optional) — Callback for errors after response sent
 
 **Example:**
+
 ```ts
 const app = new Wooter(undefined, (error) => {
-  console.error("Stray error:", error)
+	console.error("Stray error:", error)
 })
 ```
 
@@ -39,11 +41,12 @@ Register a route for one or more HTTP methods.
 
 ```ts
 app.route(c.chemin("users"), "GET", async ({ resp }) => {
-  resp(Response.json([]))
+	resp(Response.json([]))
 })
 ```
 
 **Overloads:**
+
 - `.route(path, method, handler)` — Single method
 - `.route(path, methods, handler)` — Array of methods
 - `.route(path, handler)` — Method-to-handler map
@@ -54,7 +57,7 @@ Add middleware to this router.
 
 ```ts
 app.use(async ({ next }) => {
-  await next({ userId: 123 })
+	await next({ userId: 123 })
 })
 ```
 
@@ -76,7 +79,7 @@ Register a fallback handler for unmatched routes.
 
 ```ts
 app.notFound(({ resp }) => {
-  resp(new Response("Not found", { status: 404 }))
+	resp(new Response("Not found", { status: 404 }))
 })
 ```
 
@@ -102,12 +105,14 @@ class RouteContext<TParams, TState>
 Context passed to route handlers.
 
 **Properties:**
+
 - `.request` — The incoming `Request` object
 - `.url` — Parsed `URL` object
 - `.params` — `TypedMap` of route parameters
 - `.state` — Accumulated middleware state
 
 **Methods:**
+
 - `.resp(response)` — Send a response
 - `.resp(body, init)` — Send response with body and init
 - `.json(data, init)` — Send JSON response
@@ -115,10 +120,11 @@ Context passed to route handlers.
 - `.safeExit()` — Stop processing intentionally (throws `ControlFlowBreak`)
 
 **Example:**
+
 ```ts
 app.route(c.chemin("users", c.pNumber("id")), "GET", async ({ params, resp }) => {
-  const userId = params.get("id")
-  resp(Response.json({ userId }))
+	const userId = params.get("id")
+	resp(Response.json({ userId }))
 })
 ```
 
@@ -131,23 +137,25 @@ class MiddlewareContext<TParams, TState, TNextState> extends RouteContext
 Context passed to middleware handlers. Extends `RouteContext` with flow control.
 
 **Additional Methods:**
+
 - `.next(data?, request?)` — Continue to next handler, receive response
 - `.forward(data?, request?)` — Continue to next handler, auto-respond
 - `.tryNext(data?, request?)` — Like `next()` but returns `Result`
 - `.tryForward(data?, request?)` — Like `forward()` but returns `Result`
 
 **Example:**
+
 ```ts
 const auth = middleware(async ({ request, next, resp }) => {
-  const token = request.headers.get("Authorization")
-  
-  if (!token) {
-    return resp(new Response("Unauthorized", { status: 401 }))
-  }
-  
-  const user = verifyToken(token)
-  const response = await next({ user })
-  resp(response)
+	const token = request.headers.get("Authorization")
+
+	if (!token) {
+		return resp(new Response("Unauthorized", { status: 401 }))
+	}
+
+	const user = verifyToken(token)
+	const response = await next({ user })
+	resp(response)
 })
 ```
 
@@ -172,8 +180,7 @@ Generic shape for context state.
 ### RouteHandler
 
 ```ts
-type RouteHandler<TParams = Params, TState = State> = 
-  (ctx: RouteContext<TParams, TState>) => Promise<unknown> | unknown
+type RouteHandler<TParams = Params, TState = State> = (ctx: RouteContext<TParams, TState>) => Promise<unknown> | unknown
 ```
 
 Function type for route handlers.
@@ -181,8 +188,9 @@ Function type for route handlers.
 ### MiddlewareHandler
 
 ```ts
-type MiddlewareHandler<TParams = Params, TState = State, TNextState = State> = 
-  (ctx: MiddlewareContext<TParams, TState, TNextState>) => Promise<unknown> | unknown
+type MiddlewareHandler<TParams = Params, TState = State, TNextState = State> = (
+	ctx: MiddlewareContext<TParams, TState, TNextState>,
+) => Promise<unknown> | unknown
 ```
 
 Function type for middleware handlers.
@@ -190,9 +198,7 @@ Function type for middleware handlers.
 ### MethodDefinitionInput
 
 ```ts
-type MethodDefinitionInput = "GET" | "PUT" | "POST" | "PATCH" | "DELETE" | "OPTIONS"
-                            | MethodDefinitionInput[]
-                            | "*"
+type MethodDefinitionInput = "GET" | "PUT" | "POST" | "PATCH" | "DELETE" | "OPTIONS" | MethodDefinitionInput[] | "*"
 ```
 
 HTTP methods for route registration.
@@ -226,6 +232,7 @@ resp(makeRedirect("/new-path", { status: 301 }))
 ```
 
 **Parameters:**
+
 - `location` — Redirect destination
 - `init` (optional) — Response init, defaults to status `307`
 
@@ -242,6 +249,7 @@ resp(makeError(404, "Not found"))
 ```
 
 **Parameters:**
+
 - `status` — HTTP status code
 - `message` (optional) — Error message for body
 - `headers` (optional) — Response headers
@@ -258,7 +266,7 @@ Type helper for middleware declarations.
 import { middleware } from "@bronti/wooter"
 
 const myMiddleware = middleware<{ value: string }>(async ({ next }) => {
-  await next({ value: "Hello" })
+	await next({ value: "Hello" })
 })
 ```
 
@@ -269,16 +277,17 @@ const myMiddleware = middleware<{ value: string }>(async ({ next }) => {
 Optional value wrapper.
 
 ```ts
-import { Option, some, none } from "@bronti/wooter"
+import { none, Option, some } from "@bronti/wooter"
 
 const opt: Option<string> = some("value")
 opt.match(
-  (v) => console.log(v),
-  () => console.log("no value")
+	(v) => console.log(v),
+	() => console.log("no value"),
 )
 ```
 
 **Methods:**
+
 - `.isSome()` / `.isNone()` — Check presence
 - `.unwrap()` — Get value or throw
 - `.unwrapOr(default)` — Get value or default
@@ -291,16 +300,17 @@ opt.match(
 Success or error wrapper.
 
 ```ts
-import { Result, ok, err } from "@bronti/wooter"
+import { err, ok, Result } from "@bronti/wooter"
 
 const res: Result<number, string> = ok(42)
 res.match(
-  (v) => console.log(v),
-  (e) => console.log(e)
+	(v) => console.log(v),
+	(e) => console.log(e),
 )
 ```
 
 **Methods:**
+
 - `.isOk()` / `.isErr()` — Check success/failure
 - `.unwrap()` — Get value or throw
 - `.unwrapErr()` — Get error or throw
@@ -316,10 +326,10 @@ Wooter re-exports everything from [@dldc/chemin](https://jsr.io/@dldc/chemin):
 ```ts
 import { c } from "@bronti/wooter"
 
-c.chemin()           // Build paths
-c.pString("name")    // String parameter
-c.pNumber("id")      // Number parameter
-c.p("id", /regex/)   // Custom pattern
+c.chemin() // Build paths
+c.pString("name") // String parameter
+c.pNumber("id") // Number parameter
+c.p("id", /regex/) // Custom pattern
 ```
 
 ## Error Types
@@ -332,7 +342,7 @@ Base class for Wooter errors.
 import { WooterError } from "@bronti/wooter"
 
 if (error instanceof WooterError) {
-  console.log(error.message)
+	console.log(error.message)
 }
 ```
 
@@ -352,8 +362,8 @@ Thrown when a handler calls `resp()` multiple times.
 ```ts
 // ❌ Throws HandlerRespondedTwiceError
 app.route(c.chemin("bad"), "GET", async ({ resp }) => {
-  resp(new Response("First"))
-  resp(new Response("Second"))
+	resp(new Response("First"))
+	resp(new Response("Second"))
 })
 ```
 
@@ -373,8 +383,8 @@ Special symbol used by `safeExit()` to stop processing. Not an error.
 ```ts
 // ✅ Correct
 if (error) {
-  resp(errorResponse)
-  safeExit()  // Uses ControlFlowBreak internally
+	resp(errorResponse)
+	safeExit() // Uses ControlFlowBreak internally
 }
 ```
 
@@ -387,9 +397,9 @@ TypeScript-friendly map for route parameters.
 ```ts
 params: TypedMap<{ id: number; userId: string }>
 
-params.get("id")       // number
-params.has("id")       // boolean
-params.entries()       // Iterable<[string, unknown]>
+params.get("id") // number
+params.has("id") // boolean
+params.entries() // Iterable<[string, unknown]>
 ```
 
 ## Constants
@@ -402,7 +412,7 @@ Check if value is a `WooterError`.
 import { isWooterError } from "@bronti/wooter"
 
 if (isWooterError(error)) {
-  // Handle Wooter error
+	// Handle Wooter error
 }
 ```
 
@@ -434,10 +444,10 @@ The params object is a `TypedMap`:
 
 ```ts
 app.route(c.chemin("users", c.pString("id")), "GET", ({ params }) => {
-  params.get("id")          // string | undefined
-  params.getOrThrow("id")   // string (throws if not present)
-  params.has("id")          // boolean
-  params.entries()          // Iterable<[string, unknown]>
+	params.get("id") // string | undefined
+	params.getOrThrow("id") // string (throws if not present)
+	params.has("id") // boolean
+	params.entries() // Iterable<[string, unknown]>
 })
 ```
 

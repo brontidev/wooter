@@ -3,17 +3,18 @@
 [![JSR](https://jsr.io/badges/@bronti/wooter)](https://jsr.io/@bronti/wooter)
 [![JSR Score](https://jsr.io/badges/@bronti/wooter/score)](https://jsr.io/@bronti/wooter)
 
-A **fetch-native, type-safe HTTP router** for JavaScript/TypeScript with **explicit middleware composition** and **zero runtime dependencies**.
+A **fetch-native, type-safe HTTP router** for JavaScript/TypeScript with **explicit middleware composition** and **zero runtime
+dependencies**.
 
 ```ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
-  .use(cors)
-  .use(auth)
-  .route(c.chemin("users", c.pNumber("id")), "GET", async ({ params, resp }) => {
-    resp(Response.json({ userId: params.get("id") }))
-  })
+	.use(cors)
+	.use(auth)
+	.route(c.chemin("users", c.pNumber("id")), "GET", async ({ params, resp }) => {
+		resp(Response.json({ userId: params.get("id") }))
+	})
 
 export default app.fetch
 ```
@@ -22,7 +23,8 @@ export default app.fetch
 
 Wooter is built on a single principle: **every request must produce a response before the lifecycle completes.**
 
-This invariant ensures predictable behavior. Combined with explicit middleware composition, it makes data flow visible and error handling straightforward.
+This invariant ensures predictable behavior. Combined with explicit middleware composition, it makes data flow visible and error
+handling straightforward.
 
 **Learn more:** [Wooter Philosophy](./PHILOSOPHY.MD)
 
@@ -51,23 +53,23 @@ npx jsr add @bronti/wooter
 ### Your First Router
 
 ```ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
 
 // GET /hello
 app.route(c.chemin("hello"), "GET", ({ resp }) => {
-  resp(new Response("Hello, Wooter!"))
+	resp(new Response("Hello, Wooter!"))
 })
 
 // GET /users/{id}
 app.route(c.chemin("users", c.pNumber("id")), "GET", ({ params, resp }) => {
-  resp(Response.json({ id: params.get("id") }))
+	resp(Response.json({ id: params.get("id") }))
 })
 
 // POST /users
 app.route(c.chemin("users"), "POST", ({ request, resp }) => {
-  resp(new Response("Created", { status: 201 }))
+	resp(new Response("Created", { status: 201 }))
 })
 
 export default app.fetch
@@ -87,10 +89,10 @@ Every request must produce a response. This is Wooter's core guarantee.
 
 ```ts
 app.route(c.chemin("example"), "GET", ({ resp }) => {
-  // ✅ This works
-  resp(new Response("OK"))
-  
-  // ❌ Forgetting resp() throws HandlerDidntRespondError
+	// ✅ This works
+	resp(new Response("OK"))
+
+	// ❌ Forgetting resp() throws HandlerDidntRespondError
 })
 ```
 
@@ -100,20 +102,20 @@ Middleware accumulates state for downstream handlers:
 
 ```ts
 const app = new Wooter()
-  .use(async ({ next }) => {
-    // Add user to state
-    await next({ user: { id: 1, name: "Alice" } })
-  })
-  .use(async ({ state: { user }, next }) => {
-    // Access user from previous middleware
-    await next({ 
-      permissions: getPermissions(user)
-    })
-  })
-  .route(c.chemin("admin"), "GET", async ({ state, resp }) => {
-    // Access all accumulated state
-    resp(Response.json({ user: state.user, perms: state.permissions }))
-  })
+	.use(async ({ next }) => {
+		// Add user to state
+		await next({ user: { id: 1, name: "Alice" } })
+	})
+	.use(async ({ state: { user }, next }) => {
+		// Access user from previous middleware
+		await next({
+			permissions: getPermissions(user),
+		})
+	})
+	.route(c.chemin("admin"), "GET", async ({ state, resp }) => {
+		// Access all accumulated state
+		resp(Response.json({ user: state.user, perms: state.permissions }))
+	})
 ```
 
 ### Explicit Response Propagation
@@ -131,8 +133,8 @@ resp(modifyHeaders(response))
 // tryNext() — Capture errors as Result
 const result = await tryNext()
 result.match(
-  (response) => resp(response),
-  (error) => resp(new Response("Error", { status: 500 }))
+	(response) => resp(response),
+	(error) => resp(new Response("Error", { status: 500 })),
 )
 ```
 
@@ -153,37 +155,36 @@ result.match(
 ### CRUD API
 
 ```ts
-import { Wooter, c, middleware } from "@bronti/wooter"
+import { c, middleware, Wooter } from "@bronti/wooter"
 
 const db = new Map()
 
 const app = new Wooter()
-  .route(c.chemin("items"), {
-    GET: async ({ resp }) => {
-      resp(Response.json(Array.from(db.values())))
-    },
-    POST: async ({ request, resp }) => {
-      const item = await request.json()
-      db.set(item.id, item)
-      resp(Response.json(item), { status: 201 })
-    },
-  })
-  .route(c.chemin("items", c.pNumber("id")), {
-    GET: async ({ params, resp }) => {
-      const item = db.get(params.get("id"))
-      resp(item ? Response.json(item) : 
-           new Response("Not found", { status: 404 }))
-    },
-    PUT: async ({ params, request, resp }) => {
-      const item = await request.json()
-      db.set(params.get("id"), item)
-      resp(Response.json(item))
-    },
-    DELETE: async ({ params, resp }) => {
-      db.delete(params.get("id"))
-      resp(null, { status: 204 })
-    },
-  })
+	.route(c.chemin("items"), {
+		GET: async ({ resp }) => {
+			resp(Response.json(Array.from(db.values())))
+		},
+		POST: async ({ request, resp }) => {
+			const item = await request.json()
+			db.set(item.id, item)
+			resp(Response.json(item), { status: 201 })
+		},
+	})
+	.route(c.chemin("items", c.pNumber("id")), {
+		GET: async ({ params, resp }) => {
+			const item = db.get(params.get("id"))
+			resp(item ? Response.json(item) : new Response("Not found", { status: 404 }))
+		},
+		PUT: async ({ params, request, resp }) => {
+			const item = await request.json()
+			db.set(params.get("id"), item)
+			resp(Response.json(item))
+		},
+		DELETE: async ({ params, resp }) => {
+			db.delete(params.get("id"))
+			resp(null, { status: 204 })
+		},
+	})
 
 export default app.fetch
 ```
@@ -193,65 +194,66 @@ export default app.fetch
 ```ts
 // Authentication
 const auth = middleware<{ user: User }>(
-  async ({ request, next, resp }) => {
-    const token = request.headers.get("Authorization")
-    if (!token) return resp(new Response("Unauthorized", { status: 401 }))
-    
-    const user = verifyToken(token)
-    await next({ user })
-  }
+	async ({ request, next, resp }) => {
+		const token = request.headers.get("Authorization")
+		if (!token) return resp(new Response("Unauthorized", { status: 401 }))
+
+		const user = verifyToken(token)
+		await next({ user })
+	},
 )
 
 // JSON parsing
 const json = middleware<{ json: () => Promise<any> }>(
-  async ({ request, forward, resp, safeExit }) => {
-    let cached: any
-    await forward({
-      json: async () => {
-        if (cached) return cached
-        try {
-          return cached = await request.json()
-        } catch {
-          resp(new Response("Invalid JSON", { status: 400 }))
-          safeExit()
-        }
-      },
-    })
-  }
+	async ({ request, forward, resp, safeExit }) => {
+		let cached: any
+		await forward({
+			json: async () => {
+				if (cached) return cached
+				try {
+					return cached = await request.json()
+				} catch {
+					resp(new Response("Invalid JSON", { status: 400 }))
+					safeExit()
+				}
+			},
+		})
+	},
 )
 
 const app = new Wooter()
-  .use(json)
-  .use(auth)
-  .route(c.chemin("users"), "POST", async ({ state: { json }, resp }) => {
-    const body = await json()
-    resp(Response.json(body), { status: 201 })
-  })
+	.use(json)
+	.use(auth)
+	.route(c.chemin("users"), "POST", async ({ state: { json }, resp }) => {
+		const body = await json()
+		resp(Response.json(body), { status: 201 })
+	})
 ```
 
 ## Runtimes
 
 Wooter works with any Fetch API-compatible runtime:
 
-| Runtime | Version | Status |
-|---------|---------|--------|
-| Deno | 1.20+ | ✅ Fully supported |
-| Node.js | 18+ | ✅ Fully supported |
-| Bun | 0.1.0+ | ✅ Fully supported |
-| Cloudflare Workers | Any | ✅ Fully supported |
-| Deno Deploy | Any | ✅ Fully supported |
-| Fastly Compute | Any | ✅ Fully supported |
-| Modern Browsers | - | ✅ Supported (limited use cases) |
+| Runtime            | Version | Status                           |
+| ------------------ | ------- | -------------------------------- |
+| Deno               | 1.20+   | ✅ Fully supported               |
+| Node.js            | 18+     | ✅ Fully supported               |
+| Bun                | 0.1.0+  | ✅ Fully supported               |
+| Cloudflare Workers | Any     | ✅ Fully supported               |
+| Deno Deploy        | Any     | ✅ Fully supported               |
+| Fastly Compute     | Any     | ✅ Fully supported               |
+| Modern Browsers    | -       | ✅ Supported (limited use cases) |
 
 ## Status
 
-Wooter follows **[epoch semver](https://antfu.me/posts/epoch-semver)**. The core API is stable, but the library hasn't reached v100 yet. Consider it production-ready for non-critical applications.
+Wooter follows **[epoch semver](https://antfu.me/posts/epoch-semver)**. The core API is stable, but the library hasn't reached
+v100 yet. Consider it production-ready for non-critical applications.
 
-| Aspect | Status |
-|--------|--------|
-| Core Routing | ✅ Stable |
-| Middleware | ✅ Stable |
-| API Surface | ✅ Stable |
+| Aspect         | Status                        |
+| -------------- | ----------------------------- |
+| Core Routing   | ✅ Stable                     |
+| Middleware     | ✅ Stable                     |
+| API Surface    | ✅ Stable                     |
 | Public Release | In progress (aiming for v100) |
 
 ## Contributing

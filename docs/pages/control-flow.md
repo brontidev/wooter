@@ -12,18 +12,19 @@ Middleware controls execution flow through `next()`, `forward()`, `tryNext()`, a
 
 ```ts
 const middleware = middleware(async ({ next, resp }) => {
-  // Wait for downstream response
-  const response = await next({ userId: 123 })
-  
-  // Now you have the response—modify it, log it, etc.
-  console.log(`Got response: ${response.status}`)
-  
-  // Must explicitly send it
-  resp(response)
+	// Wait for downstream response
+	const response = await next({ userId: 123 })
+
+	// Now you have the response—modify it, log it, etc.
+	console.log(`Got response: ${response.status}`)
+
+	// Must explicitly send it
+	resp(response)
 })
 ```
 
 Use `next()` when you need to:
+
 - Inspect the response
 - Modify the response
 - Wrap or replace the response
@@ -35,10 +36,10 @@ Use `next()` when you need to:
 
 ```ts
 const middleware = middleware(async ({ forward }) => {
-  // Pass control downstream AND automatically respond with the result
-  await forward({ userId: 123 })
-  
-  // Don't need to call resp()—forward() handles it
+	// Pass control downstream AND automatically respond with the result
+	await forward({ userId: 123 })
+
+	// Don't need to call resp()—forward() handles it
 })
 ```
 
@@ -50,42 +51,43 @@ resp(response)
 ```
 
 Use `forward()` when:
+
 - Middleware only provides state/helpers
 - You don't need to modify the response
 - You want to communicate "I'm transparent to the response"
 
 ## When to Use Each
 
-| Situation | Use |
-|-----------|-----|
-| Adding state only | `forward()` |
-| Inspecting response | `next()` |
-| Modifying response | `next()` |
-| Adding headers to response | `next()` |
-| Logging response | `next()` or `next()` + `forward()` |
-| Error handling | `next()` or `tryNext()` |
-| Rate limiting | `next()` (check before) or `forward()` |
-| Request parsing | `forward()` |
+| Situation                  | Use                                    |
+| -------------------------- | -------------------------------------- |
+| Adding state only          | `forward()`                            |
+| Inspecting response        | `next()`                               |
+| Modifying response         | `next()`                               |
+| Adding headers to response | `next()`                               |
+| Logging response           | `next()` or `next()` + `forward()`     |
+| Error handling             | `next()` or `tryNext()`                |
+| Rate limiting              | `next()` (check before) or `forward()` |
+| Request parsing            | `forward()`                            |
 
 ## forward() Example
 
 ```ts
 // JSON parsing middleware
 const json = middleware<{ json: () => Promise<any> }>(async ({ request, forward, resp, safeExit }) => {
-  let cached: any
+	let cached: any
 
-  await forward({
-    json: async () => {
-      if (cached) return cached
-      try {
-        return cached = await request.clone().json()
-      } catch {
-        // If error, respond and exit
-        resp(new Response("Invalid JSON", { status: 400 }))
-        safeExit()
-      }
-    },
-  })
+	await forward({
+		json: async () => {
+			if (cached) return cached
+			try {
+				return cached = await request.clone().json()
+			} catch {
+				// If error, respond and exit
+				resp(new Response("Invalid JSON", { status: 400 }))
+				safeExit()
+			}
+		},
+	})
 })
 ```
 
@@ -96,16 +98,16 @@ This middleware only provides a helper function. It doesn't care about the respo
 ```ts
 // Logging middleware
 const logging = middleware(async ({ request, next, resp }) => {
-  const start = Date.now()
-  
-  // Get the response
-  const response = await next()
-  
-  // Log it
-  console.log(`${request.method} ${request.url} ${response.status} ${Date.now() - start}ms`)
-  
-  // Send it
-  resp(response)
+	const start = Date.now()
+
+	// Get the response
+	const response = await next()
+
+	// Log it
+	console.log(`${request.method} ${request.url} ${response.status} ${Date.now() - start}ms`)
+
+	// Send it
+	resp(response)
 })
 ```
 
@@ -115,14 +117,14 @@ This middleware needs the response to log it, so `next()` is required.
 
 ```ts
 const addSecurityHeaders = middleware(async ({ next, resp }) => {
-  const response = await next()
-  
-  // Create new response with additional headers
-  const newResponse = new Response(response.body, response)
-  newResponse.headers.set("X-Content-Type-Options", "nosniff")
-  newResponse.headers.set("X-Frame-Options", "DENY")
-  
-  resp(newResponse)
+	const response = await next()
+
+	// Create new response with additional headers
+	const newResponse = new Response(response.body, response)
+	newResponse.headers.set("X-Content-Type-Options", "nosniff")
+	newResponse.headers.set("X-Frame-Options", "DENY")
+
+	resp(newResponse)
 })
 ```
 
@@ -132,16 +134,16 @@ const addSecurityHeaders = middleware(async ({ next, resp }) => {
 
 ```ts
 const middleware = middleware(async ({ tryNext, resp }) => {
-  const result = await tryNext()
-  
-  // result is Result<Response, unknown>
-  result.match(
-    (response) => resp(response),    // Success
-    (error) => {                      // Error
-      console.error(error)
-      resp(new Response("Error", { status: 500 }))
-    }
-  )
+	const result = await tryNext()
+
+	// result is Result<Response, unknown>
+	result.match(
+		(response) => resp(response), // Success
+		(error) => { // Error
+			console.error(error)
+			resp(new Response("Error", { status: 500 }))
+		},
+	)
 })
 ```
 
@@ -149,13 +151,13 @@ Equivalent to try/catch:
 
 ```ts
 const middleware = middleware(async ({ next, resp }) => {
-  try {
-    const response = await next()
-    resp(response)
-  } catch (error) {
-    console.error(error)
-    resp(new Response("Error", { status: 500 }))
-  }
+	try {
+		const response = await next()
+		resp(response)
+	} catch (error) {
+		console.error(error)
+		resp(new Response("Error", { status: 500 }))
+	}
 })
 ```
 
@@ -167,17 +169,17 @@ Choose whichever style you prefer. `tryNext()` with `.match()` is functional sty
 
 ```ts
 const middleware = middleware(async ({ tryForward }) => {
-  const result = await tryForward({ userId: 123 })
-  
-  result.match(
-    (response) => {
-      // Already responded via resp()
-    },
-    (error) => {
-      // Handle error if needed
-      console.error(error)
-    }
-  )
+	const result = await tryForward({ userId: 123 })
+
+	result.match(
+		(response) => {
+			// Already responded via resp()
+		},
+		(error) => {
+			// Handle error if needed
+			console.error(error)
+		},
+	)
 })
 ```
 
@@ -189,21 +191,21 @@ This is less commonly used since `forward()` already handles responses automatic
 
 ```ts
 const jsonParser = middleware(async ({ request, forward, resp, safeExit }) => {
-  let parsed: unknown
-  
-  await forward({
-    parseJson: async () => {
-      if (parsed) return parsed
-      try {
-        return parsed = await request.json()
-      } catch {
-        // Send error response
-        resp(new Response("Invalid JSON", { status: 400 }))
-        // Stop processing—don't continue to routes
-        safeExit()  // throws ControlFlowBreak internally
-      }
-    },
-  })
+	let parsed: unknown
+
+	await forward({
+		parseJson: async () => {
+			if (parsed) return parsed
+			try {
+				return parsed = await request.json()
+			} catch {
+				// Send error response
+				resp(new Response("Invalid JSON", { status: 400 }))
+				// Stop processing—don't continue to routes
+				safeExit() // throws ControlFlowBreak internally
+			}
+		},
+	})
 })
 ```
 
@@ -287,15 +289,15 @@ Middleware can respond early and stop route processing:
 
 ```ts
 const auth = middleware(async ({ request, next, resp }) => {
-  const token = request.headers.get("Authorization")
-  
-  if (!token) {
-    // Respond early, never call next()
-    return resp(new Response("Unauthorized", { status: 401 }))
-  }
-  
-  // Has token, continue to next handler
-  await next({ authenticated: true })
+	const token = request.headers.get("Authorization")
+
+	if (!token) {
+		// Respond early, never call next()
+		return resp(new Response("Unauthorized", { status: 401 }))
+	}
+
+	// Has token, continue to next handler
+	await next({ authenticated: true })
 })
 ```
 
@@ -305,16 +307,16 @@ Modify the request passed to downstream handlers:
 
 ```ts
 const enrichRequest = middleware(async ({ request, next, resp }) => {
-  // Modify request
-  const newRequest = new Request(request.url, {
-    ...request,
-    headers: new Headers(request.headers),
-  })
-  newRequest.headers.set("X-Processed", "true")
-  
-  // Pass modified request to next()
-  const response = await next({}, newRequest)
-  resp(response)
+	// Modify request
+	const newRequest = new Request(request.url, {
+		...request,
+		headers: new Headers(request.headers),
+	})
+	newRequest.headers.set("X-Processed", "true")
+
+	// Pass modified request to next()
+	const response = await next({}, newRequest)
+	resp(response)
 })
 ```
 
@@ -330,8 +332,11 @@ const enrichRequest = middleware(async ({ request, next, resp }) => {
 ## Common Patterns
 
 ### Middleware that only adds state → forward()
+
 ### Middleware that modifies response → next()
+
 ### Middleware that handles errors → tryNext() or try/catch
+
 ### Middleware that validates → forward() or early resp()
 
 ## Next Steps

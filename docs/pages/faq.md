@@ -8,15 +8,20 @@ title: FAQ
 
 ### What is Wooter?
 
-Wooter is a fetch-native, type-safe router for JavaScript/TypeScript built around the principle that every request must produce a response. It supports middleware composition and works with any Fetch API-compatible runtime (Deno, Node.js, Cloudflare Workers, etc.).
+Wooter is a fetch-native, type-safe router for JavaScript/TypeScript built around the principle that every request must produce a
+response. It supports middleware composition and works with any Fetch API-compatible runtime (Deno, Node.js, Cloudflare Workers,
+etc.).
 
 ### Is Wooter production-ready?
 
-Wooter is in active development and the core API is stable. The project follows [epoch semver](https://antfu.me/posts/epoch-semver)—versions below v100 are pre-release. Avoid critical production usage until v100.0.0, but the library is suitable for non-critical projects and testing.
+Wooter is in active development and the core API is stable. The project follows
+[epoch semver](https://antfu.me/posts/epoch-semver)—versions below v100 are pre-release. Avoid critical production usage until
+v100.0.0, but the library is suitable for non-critical projects and testing.
 
 ### Can I use Wooter with Node.js?
 
-Yes! Wooter works with any runtime supporting the Fetch API, including Node.js 18+. Install via npm and use with frameworks like Express or create a standalone HTTP server.
+Yes! Wooter works with any runtime supporting the Fetch API, including Node.js 18+. Install via npm and use with frameworks like
+Express or create a standalone HTTP server.
 
 ### Does Wooter work with TypeScript?
 
@@ -30,13 +35,14 @@ Use Chemin's parameter builders:
 
 ```ts
 app.route(c.chemin("users", c.pNumber("id")), "GET", ({ params }) => {
-  const id = params.get("id")  // type: number
+	const id = params.get("id") // type: number
 })
 ```
 
 ### Can I use regular expressions for route parameters?
 
-Yes, Chemin supports custom parameter validators. See the [Chemin custom parameters documentation](https://jsr.io/@dldc/chemin@13.0.0#custom-param) for detailed examples.
+Yes, Chemin supports custom parameter validators. See the
+[Chemin custom parameters documentation](https://jsr.io/@dldc/chemin@13.0.0#custom-param) for detailed examples.
 
 ### How do I handle query parameters?
 
@@ -44,8 +50,8 @@ Query parameters are part of the URL. Access them via the `request` object:
 
 ```ts
 app.route(c.chemin("search"), "GET", ({ request }) => {
-  const url = new URL(request.url)
-  const q = url.searchParams.get("q")
+	const url = new URL(request.url)
+	const q = url.searchParams.get("q")
 })
 ```
 
@@ -59,8 +65,8 @@ app.route(c.chemin("users"), "GET", handler)
 
 // Object (recommended for multiple methods)
 app.route(c.chemin("users"), {
-  GET: handler1,
-  POST: handler2,
+	GET: handler1,
+	POST: handler2,
 })
 ```
 
@@ -72,7 +78,7 @@ Use `branch()` to create a scoped router:
 
 ```ts
 const api = app.branch(c.chemin("api"))
-  .use(requireAuth)
+	.use(requireAuth)
 
 api.route(c.chemin("users"), "GET", handler)
 // /api/users has requireAuth applied
@@ -119,11 +125,11 @@ Use `tryNext()` to capture errors as `Result`:
 ```ts
 const result = await tryNext()
 result.match(
-  (response) => resp(response),
-  (error) => {
-    // Handle error
-    resp(new Response("Error", { status: 500 }))
-  }
+	(response) => resp(response),
+	(error) => {
+		// Handle error
+		resp(new Response("Error", { status: 500 }))
+	},
 )
 ```
 
@@ -131,10 +137,10 @@ Or use try/catch:
 
 ```ts
 try {
-  const response = await next()
-  resp(response)
+	const response = await next()
+	resp(response)
 } catch (error) {
-  resp(new Response("Error", { status: 500 }))
+	resp(new Response("Error", { status: 500 }))
 }
 ```
 
@@ -144,16 +150,16 @@ Stray errors are errors that occur after a response has already been sent. They'
 
 ```ts
 const app = new Wooter(undefined, (error) => {
-  console.error("Stray error:", error)
+	console.error("Stray error:", error)
 })
 
 app.route(c.chemin("example"), "GET", ({ resp }) => {
-  resp(new Response("OK"))
-  
-  // This error occurs after response
-  setTimeout(() => {
-    throw new Error("Stray!")
-  }, 100)
+	resp(new Response("OK"))
+
+	// This error occurs after response
+	setTimeout(() => {
+		throw new Error("Stray!")
+	}, 100)
 })
 ```
 
@@ -163,18 +169,18 @@ app.route(c.chemin("example"), "GET", ({ resp }) => {
 
 ```ts
 const json = middleware(async ({ request, resp, forward, safeExit }) => {
-  let parsed: any
-  await forward({
-    json: async () => {
-      if (parsed) return parsed
-      try {
-        return parsed = await request.json()
-      } catch {
-        resp(new Response("Invalid JSON", { status: 400 }))
-        safeExit()  // Stop processing
-      }
-    },
-  })
+	let parsed: any
+	await forward({
+		json: async () => {
+			if (parsed) return parsed
+			try {
+				return parsed = await request.json()
+			} catch {
+				resp(new Response("Invalid JSON", { status: 400 }))
+				safeExit() // Stop processing
+			}
+		},
+	})
 })
 ```
 
@@ -187,18 +193,18 @@ It's not an error—it's caught internally.
 These are utility types for functional error handling:
 
 ```ts
-import { Option, some, none, Result, ok, err } from "@bronti/wooter"
+import { err, none, ok, Option, Result, some } from "@bronti/wooter"
 
 // Option: value may or may not exist
 const user = Option.from(maybeUser)
-  .map(u => u.name)
-  .unwrapOr("Unknown")
+	.map((u) => u.name)
+	.unwrapOr("Unknown")
 
 // Result: operation can fail
 const result = ok(42)
 result.match(
-  (v) => console.log(v),
-  (e) => console.log(e)
+	(v) => console.log(v),
+	(e) => console.log(e),
 )
 ```
 
@@ -210,19 +216,19 @@ Yes, any validation library works. You can use them in middleware or handlers:
 import { z } from "npm:zod"
 
 const schema = z.object({
-  name: z.string(),
-  email: z.string().email(),
+	name: z.string(),
+	email: z.string().email(),
 })
 
 app.route(c.chemin("users"), "POST", async ({ request, resp }) => {
-  const body = await request.json()
-  const result = schema.safeParse(body)
-  
-  if (!result.success) {
-    return resp(new Response(JSON.stringify(result.error), { status: 400 }))
-  }
-  
-  resp(Response.json(result.data, { status: 201 }))
+	const body = await request.json()
+	const result = schema.safeParse(body)
+
+	if (!result.success) {
+		return resp(new Response(JSON.stringify(result.error), { status: 400 }))
+	}
+
+	resp(Response.json(result.data, { status: 201 }))
 })
 ```
 
@@ -230,7 +236,8 @@ app.route(c.chemin("users"), "POST", async ({ request, resp }) => {
 
 ### Is Wooter fast?
 
-Wooter is lightweight with minimal overhead. It doesn't do much—just route matching and middleware composition. Performance depends mainly on your handlers.
+Wooter is lightweight with minimal overhead. It doesn't do much—just route matching and middleware composition. Performance
+depends mainly on your handlers.
 
 ### How many routes can Wooter handle?
 
@@ -238,7 +245,8 @@ Wooter should handle thousands of routes without issues. The internal router use
 
 ### Does Wooter support HTTP/2 or HTTP/3?
 
-Wooter doesn't implement HTTP protocols—it works with whatever runtime you use. The underlying runtime (Deno, Node.js, etc.) handles that.
+Wooter doesn't implement HTTP protocols—it works with whatever runtime you use. The underlying runtime (Deno, Node.js, etc.)
+handles that.
 
 ## Advanced
 
@@ -248,8 +256,8 @@ Yes, all handlers and middleware can be async:
 
 ```ts
 app.route(c.chemin("example"), "GET", async ({ resp }) => {
-  const data = await fetchData()
-  resp(Response.json(data))
+	const data = await fetchData()
+	resp(Response.json(data))
 })
 ```
 
@@ -272,12 +280,12 @@ Yes, use `next()` to capture the response:
 
 ```ts
 const middleware = middleware(async ({ next, resp }) => {
-  const response = await next()
-  
-  // Do something with response after route runs
-  console.log("Route returned:", response.status)
-  
-  resp(response)
+	const response = await next()
+
+	// Do something with response after route runs
+	console.log("Route returned:", response.status)
+
+	resp(response)
 })
 ```
 
@@ -298,11 +306,11 @@ File uploads are handled like any other request body. The `request` object inclu
 
 ```ts
 app.route(c.chemin("upload"), "POST", async ({ request, resp }) => {
-  const form = await request.formData()
-  const file = form.get("file")
-  
-  // Process file...
-  resp(Response.json({ uploaded: true }))
+	const form = await request.formData()
+	const file = form.get("file")
+
+	// Process file...
+	resp(Response.json({ uploaded: true }))
 })
 ```
 
@@ -312,16 +320,16 @@ Yes, Wooter is just HTTP routing. WebSocket upgrades happen in handlers:
 
 ```ts
 app.route(c.chemin("ws"), "GET", async ({ request, resp }) => {
-  if (request.headers.get("upgrade") !== "websocket") {
-    return resp(new Response(null, { status: 501 }))
-  }
-  
-  const { socket, response } = Deno.upgradeWebSocket(request)
-  resp(response)
-  
-  socket.addEventListener("message", (event) => {
-    // Handle WS messages
-  })
+	if (request.headers.get("upgrade") !== "websocket") {
+		return resp(new Response(null, { status: 501 }))
+	}
+
+	const { socket, response } = Deno.upgradeWebSocket(request)
+	resp(response)
+
+	socket.addEventListener("message", (event) => {
+		// Handle WS messages
+	})
 })
 ```
 
@@ -338,19 +346,21 @@ See [Error Handling: Validation with Error Collection](./examples/error-handling
 ### How do I structure a larger application?
 
 Consider:
+
 - Using multiple routers via `branch()`
 - Separating middleware into modules
 - Creating custom middleware factories
 - Organizing routes by feature
 
 Example:
+
 ```ts
 const app = new Wooter()
-  .use(logging)
-  .use(errorHandler)
+	.use(logging)
+	.use(errorHandler)
 
 const api = app.branch(c.chemin("api", "v1"))
-  .use(auth)
+	.use(auth)
 
 const users = api.branch(c.chemin("users"))
 users.route(c.chemin(), "GET", listUsers)
@@ -370,6 +380,7 @@ users.route(c.chemin(c.pNumber("id")), "GET", getUser)
 ### How do I report a bug?
 
 Report issues on the project's repository with:
+
 - Clear description of the problem
 - Minimal code reproduction
 - Expected vs. actual behavior
@@ -378,6 +389,7 @@ Report issues on the project's repository with:
 ### Can I contribute?
 
 Yes! Check the repository for contribution guidelines. Common ways to help:
+
 - Report bugs
 - Improve documentation
 - Add examples

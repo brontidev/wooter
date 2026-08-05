@@ -9,7 +9,7 @@ Get up and running with Wooter in 5 minutes.
 ## 1. Create Your Router
 
 ```ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
 ```
@@ -18,7 +18,7 @@ const app = new Wooter()
 
 ```ts
 app.route(c.chemin(), "GET", async ({ resp }) => {
-  resp(new Response("Hello, World!"))
+	resp(new Response("Hello, World!"))
 })
 ```
 
@@ -28,13 +28,13 @@ Use a method map to handle GET, POST, PUT, etc. on the same path:
 
 ```ts
 app.route(c.chemin("users"), {
-  GET: async ({ resp }) => {
-    resp(Response.json(["User 1", "User 2"]))
-  },
-  POST: async ({ request, resp }) => {
-    const body = await request.json()
-    resp(Response.json(body), { status: 201 })
-  },
+	GET: async ({ resp }) => {
+		resp(Response.json(["User 1", "User 2"]))
+	},
+	POST: async ({ request, resp }) => {
+		const body = await request.json()
+		resp(Response.json(body), { status: 201 })
+	},
 })
 ```
 
@@ -45,18 +45,18 @@ Use chemin's parameter builders to create type-safe routes:
 ```ts
 // String parameter
 app.route(c.chemin("users", c.pString("id")), {
-  GET: async ({ params, resp }) => {
-    const userId = params.get("id")
-    resp(Response.json({ id: userId }))
-  },
+	GET: async ({ params, resp }) => {
+		const userId = params.get("id")
+		resp(Response.json({ id: userId }))
+	},
 })
 
 // Number parameter
 app.route(c.chemin("posts", c.pNumber("postId")), {
-  GET: async ({ params, resp }) => {
-    const postId = params.get("postId")
-    resp(Response.json({ postId }))
-  },
+	GET: async ({ params, resp }) => {
+		const postId = params.get("postId")
+		resp(Response.json({ postId }))
+	},
 })
 ```
 
@@ -66,13 +66,13 @@ Middleware runs before route handlers and can enrich context:
 
 ```ts
 app.use(async ({ request, next }) => {
-  const userId = request.headers.get("X-User-ID")
-  await next({ userId })
+	const userId = request.headers.get("X-User-ID")
+	await next({ userId })
 })
 
 // Now all routes have access to state.userId
 app.route(c.chemin("profile"), "GET", async ({ state, resp }) => {
-  resp(Response.json({ userId: state.userId }))
+	resp(Response.json({ userId: state.userId }))
 })
 ```
 
@@ -82,26 +82,26 @@ Create a middleware to parse and validate JSON:
 
 ```ts
 const jsonMiddleware = async ({ request, resp, forward, safeExit }) => {
-  let cachedJson: unknown
+	let cachedJson: unknown
 
-  await forward({
-    json: async () => {
-      if (cachedJson) return cachedJson
-      try {
-        return cachedJson = await request.clone().json()
-      } catch {
-        resp(new Response("Invalid JSON", { status: 400 }))
-        safeExit()
-      }
-    },
-  })
+	await forward({
+		json: async () => {
+			if (cachedJson) return cachedJson
+			try {
+				return cachedJson = await request.clone().json()
+			} catch {
+				resp(new Response("Invalid JSON", { status: 400 }))
+				safeExit()
+			}
+		},
+	})
 }
 
 app.use(jsonMiddleware)
 
 app.route(c.chemin("posts"), "POST", async ({ state: { json }, resp }) => {
-  const body = await json()
-  resp(Response.json(body), { status: 201 })
+	const body = await json()
+	resp(Response.json(body), { status: 201 })
 })
 ```
 
@@ -111,13 +111,13 @@ Catch errors in middleware to prevent route-level repetition:
 
 ```ts
 const errorHandling = async ({ tryNext, resp }) => {
-  const result = await tryNext()
-  
-  if (result.isErr()) {
-    const error = result.unwrapErr()
-    console.error(error)
-    resp(new Response("Internal Server Error", { status: 500 }))
-  }
+	const result = await tryNext()
+
+	if (result.isErr()) {
+		const error = result.unwrapErr()
+		console.error(error)
+		resp(new Response("Internal Server Error", { status: 500 }))
+	}
 }
 
 app.use(errorHandling)
@@ -137,40 +137,40 @@ Deno.serve(app.fetch)
 // Node.js example
 import { createServer } from "http"
 createServer((req, res) => {
-  const url = `http://${req.headers.host}${req.url}`
-  app.fetch(new Request(url, { method: req.method, headers: req.headers }))
-    .then(response => {
-      res.writeHead(response.status, Object.fromEntries(response.headers))
-      res.end(await response.text())
-    })
+	const url = `http://${req.headers.host}${req.url}`
+	app.fetch(new Request(url, { method: req.method, headers: req.headers }))
+		.then((response) => {
+			res.writeHead(response.status, Object.fromEntries(response.headers))
+			res.end(await response.text())
+		})
 }).listen(3000)
 ```
 
 ## Complete Example
 
 ```ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
-  .use(async ({ request, next }) => {
-    await next({ timestamp: Date.now() })
-  })
-  .route(c.chemin(), "GET", async ({ resp }) => {
-    resp(new Response("Home"))
-  })
-  .route(c.chemin("users", c.pString("id")), "GET", async ({ params, state, resp }) => {
-    resp(Response.json({
-      userId: params.get("id"),
-      requestTime: state.timestamp,
-    }))
-  })
-  .route(c.chemin("api", "users"), "POST", async ({ request, resp }) => {
-    const body = await request.json()
-    resp(Response.json(body), { status: 201 })
-  })
-  .notFound(({ resp }) => {
-    resp(new Response("Not Found", { status: 404 }))
-  })
+	.use(async ({ request, next }) => {
+		await next({ timestamp: Date.now() })
+	})
+	.route(c.chemin(), "GET", async ({ resp }) => {
+		resp(new Response("Home"))
+	})
+	.route(c.chemin("users", c.pString("id")), "GET", async ({ params, state, resp }) => {
+		resp(Response.json({
+			userId: params.get("id"),
+			requestTime: state.timestamp,
+		}))
+	})
+	.route(c.chemin("api", "users"), "POST", async ({ request, resp }) => {
+		const body = await request.json()
+		resp(Response.json(body), { status: 201 })
+	})
+	.notFound(({ resp }) => {
+		resp(new Response("Not Found", { status: 404 }))
+	})
 
 export default app.fetch
 ```

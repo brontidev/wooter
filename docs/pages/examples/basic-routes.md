@@ -9,12 +9,12 @@ Practical examples of common routing patterns.
 ## Simple GET Request
 
 ```ts
-import { Wooter, c } from "@bronti/wooter"
+import { c, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
 
 app.route(c.chemin("hello"), "GET", async ({ resp }) => {
-  resp(new Response("Hello, World!"))
+	resp(new Response("Hello, World!"))
 })
 
 export default app.fetch
@@ -24,11 +24,11 @@ export default app.fetch
 
 ```ts
 app.route(c.chemin("users"), "GET", async ({ resp }) => {
-  const users = [
-    { id: 1, name: "Alice" },
-    { id: 2, name: "Bob" },
-  ]
-  resp(Response.json(users))
+	const users = [
+		{ id: 1, name: "Alice" },
+		{ id: 2, name: "Bob" },
+	]
+	resp(Response.json(users))
 })
 ```
 
@@ -36,11 +36,11 @@ app.route(c.chemin("users"), "GET", async ({ resp }) => {
 
 ```ts
 app.route(c.chemin("users", c.pNumber("id")), "GET", async ({ params, resp }) => {
-  const userId = params.get("id")
-  resp(Response.json({
-    id: userId,
-    name: "Alice",
-  }))
+	const userId = params.get("id")
+	resp(Response.json({
+		id: userId,
+		name: "Alice",
+	}))
 })
 ```
 
@@ -48,14 +48,14 @@ app.route(c.chemin("users", c.pNumber("id")), "GET", async ({ params, resp }) =>
 
 ```ts
 app.route(c.chemin("users"), "POST", async ({ request, resp }) => {
-  const body = await request.json()
-  
-  const newUser = {
-    id: Math.random(),
-    ...body,
-  }
-  
-  resp(Response.json(newUser), { status: 201 })
+	const body = await request.json()
+
+	const newUser = {
+		id: Math.random(),
+		...body,
+	}
+
+	resp(Response.json(newUser), { status: 201 })
 })
 ```
 
@@ -63,13 +63,13 @@ app.route(c.chemin("users"), "POST", async ({ request, resp }) => {
 
 ```ts
 app.route(c.chemin("users"), {
-  GET: async ({ resp }) => {
-    resp(Response.json([]))
-  },
-  POST: async ({ request, resp }) => {
-    const body = await request.json()
-    resp(Response.json(body), { status: 201 })
-  },
+	GET: async ({ resp }) => {
+		resp(Response.json([]))
+	},
+	POST: async ({ request, resp }) => {
+		const body = await request.json()
+		resp(Response.json(body), { status: 201 })
+	},
 })
 ```
 
@@ -80,43 +80,41 @@ const users = new Map()
 let nextId = 1
 
 const app = new Wooter()
-
-// List all users
-.route(c.chemin("users"), {
-  GET: async ({ resp }) => {
-    resp(Response.json(Array.from(users.values())))
-  },
-  POST: async ({ request, resp }) => {
-    const body = await request.json()
-    const user = { id: nextId++, ...body }
-    users.set(user.id, user)
-    resp(Response.json(user), { status: 201 })
-  },
-})
-
-// Get, update, delete one user
-.route(c.chemin("users", c.pNumber("id")), {
-  GET: async ({ params, resp }) => {
-    const id = params.get("id")
-    const user = users.get(id)
-    if (!user) {
-      return resp(new Response("Not found", { status: 404 }))
-    }
-    resp(Response.json(user))
-  },
-  PUT: async ({ params, request, resp }) => {
-    const id = params.get("id")
-    const body = await request.json()
-    const user = { id, ...body }
-    users.set(id, user)
-    resp(Response.json(user))
-  },
-  DELETE: async ({ params, resp }) => {
-    const id = params.get("id")
-    users.delete(id)
-    resp(null, { status: 204 })
-  },
-})
+	// List all users
+	.route(c.chemin("users"), {
+		GET: async ({ resp }) => {
+			resp(Response.json(Array.from(users.values())))
+		},
+		POST: async ({ request, resp }) => {
+			const body = await request.json()
+			const user = { id: nextId++, ...body }
+			users.set(user.id, user)
+			resp(Response.json(user), { status: 201 })
+		},
+	})
+	// Get, update, delete one user
+	.route(c.chemin("users", c.pNumber("id")), {
+		GET: async ({ params, resp }) => {
+			const id = params.get("id")
+			const user = users.get(id)
+			if (!user) {
+				return resp(new Response("Not found", { status: 404 }))
+			}
+			resp(Response.json(user))
+		},
+		PUT: async ({ params, request, resp }) => {
+			const id = params.get("id")
+			const body = await request.json()
+			const user = { id, ...body }
+			users.set(id, user)
+			resp(Response.json(user))
+		},
+		DELETE: async ({ params, resp }) => {
+			const id = params.get("id")
+			users.delete(id)
+			resp(null, { status: 204 })
+		},
+	})
 
 export default app.fetch
 ```
@@ -125,12 +123,12 @@ export default app.fetch
 
 ```ts
 app
-.route(c.chemin("api", "v1", "users"), "GET", async ({ resp }) => {
-  resp(Response.json([]))
-})
-.route(c.chemin("api", "v1", "posts"), "GET", async ({ resp }) => {
-  resp(Response.json([]))
-})
+	.route(c.chemin("api", "v1", "users"), "GET", async ({ resp }) => {
+		resp(Response.json([]))
+	})
+	.route(c.chemin("api", "v1", "posts"), "GET", async ({ resp }) => {
+		resp(Response.json([]))
+	})
 ```
 
 ## Nested Routers
@@ -139,11 +137,11 @@ app
 const api = app.branch(c.chemin("api", "v1"))
 
 api.route(c.chemin("users"), "GET", async ({ resp }) => {
-  resp(Response.json([]))
+	resp(Response.json([]))
 })
 
 api.route(c.chemin("posts"), "GET", async ({ resp }) => {
-  resp(Response.json([]))
+	resp(Response.json([]))
 })
 
 // Routes available as:
@@ -157,13 +155,13 @@ api.route(c.chemin("posts"), "GET", async ({ resp }) => {
 const userRouter = app.branch(c.chemin("users", c.pNumber("userId")))
 
 userRouter.route(c.chemin("profile"), "GET", async ({ params, resp }) => {
-  const userId = params.get("userId")
-  resp(Response.json({ userId }))
+	const userId = params.get("userId")
+	resp(Response.json({ userId }))
 })
 
 userRouter.route(c.chemin("settings"), "GET", async ({ params, resp }) => {
-  const userId = params.get("userId")
-  resp(Response.json({ userId, settings: {} }))
+	const userId = params.get("userId")
+	resp(Response.json({ userId, settings: {} }))
 })
 
 // Routes:
@@ -178,16 +176,16 @@ userRouter.route(c.chemin("settings"), "GET", async ({ params, resp }) => {
 const hexColor = c.p("color", /^[0-9a-f]{6}$/i)
 
 app.route(c.chemin("colors", hexColor), "GET", async ({ params, resp }) => {
-  const color = params.get("color")
-  resp(Response.json({ color }))
+	const color = params.get("color")
+	resp(Response.json({ color }))
 })
 
 // UUID
 const uuid = c.p("id", /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 
 app.route(c.chemin("items", uuid), "GET", async ({ params, resp }) => {
-  const id = params.get("id")
-  resp(Response.json({ id }))
+	const id = params.get("id")
+	resp(Response.json({ id }))
 })
 ```
 
@@ -195,10 +193,12 @@ app.route(c.chemin("items", uuid), "GET", async ({ params, resp }) => {
 
 ```ts
 app.notFound(async ({ request, resp }) => {
-  resp(new Response(
-    `Not found: ${request.method} ${request.url}`,
-    { status: 404 }
-  ))
+	resp(
+		new Response(
+			`Not found: ${request.method} ${request.url}`,
+			{ status: 404 },
+		),
+	)
 })
 ```
 
@@ -234,10 +234,10 @@ resp(new Response("Server error", { status: 500 }))
 
 ```ts
 resp(Response.json(data), {
-  headers: {
-    "X-Custom-Header": "value",
-    "Content-Type": "application/json",
-  },
+	headers: {
+		"X-Custom-Header": "value",
+		"Content-Type": "application/json",
+	},
 })
 ```
 
@@ -247,7 +247,7 @@ resp(Response.json(data), {
 import { makeRedirect } from "@bronti/wooter"
 
 app.route(c.chemin("old-url"), "GET", async ({ resp }) => {
-  resp(makeRedirect("/new-url", { status: 301 }))
+	resp(makeRedirect("/new-url", { status: 301 }))
 })
 ```
 
@@ -255,7 +255,7 @@ app.route(c.chemin("old-url"), "GET", async ({ resp }) => {
 
 ```ts
 app.route(c.chemin("docs"), "GET", async ({ resp }) => {
-  resp(makeRedirect("https://example.com/docs"))
+	resp(makeRedirect("https://example.com/docs"))
 })
 ```
 
@@ -263,12 +263,12 @@ app.route(c.chemin("docs"), "GET", async ({ resp }) => {
 
 ```ts
 app.route(c.chemin("search"), "GET", async ({ request, resp }) => {
-  const url = new URL(request.url)
-  const q = url.searchParams.get("q")
-  const limit = url.searchParams.get("limit") || "10"
-  
-  const results = search(q, parseInt(limit))
-  resp(Response.json(results))
+	const url = new URL(request.url)
+	const q = url.searchParams.get("q")
+	const limit = url.searchParams.get("limit") || "10"
+
+	const results = search(q, parseInt(limit))
+	resp(Response.json(results))
 })
 
 // GET /search?q=alice&limit=20
@@ -278,14 +278,14 @@ app.route(c.chemin("search"), "GET", async ({ request, resp }) => {
 
 ```ts
 app.route(c.chemin("protected"), "GET", async ({ request, resp }) => {
-  const token = request.headers.get("Authorization")
-  const userAgent = request.headers.get("User-Agent")
-  
-  if (!token) {
-    return resp(new Response("Unauthorized", { status: 401 }))
-  }
-  
-  resp(Response.json({ token, userAgent }))
+	const token = request.headers.get("Authorization")
+	const userAgent = request.headers.get("User-Agent")
+
+	if (!token) {
+		return resp(new Response("Unauthorized", { status: 401 }))
+	}
+
+	resp(Response.json({ token, userAgent }))
 })
 ```
 
@@ -293,13 +293,13 @@ app.route(c.chemin("protected"), "GET", async ({ request, resp }) => {
 
 ```ts
 app.route(c.chemin("either"), "*", async ({ request, resp }) => {
-  if (request.method === "GET") {
-    resp(Response.json({ method: "GET" }))
-  } else if (request.method === "POST") {
-    resp(Response.json({ method: "POST" }))
-  } else {
-    resp(new Response("Method not allowed", { status: 405 }))
-  }
+	if (request.method === "GET") {
+		resp(Response.json({ method: "GET" }))
+	} else if (request.method === "POST") {
+		resp(Response.json({ method: "POST" }))
+	} else {
+		resp(new Response("Method not allowed", { status: 405 }))
+	}
 })
 ```
 

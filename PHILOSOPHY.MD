@@ -2,11 +2,15 @@
 
 ## Purpose
 
-Wooter is a fetch-native routing and middleware framework designed around a small set of runtime guarantees and a large amount of implementation freedom.
+Wooter is a fetch-native routing and middleware framework designed around a small set of runtime guarantees and a large amount of
+implementation freedom.
 
-The framework intentionally avoids prescribing a single application architecture. Users may prefer exceptions, Result types, helper functions, middleware-driven validation, route-local validation, or entirely custom abstractions. Wooter is designed to support these approaches rather than force one.
+The framework intentionally avoids prescribing a single application architecture. Users may prefer exceptions, Result types,
+helper functions, middleware-driven validation, route-local validation, or entirely custom abstractions. Wooter is designed to
+support these approaches rather than force one.
 
-The framework's job is to ensure the request lifecycle remains valid. How users build on top of that lifecycle is largely their decision.
+The framework's job is to ensure the request lifecycle remains valid. How users build on top of that lifecycle is largely their
+decision.
 
 ---
 
@@ -20,10 +24,10 @@ This invariant drives nearly every design decision in the framework.
 
 The framework does not care:
 
-* How a response was created.
-* Which handler created it.
-* Whether exceptions or Result types were used.
-* Whether middleware or routes handled errors.
+- How a response was created.
+- Which handler created it.
+- Whether exceptions or Result types were used.
+- Whether middleware or routes handled errors.
 
 The framework only cares that a valid response exists before execution ends.
 
@@ -41,22 +45,14 @@ The lifecycle is considered successful when a response has been produced, not wh
 
 Conceptually:
 
-Request
-↓
-Middleware
-↓
-Route
-↓
-Response Produced
-↓
-Lifecycle Complete
+Request ↓ Middleware ↓ Route ↓ Response Produced ↓ Lifecycle Complete
 
 The response may originate from:
 
-* Middleware
-* Route handlers
-* Error handlers
-* Helper abstractions
+- Middleware
+- Route handlers
+- Error handlers
+- Helper abstractions
 
 The framework does not distinguish between these sources.
 
@@ -81,10 +77,10 @@ The handler focuses on useful work.
 
 Error handling is typically moved elsewhere:
 
-* Validation middleware
-* Authentication middleware
-* Error translation middleware
-* Helper wrappers
+- Validation middleware
+- Authentication middleware
+- Error translation middleware
+- Helper wrappers
 
 This reduces repetitive checks and keeps route logic focused.
 
@@ -100,14 +96,14 @@ Middleware exists to handle behavior that would otherwise be duplicated.
 
 Examples:
 
-* Authentication
-* Authorization
-* Validation
-* Request parsing
-* Logging
-* Error translation
-* Metrics
-* Helper injection
+- Authentication
+- Authorization
+- Validation
+- Request parsing
+- Logging
+- Error translation
+- Metrics
+- Helper injection
 
 The preferred approach is:
 
@@ -135,9 +131,9 @@ Example:
 
 ```ts
 app
-    .use(auth)
-    .use(json)
-    .use(validation)
+	.use(auth)
+	.use(json)
+	.use(validation)
 ```
 
 A downstream handler may receive:
@@ -160,8 +156,8 @@ Unlike many middleware systems, responses are propagated explicitly.
 
 Middleware must either:
 
-* Produce a response itself.
-* Or propagate a response from downstream.
+- Produce a response itself.
+- Or propagate a response from downstream.
 
 This behavior is intentional.
 
@@ -183,7 +179,7 @@ Example:
 
 ```ts
 await forward({
-    parseJson,
+	parseJson,
 })
 ```
 
@@ -238,10 +234,10 @@ The handler describes successful execution.
 
 Failures may be handled elsewhere:
 
-* Middleware
-* Helper abstractions
-* Error translation layers
-* Route-local catch blocks
+- Middleware
+- Helper abstractions
+- Error translation layers
+- Route-local catch blocks
 
 This allows handlers to remain concise without repeatedly checking for every possible failure.
 
@@ -299,7 +295,8 @@ Exception-based APIs exist for users who prefer exception propagation.
 
 Users should choose the approach that best fits their application.
 
-However, users should avoid consuming Result errors without handling them, as doing so can accidentally swallow failures that would otherwise propagate correctly.
+However, users should avoid consuming Result errors without handling them, as doing so can accidentally swallow failures that
+would otherwise propagate correctly.
 
 ---
 
@@ -377,9 +374,9 @@ This design is inspired by systems that use exceptions for non-local control flo
 
 Examples include:
 
-* Redirect handling in SvelteKit
-* Cancellation signals in async runtimes
-* Internal framework control-flow exceptions in many web frameworks
+- Redirect handling in SvelteKit
+- Cancellation signals in async runtimes
+- Internal framework control-flow exceptions in many web frameworks
 
 The important distinction is that these exceptions are not failures.
 
@@ -393,9 +390,9 @@ Some thrown values belong to the framework itself.
 
 Examples include:
 
-* ControlFlowBreak
-* Internal lifecycle exceptions
-* Other runtime-managed signals
+- ControlFlowBreak
+- Internal lifecycle exceptions
+- Other runtime-managed signals
 
 Application code should generally not consume these values.
 
@@ -413,13 +410,13 @@ Example:
 
 ```ts
 try {
-    await doSomething()
+	await doSomething()
 } catch (error) {
-    if (isWooterError(error)) {
-        throw error
-    }
+	if (isWooterError(error)) {
+		throw error
+	}
 
-    // application-specific handling
+	// application-specific handling
 }
 ```
 
@@ -453,7 +450,8 @@ Both may travel through the exception system.
 
 Only one category represents an actual error.
 
-The framework intentionally uses the same transport mechanism for both because it allows execution to unwind cleanly while preserving happy-path code.
+The framework intentionally uses the same transport mechanism for both because it allows execution to unwind cleanly while
+preserving happy-path code.
 
 ---
 
@@ -463,9 +461,9 @@ Wooter uses Chemin for path matching and parameter extraction.
 
 Routing should be:
 
-* Type-safe
-* Explicit
-* Composable
+- Type-safe
+- Explicit
+- Composable
 
 Chemin is exposed directly because path definitions are considered a core part of application structure.
 
@@ -479,9 +477,9 @@ Wooter is built around modern web standards.
 
 Core primitives include:
 
-* Request
-* Response
-* fetch()
+- Request
+- Response
+- fetch()
 
 The framework intentionally avoids introducing replacements for these APIs.
 
@@ -489,11 +487,11 @@ This allows applications to remain portable across runtimes.
 
 Examples:
 
-* Deno
-* Bun
-* Node.js
-* Cloudflare Workers
-* Other Fetch-compatible environments
+- Deno
+- Bun
+- Node.js
+- Cloudflare Workers
+- Other Fetch-compatible environments
 
 The framework should feel like an extension of the Web Platform rather than an abstraction over it.
 
@@ -512,10 +510,10 @@ When evaluating new features, prioritize:
 
 Avoid adding features that:
 
-* Hide lifecycle behavior.
-* Restrict architectural choices.
-* Force a single error-handling style.
-* Replace existing web standards without strong justification.
+- Hide lifecycle behavior.
+- Restrict architectural choices.
+- Force a single error-handling style.
+- Replace existing web standards without strong justification.
 
 Wooter should remain a developer tool, not an application architecture.
 
