@@ -1,85 +1,50 @@
-type MiniOption<T> = { ok: false } | ({ ok: true } & T)
+import { match } from "./match.ts"
+import { matcher, single, wrap } from "./matcher.ts"
+import type { Matcher, Param, Path } from "./types.ts"
 
-const _KIND = Symbol('wooter.param.kind')
-
-type SingleMatcherFn<Value, Opt = undefined> = (seg: string, opt: Opt) => MiniOption<{ value: Value }>
-type SingleMatcher<Value, Opt = undefined> = { [_KIND]: 1, name?: string } & SingleMatcherFn<Value, Opt>
-
-type SpanMatcherFn<Value, Opt = undefined> = (segs: string[], opt: Opt) => MiniOption<{ value: Value, consumed: number }> 
-type SpanMatcher<Value, Opt = undefined> = { [_KIND]: 2, name?: string } & SpanMatcherFn<Value, Opt>
-
-type Matcher<Value, Opt = undefined> = SingleMatcher<Value, Opt> | SpanMatcher<Value, Opt>
-
-const matcher = {
-    single<T, Opt = undefined>(matcher: SingleMatcherFn<T, Opt>, name?: string): SingleMatcher<T, Opt> {
-        return Object.assign(matcher, { [_KIND]: 1, name } as const)
-    },
-    span<T, Opt = undefined>(matcher: SpanMatcherFn<T, Opt>, name?: string): SpanMatcher<T, Opt> {
-        return Object.assign(matcher, { [_KIND]: 2, name } as const)
-    }
+export const path = <const TPath extends Path>(...path: TPath): TPath => path
+export function p<Name extends string>(name: Name): Param<Name, string>
+export function p<Name extends string, T>(name: Name, matcher: Matcher<T, undefined>): Param<Name, T, undefined>
+export function p<Name extends string, T, Options>(name: Name, matcher: Matcher<T, Options>, options: Options): Param<Name, T, Options>
+export function p(name: string, matcher?: Matcher<any, any>, options?: any): any {
+    return matcher ? { name, matcher, options } as const : { name } as const
 }
 
-type PathParam<Name extends string = string, Value = string, Opt = undefined> =
-    | [name: Name]
-    | [name: Name, matcher: Matcher<Value, Opt>]
-    | [name: Name, matcher: Matcher<Value, Opt>, opt: Opt]
-
-type Path = (string | PathParam)[]
-
-const num = matcher.single((seg) => {
+export const num = single<number>(function num(seg) {
     const value = Number(seg)
-    return isNaN(value) ? { ok: false } : { ok: true, value }
+    if (isNaN(value)) return { ok: false }
+    return { ok: true, value }
 })
 
-const rest = matcher.span((segs) => {
-    return { ok: true, value: segs, consumed: segs.length }
-})
+// const _constant = single<string, string>((seg, opt) => seg == opt ? { ok: true, value: seg } : { ok: false })
+// export const constant = (constant: string) => {
+//     return p<never>(undefined as unknown as string, _constant, constant)
+// }
 
-function p<Name extends string>(name: Name): PathParam<Name>
-function p<Name extends string, T>(name: Name, matcher: Matcher<T, undefined>): PathParam<Name, T>
-function p<Name extends string, T, Opt>(name: Name, matcher: Matcher<T, Opt>, opt: Opt): PathParam<Name, T, Opt>
-function p(...param: unknown[]): unknown {
-    return param
+export function multiple<T, Opt>(matcher: Matcher<T, Opt>, at_least_one = false): Matcher<T[], Opt> {
+    return wrap<T[], Opt>((path, i, opt) => {
+        let consume = 0
+        const value = []
+
+        while(true) {
+            const result = matcher(path, i, opt)
+            if(result.ok) {
+                value.push(result.value)
+                i += result.consume
+                consume += result.consume
+                continue
+            }
+            break
+        }
+
+        if(consume == 0 && at_least_one) return { ok: false }
+        return { ok: true, consume, value }
+    }, matcher.name, name => name + (at_least_one ? '+' : '*'))
 }
 
-function path(...path: Path): Path {
-    return path
-}
-
-function match(pattern: Path, path: string): MiniOption<{ value: Record<string, unknown> }> {
-    const out: Record<string, unknown> = {}
-    const segs = path.split('/')
-    let i = 0;
-    for (const step of pattern) {
-        if(i >= segs.length) return { ok: false }
-        if(typeof step == 'string') {
-            if(segs[i] !== step) return { ok: false }
-            i++;
-            continue
-        }
-
-        const [name, matcher, options] = step
-
-        if(matcher === undefined) {
-            out[name] = segs[i]
-            i++;
-            continue
-        }
-        
-        let arg_one: string | string[];
-
-        if(matcher[_KIND] == 1) {
-            arg_one = segs[i]
-        } else if(matcher[_KIND] == 2) {
-            arg_one = segs.slice(i)
-        } else {
-            continue
-        }
-
-        const result = matcher(arg_one, options)
-        if(!result.ok) return { ok: false }
-        i += result.consumed ?? 1
-        out[name] = result.value
-    }
-    return { ok: true, value: out }
+export function optional<T, Opt>(matcher: Matcher<T, Opt>): Matcher<T | undefined, Opt> {
+    return wrap<T | undefined, Opt>((path, i, opt) => {
+        const result = matcher(path, i, opt)
+        return result.ok ? result : { ok: true, value: undefined, consume: 0 }
+    }, matcher.name, name => `${name}?`)
 }
