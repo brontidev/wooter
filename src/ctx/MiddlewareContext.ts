@@ -92,11 +92,22 @@ export default class MiddlewareContext<
 		const { promise, resolve } = Promise.withResolvers<Result<Response, unknown>>()
 		this.calledNext = true
 		const ctx = this.nextHandler(state, request || this.request)
+		this[RouteContext__respond].then((response) => {
+			if (!ctx[RouteContext__respond].resolved) {
+				ctx[RouteContext__respond].push(response)
+			}
+		})
 		ctx[RouteContext__respond].then((response) => {
 			resolve(ok(response))
 		})
 		ctx[RouteContext__execution].then((v) => {
 			v.inspect((e) => {
+				if (e instanceof HandlerDidntRespondError && this.respondSoon.resolved) {
+					this[RouteContext__respond].then((response) => {
+						resolve(ok(response))
+					})
+					return
+				}
 				resolve(err(e))
 			})
 		})
@@ -111,7 +122,7 @@ export default class MiddlewareContext<
 	 * @returns The response sent by `resp`.
 	 */
 	readonly forward = (state: TNextState extends undefined ? TEmptyObject : TNextState, request?: Request): Promise<Response> =>
-		this.next(state, request).then(this.resp)
+		this.next(state, request).then((response) => this.respondSoon.resolved ? response : this.resp(response))
 
 	/**
 	 * Invokes {@link tryNext} and maps successful responses through `resp`.
@@ -123,7 +134,8 @@ export default class MiddlewareContext<
 	readonly tryForward = (
 		state: TNextState extends undefined ? TEmptyObject : TNextState,
 		request?: Request,
-	): Promise<Result<Response, unknown>> => this.tryNext(state, request).then((o) => o.map(this.resp))
+	): Promise<Result<Response, unknown>> =>
+		this.tryNext(state, request).then((o) => o.map((response) => this.respondSoon.resolved ? response : this.resp(response)))
 
 	/**
 	 * Adapts a middleware handler into the router's internal handler signature.
