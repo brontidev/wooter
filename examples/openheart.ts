@@ -23,7 +23,7 @@ Get all emoji counts for /example.com/uid:
 curl '${url}/example.com/uid'
 `
 
-import { c, makeError, Wooter } from "@@/index.ts"
+import { p, makeError, Wooter } from "@@/index.ts"
 import { nerdIcons, rubiks, withDates } from "jsr:@rubiks/rubiks@1.2.9"
 const console = rubiks().use(withDates).use(nerdIcons())
 
@@ -97,12 +97,12 @@ function ensureEmoji(emoji: string) {
 	if (parsedEmoji && /\p{Emoji}/u.test(parsedEmoji)) return parsedEmoji
 }
 
-wooter.route(c.chemin(), "GET", async ({ resp }) => {
+wooter.route(p.path(), "GET", async ({ resp }) => {
 	resp(doc)
 })
 
-wooter.route(c.chemin(c.pString("domain"), c.pMultiple(c.pString("uid"))), {
-	async GET({ resp, params }) {
+wooter.route(p.path(p.param("domain"), p.param("uid", p.multiple())), {
+	async GET({ json, params }) {
 		const domain = encodeURI(params.get("domain"))
 		const uid = params.get("uid")
 
@@ -110,7 +110,7 @@ wooter.route(c.chemin(c.pString("domain"), c.pMultiple(c.pString("uid"))), {
 			prefix: uid.length ? keys.uid(domain, uid.join("/")) : keys.domain(domain),
 		})
 
-		resp.json(
+		json(
 			Object.fromEntries(
 				(await Array.fromAsync(kvList)).reduce(
 					(map, entry) => {

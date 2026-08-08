@@ -233,7 +233,10 @@ export default class RouteContext<
 	 *
 	 * @internal
 	 */
-	static useRouteHandler<TParams extends Record<string, unknown> | undefined = Record<string, unknown>, TState extends State | undefined = State>(
+	static useRouteHandler<
+		TParams extends Record<string, unknown> | undefined = Record<string, unknown>,
+		TState extends State | undefined = State,
+	>(
 		handler: RouteHandler<TParams, TState>,
 		params: Record<string, unknown>,
 	): InternalHandler {

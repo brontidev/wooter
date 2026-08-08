@@ -57,7 +57,12 @@
 			"./examples",
 			"./tests",
 			"./temp"
-		]
+		],
+		"rules": {
+			"exclude": [
+				"no-explicit-any"
+			]
+		}
 	},
 	"unstable": ["kv"],
 	"fmt": {

@@ -44,14 +44,14 @@ export type Node =
 	& { path: Path }
 
 export type Namespace = {
-    path: Path,
-    graph: Graph
+	path: Path
+	graph: Graph
 }
 
 export class Graph {
 	private nodes = new Set<Node>()
 	private middleware = new Set<MiddlewareHandler>()
-    private namespaces = new Set<Namespace>()
+	private namespaces = new Set<Namespace>()
 
 	constructor(private basePath?: Path) {}
 
@@ -60,10 +60,10 @@ export class Graph {
 	}
 
 	addNamespace(path: Path, graph: Graph) {
-        this.namespaces.add({
-            graph,
-            path
-        })
+		this.namespaces.add({
+			graph,
+			path,
+		})
 	}
 
 	addNode(node: Node) {
@@ -97,10 +97,10 @@ export class Graph {
 		})
 	}
 
-    protected internalGetHandler(path: string[], i: number, method: string) {
-        let handler: RouteHandler | null = null
-        let params: unknown = {}
-        for (const node of this.nodes) {
+	protected internalGetHandler(path: string[], i: number, method: string) {
+		let handler: RouteHandler | null = null
+		let params: unknown = {}
+		for (const node of this.nodes) {
 			if (node.t === NodeType.MethodsToHandlers) {
 				const _handler = node.handlers.get(method)
 				if (!_handler) continue
@@ -120,7 +120,7 @@ export class Graph {
 			params = result.params
 			return { handler, params }
 		}
-    }
+	}
 
 	getHandler(pathname: string, method: string): InternalHandler | undefined {
 		const path = pathname.split("/")
@@ -138,38 +138,40 @@ export class Graph {
 		}
 
 		let handler: RouteHandler | undefined = undefined
-        for (const namespace of this.namespaces) {
-            const result = match(path, i, namespace.path, false)
-            if(!result.match) continue
-            Object.assign(params, result.params)
-            i = result.stopped_at
-
-            const handlerResult = namespace.graph.internalGetHandler(path, i, method)
-            if(!handlerResult) continue
-            handler = handlerResult.handler
-            Object.assign(params, handlerResult.params)
-        }
-
-        if(!handler) for (const node of this.nodes) {
-            let _handler: RouteHandler | undefined = undefined
-			if (node.t === NodeType.MethodsToHandlers) {
-				_handler = node.handlers.get(method)
-                if(!_handler) continue
-			} else if (node.t === NodeType.AnyMethod) {
-				_handler = node.handler
-			} else if (node.t === NodeType.HandlerWithMethods) {
-				if (!node.methods.has(method)) continue
-				_handler = node.handler
-			} else {
-				throw new TypeError("invalid configuration")
-			}
-
-			const result = match(path, i, node.path, true)
-
+		for (const namespace of this.namespaces) {
+			const result = match(path, i, namespace.path, false)
 			if (!result.match) continue
 			Object.assign(params, result.params)
-            handler = _handler
-			break
+			i = result.stopped_at
+
+			const handlerResult = namespace.graph.internalGetHandler(path, i, method)
+			if (!handlerResult) continue
+			handler = handlerResult.handler
+			Object.assign(params, handlerResult.params)
+		}
+
+		if (!handler) {
+			for (const node of this.nodes) {
+				let _handler: RouteHandler | undefined = undefined
+				if (node.t === NodeType.MethodsToHandlers) {
+					_handler = node.handlers.get(method)
+					if (!_handler) continue
+				} else if (node.t === NodeType.AnyMethod) {
+					_handler = node.handler
+				} else if (node.t === NodeType.HandlerWithMethods) {
+					if (!node.methods.has(method)) continue
+					_handler = node.handler
+				} else {
+					throw new TypeError("invalid configuration")
+				}
+
+				const result = match(path, i, node.path, true)
+
+				if (!result.match) continue
+				Object.assign(params, result.params)
+				handler = _handler
+				break
+			}
 		}
 
 		if (!handler) return
@@ -184,7 +186,11 @@ export class Graph {
 	 * @param middlewareSet Middleware chain.
 	 * @returns Internal handler.
 	 */
-	protected static compose(handler: RouteHandler, params: Record<string, unknown>, middlewareSet: Set<MiddlewareHandler>): InternalHandler {
+	protected static compose(
+		handler: RouteHandler,
+		params: Record<string, unknown>,
+		middlewareSet: Set<MiddlewareHandler>,
+	): InternalHandler {
 		const middleware = middlewareSet.values()
 		return (state, req) => {
 			const createNext = (): InternalHandler => (nextState, req) => {

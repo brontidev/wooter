@@ -18,7 +18,7 @@ export default function use<
 	TParams extends Params = {},
 >(
 	middlewareHandler: MiddlewareHandler<TParams, BaseState, NextState>,
-	handler: RouteHandler<TParams, OptionalMerge<State, BaseState, NextState>>,
+	handler: RouteHandler<TParams, OptionalMerge<BaseState, NextState>>,
 ): RouteHandler<TParams, BaseState> {
 	return async ({ params: _params, request, state: _data, resp }) => {
 		let data = Object.fromEntries(Object.entries(_data))

@@ -1,6 +1,11 @@
 import type { Merge } from "@/types.ts"
 
 /**
+ * Generic route-parameter object shape.
+ */
+export type Params = Record<string, unknown>
+
+/**
  * Generic context state object shape.
  */
 export type State = Record<string, unknown>
@@ -16,8 +21,9 @@ export type { TypedMap } from "@bronti/robust/TypedMap"
  *
  * @internal
  */
-export type OptionalMerge<A extends Record<keyof any, unknown> | undefined, B extends Record<keyof any, unknown> | undefined> = A extends undefined ? B
-	: (B extends undefined ? A : Merge<A, B>)
+export type OptionalMerge<A extends Record<keyof any, unknown> | undefined, B extends Record<keyof any, unknown> | undefined> =
+	A extends undefined ? B
+		: (B extends undefined ? A : Merge<A, B>)
 
 /**
  * HTTP methods for typed route declarations.
