@@ -19,15 +19,14 @@ export const num = single<number>(function num(seg) {
 	return { ok: true, value }
 })
 
-export const passthrough = single<string>((value) => ({ ok: true, value }))
+export const passthrough = single<string>((value) => value ? ({ ok: true, value }) : { ok: false })
 
 // const _constant = single<string, string>((seg, opt) => seg == opt ? { ok: true, value: seg } : { ok: false })
 // export const constant = (constant: string) => {
 //     return p<never>(undefined as unknown as string, _constant, constant)
 // }
 
-export function multiple<T, Opt>(matcher?: Matcher<T, Opt>, at_least_one = false): Matcher<T[], Opt> {
-    matcher ??= passthrough as unknown as Matcher<T, Opt>
+export function multiple<T, Opt>(matcher: Matcher<T, Opt>, at_least_one = false): Matcher<T[], Opt> {
 	return wrap<T[], Opt>(
 		(path, i, opt) => {
 			let consume = 0
@@ -51,6 +50,8 @@ export function multiple<T, Opt>(matcher?: Matcher<T, Opt>, at_least_one = false
 		(name) => name + (at_least_one ? "+" : "*"),
 	)
 }
+
+export const rest = multiple(passthrough)
 
 export function optional<T, Opt>(matcher: Matcher<T, Opt>): Matcher<T | undefined, Opt> {
 	return wrap<T | undefined, Opt>(

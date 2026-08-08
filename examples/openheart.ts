@@ -101,7 +101,7 @@ wooter.route(p.path(), "GET", async ({ resp }) => {
 	resp(doc)
 })
 
-wooter.route(p.path(p.param("domain"), p.param("uid", p.multiple())), {
+wooter.route(p.path(p.param("domain"), p.param("uid", p.rest)), {
 	async GET({ json, params }) {
 		const domain = encodeURI(params.get("domain"))
 		const uid = params.get("uid")

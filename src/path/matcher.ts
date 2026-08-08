@@ -18,7 +18,6 @@ export function wrap<T, Options = undefined>(
 	name: string,
 	transform?: (name: string) => string,
 ): Matcher<T, Options> {
-	console.log(name, name ? (transform ? transform(name) : name) : "")
 	return Object.defineProperty(fn, "name", {
 		value: name ? (transform ? transform(name) : name) : "",
 		configurable: true,
