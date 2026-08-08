@@ -1,11 +1,13 @@
 import type { TChemin, TEmptyObject } from "@@/chemin.ts"
-import RouterGraph, { type MethodDefinitionInput, type MethodDefinitions } from "@/graph/RouterGraph.ts"
+import RouterGraph, { type MethodDefinitionInput, type MethodDefinitions } from "@/graph/old/RouterGraph.ts"
 import type { MiddlewareHandler, OptionalMerge, Params, RouteHandler, State } from "@@/types.ts"
 
 import type { Merge } from "@/types.ts"
 import c from "@@/chemin.ts"
 import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import { strayErrorStore } from "@/WooterError.ts"
+import { Graph } from "@/graph/Graph.ts"
+import { Path } from "@/path/types.ts"
 
 type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : never
 
@@ -16,7 +18,7 @@ type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : neve
  * @typeParam TParentParams Params inherited from parent routers.
  */
 export default class Wooter<TState extends State | undefined = undefined, TParentParams extends Params | undefined = undefined> {
-	private graph: RouterGraph
+	private graph: Graph
 	#notFoundHandler?: RouteHandler<TEmptyObject>
 
 	/**
@@ -36,12 +38,12 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @param catchStrayErrors Error sink used for asynchronous errors that occur after a response was already sent.
 	 */
 	constructor(
-		private basePath: TChemin<TParentParams> = c.chemin() as unknown as TChemin<TParentParams>,
+		basePath?: Path,
 		protected catchStrayErrors: (e: unknown) => void = (e) => {
 			throw e
 		},
 	) {
-		this.graph = new RouterGraph()
+		this.graph = new Graph(basePath)
 	}
 
 	/**
@@ -73,7 +75,7 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @throws TypeError if handler is not provided with string/array method.
 	 */
 	route<TParams extends Params>(
-		path: TChemin<TParams>,
+		path: Path,
 		method: MethodDefinitionInput,
 		handler: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TState>,
 	): this
@@ -99,7 +101,7 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @returns The current router for method chaining.
 	 */
 	route<TParams extends Params>(
-		path: TChemin<TParams>,
+		path: Path,
 		handlers: MethodDefinitions<Merge<TParams, TParentParams>, TState>,
 	): this
 	/**
@@ -111,22 +113,21 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @returns The current router instance for chaining.
 	 */
 	route<TParams extends Params>(
-		path: TChemin<TParams>,
+		path: Path,
 		methodOrHandlers: MethodDefinitionInput | MethodDefinitions<Merge<TParams, TParentParams>, TState>,
 		handler?: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TState>,
 	): this {
-		const wholePath = c.chemin(this.basePath, path)
 		if (typeof methodOrHandlers == "string" || Array.isArray(methodOrHandlers)) {
 			if (!handler) throw new TypeError()
 			if (methodOrHandlers === "*") {
-				this.graph.addRoute_wildcardMethod(wholePath, handler)
+				this.graph.addRoute_wildcardMethod(path, handler)
 			} else {
-				const methods = new Set([methodOrHandlers].flat())
-				this.graph.addRoute_withMethodSet(wholePath, handler, methods)
+				const methods = new Set([methodOrHandlers].flat().map(x => x.toUpperCase()))
+				this.graph.addRoute_withMethodSet(path, handler, methods)
 			}
 		} else {
 			this.graph.addRoute_withMethodMap(
-				wholePath,
+				path,
 				methodOrHandlers as MethodDefinitions<Merge<TParams, TParentParams>, TState>,
 			)
 		}
@@ -182,11 +183,11 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @param basePath Path prefix for the child router.
 	 * @returns A new router instance scoped to `basePath`.
 	 */
-	branch<TParams extends Params>(basePath: TChemin<TParams>): Wooter<TState, Merge<TParams, TParentParams>> {
+	branch<TParams extends Params>(basePath: Path): Wooter<TState, Merge<TParams, TParentParams>> {
 		const router = new Wooter<TState, Merge<TParams, TParentParams>>(
-			c.chemin(this.basePath, basePath) as unknown as TChemin<Merge<TParams, TParentParams>>,
+			// c.chemin(this.basePath, basePath) as unknown as TChemin<Merge<TParams, TParentParams>>,
 		)
-		this.graph.addNamespace(router.graph)
+		this.graph.addNamespace(basePath, router.graph)
 		return router
 	}
 
