@@ -155,12 +155,12 @@ result.match(
 ### CRUD API
 
 ```ts
-import { c, middleware, Wooter } from "@bronti/wooter"
+import { p, middleware, Wooter } from "@bronti/wooter"
 
 const db = new Map()
 
 const app = new Wooter()
-	.route(c.chemin("items"), {
+	.route(p.path("items"), {
 		GET: async ({ resp }) => {
 			resp(Response.json(Array.from(db.values())))
 		},
@@ -170,7 +170,7 @@ const app = new Wooter()
 			resp(Response.json(item), { status: 201 })
 		},
 	})
-	.route(c.chemin("items", c.pNumber("id")), {
+	.route(p.path("items", p.param("id", p.num)), {
 		GET: async ({ params, resp }) => {
 			const item = db.get(params.get("id"))
 			resp(item ? Response.json(item) : new Response("Not found", { status: 404 }))
@@ -224,7 +224,7 @@ const json = middleware<{ json: () => Promise<any> }>(
 const app = new Wooter()
 	.use(json)
 	.use(auth)
-	.route(c.chemin("users"), "POST", async ({ state: { json }, resp }) => {
+	.route(p.path("users"), "POST", async ({ state: { json }, resp }) => {
 		const body = await json()
 		resp(Response.json(body), { status: 201 })
 	})

@@ -1,5 +1,5 @@
 import { match } from "@/path/match.ts"
-import type { ParamsOfPath, Path } from "@/path/types.ts"
+import type { Path } from "@/path/types.ts"
 import type { Methods, RouteHandler, State } from "@@/types.ts"
 import type { InternalHandler } from "@/ctx/RouteContext.ts"
 import MiddlewareContext, { type MiddlewareHandler } from "@/ctx/MiddlewareContext.ts"
