@@ -1,6 +1,6 @@
 import { match } from "@/path/match.ts"
 import type { ParamsOfPath, Path } from "@/path/types.ts"
-import type { Methods, Params, RouteHandler, State } from "@@/types.ts"
+import type { Methods, RouteHandler, State } from "@@/types.ts"
 import type { InternalHandler } from "@/ctx/RouteContext.ts"
 import MiddlewareContext, { type MiddlewareHandler } from "@/ctx/MiddlewareContext.ts"
 import RouteContext from "@/ctx/RouteContext.ts"
@@ -18,7 +18,7 @@ export type MethodDefinitionInput = Methods | Uppercase<string> | Methods[] | Up
  * @internal
  */
 export type MethodDefinitions<
-	TParams extends Params,
+	TParams extends Record<string, unknown>,
 	TState extends
 		| State
 		| undefined = undefined,
@@ -184,7 +184,7 @@ export class Graph {
 	 * @param middlewareSet Middleware chain.
 	 * @returns Internal handler.
 	 */
-	protected static compose(handler: RouteHandler, params: Params, middlewareSet: Set<MiddlewareHandler>): InternalHandler {
+	protected static compose(handler: RouteHandler, params: Record<string, unknown>, middlewareSet: Set<MiddlewareHandler>): InternalHandler {
 		const middleware = middlewareSet.values()
 		return (state, req) => {
 			const createNext = (): InternalHandler => (nextState, req) => {

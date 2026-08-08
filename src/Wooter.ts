@@ -1,13 +1,13 @@
 import type { TChemin, TEmptyObject } from "@@/chemin.ts"
 import RouterGraph, { type MethodDefinitionInput, type MethodDefinitions } from "@/graph/old/RouterGraph.ts"
-import type { MiddlewareHandler, OptionalMerge, Params, RouteHandler, State } from "@@/types.ts"
+import type { MiddlewareHandler, OptionalMerge, RouteHandler, State } from "@@/types.ts"
 
 import type { Merge } from "@/types.ts"
 import c from "@@/chemin.ts"
 import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import { strayErrorStore } from "@/WooterError.ts"
 import { Graph } from "@/graph/Graph.ts"
-import { Path } from "@/path/types.ts"
+import { ParamsOfPath, Path } from "@/path/types.ts"
 
 type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : never
 
@@ -17,7 +17,7 @@ type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : neve
  * @typeParam TState Middleware-provided data available on every handler context.
  * @typeParam TParentParams Params inherited from parent routers.
  */
-export default class Wooter<TState extends State | undefined = undefined, TParentParams extends Params | undefined = undefined> {
+export default class Wooter<TState extends State | undefined = undefined, BasePath extends Path = Path, TParentParams extends Record<keyof any, unknown> | undefined = undefined> {
 	private graph: Graph
 	#notFoundHandler?: RouteHandler<TEmptyObject>
 
@@ -38,7 +38,7 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @param catchStrayErrors Error sink used for asynchronous errors that occur after a response was already sent.
 	 */
 	constructor(
-		basePath?: Path,
+		basePath?: BasePath,
 		protected catchStrayErrors: (e: unknown) => void = (e) => {
 			throw e
 		},
@@ -74,10 +74,10 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @returns The current router for method chaining.
 	 * @throws TypeError if handler is not provided with string/array method.
 	 */
-	route<TParams extends Params>(
-		path: Path,
+	route<TPath extends Path, TParams = ParamsOfPath<TPath>>(
+		path: TPath,
 		method: MethodDefinitionInput,
-		handler: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TState>,
+		handler: RouteHandler<OptionalMerge<TParams, TParentParams>, TState>,
 	): this
 	/**
 	 * Registers different handlers for different HTTP methods on the same path.
@@ -100,7 +100,7 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @param handlers Map of HTTP methods to their handler functions.
 	 * @returns The current router for method chaining.
 	 */
-	route<TParams extends Params>(
+	route<TPath extends Path, TParams = ParamsOfPath<TPath>>(
 		path: Path,
 		handlers: MethodDefinitions<Merge<TParams, TParentParams>, TState>,
 	): this
@@ -112,10 +112,10 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @param handler Handler used when `methodOrHandlers` is method-based.
 	 * @returns The current router instance for chaining.
 	 */
-	route<TParams extends Params>(
+	route<TPath extends Path, TParams = ParamsOfPath<TPath>>(
 		path: Path,
 		methodOrHandlers: MethodDefinitionInput | MethodDefinitions<Merge<TParams, TParentParams>, TState>,
-		handler?: RouteHandler<OptionalMerge<Params, TParams, TParentParams>, TState>,
+		handler?: RouteHandler<OptionalMerge<TParams, TParentParams>, TState>,
 	): this {
 		if (typeof methodOrHandlers == "string" || Array.isArray(methodOrHandlers)) {
 			if (!handler) throw new TypeError()
@@ -144,7 +144,7 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 */
 	use<TNextState extends State | undefined = undefined>(
 		handler: MiddlewareHandler<Params, TState, TNextState>,
-	): Wooter<OptionalMerge<State, TState, TNextState>, TParentParams>
+	): Wooter<OptionalMerge<TState, TNextState>, BasePath, TParentParams>
 
 	/**
 	 * Adds middleware authored against a narrower input data shape.
@@ -159,8 +159,8 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 		TNextState extends State | undefined = undefined,
 		THandlerInputState extends State & KeysSubset<THandlerInputState, TState> | undefined = undefined,
 	>(
-		handler: MiddlewareHandler<Params, THandlerInputState, TNextState>,
-	): Wooter<OptionalMerge<State, TState, TNextState>, TParentParams>
+		handler: MiddlewareHandler<Record<string, unknown>, THandlerInputState, TNextState>,
+	): Wooter<OptionalMerge<TState, TNextState>, BasePath, TParentParams>
 
 	/**
 	 * Adds middleware to this router.
@@ -169,10 +169,10 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @returns A typed router view whose `data` includes middleware output.
 	 */
 	use<TNextState extends State | undefined = undefined>(
-		handler: MiddlewareHandler<Params, TState, TNextState>,
-	): Wooter<OptionalMerge<State, TState, TNextState>, TParentParams> {
+		handler: MiddlewareHandler<Record<string, unknown>, TState, TNextState>,
+	): Wooter<OptionalMerge<TState, TNextState>, BasePath, TParentParams> {
 		this.graph.addMiddleware(handler)
-		return this as unknown as Wooter<OptionalMerge<State, TState, TNextState>, TParentParams>
+		return this as unknown as Wooter<OptionalMerge<TState, TNextState>, BasePath, TParentParams>
 	}
 
 	/**
@@ -183,8 +183,8 @@ export default class Wooter<TState extends State | undefined = undefined, TParen
 	 * @param basePath Path prefix for the child router.
 	 * @returns A new router instance scoped to `basePath`.
 	 */
-	branch<TParams extends Params>(basePath: Path): Wooter<TState, Merge<TParams, TParentParams>> {
-		const router = new Wooter<TState, Merge<TParams, TParentParams>>(
+	branch<TPath extends Path, TParams = ParamsOfPath<TPath>>(basePath: TPath): Wooter<TState, BasePath, Merge<TParams, TParentParams>> {
+		const router = new Wooter<TState, BasePath, Merge<TParams, TParentParams>>(
 			// c.chemin(this.basePath, basePath) as unknown as TChemin<Merge<TParams, TParentParams>>,
 		)
 		this.graph.addNamespace(basePath, router.graph)

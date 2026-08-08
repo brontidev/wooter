@@ -1,4 +1,4 @@
-import type { Params, State as State } from "@@/types.ts"
+import type { State } from "@@/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
@@ -31,7 +31,7 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
  * @typeParam TNextState State shape that this middleware can pass to the next handler.
  */
 export default class MiddlewareContext<
-	TParams extends Params | undefined = undefined,
+	TParams extends Record<string, unknown> | undefined = undefined,
 	TState extends State | undefined = undefined,
 	TNextState extends State | undefined = undefined,
 > extends RouteContext<TParams, TState> {
@@ -136,12 +136,12 @@ export default class MiddlewareContext<
 	 * @internal
 	 */
 	static useMiddlewareHandler<
-		TParams extends Params = Params,
+		TParams extends Record<string, unknown> = Record<string, unknown>,
 		TState extends State | undefined = undefined,
 		TNextState extends State | undefined = undefined,
 	>(
 		handler: MiddlewareHandler<TParams, TState, TNextState>,
-		params: Params,
+		params: Record<string, unknown>,
 		next: InternalHandler,
 	): InternalHandler {
 		return (state, req) => {
@@ -174,7 +174,7 @@ export default class MiddlewareContext<
  * @returns Optional promise for async middleware.
  */
 export type MiddlewareHandler<
-	TParams extends Params = Params,
+	TParams extends Record<string, unknown> = Record<string, unknown>,
 	TState extends State | undefined = undefined,
 	TNextState extends State | undefined = undefined,
 > = (ctx: MiddlewareContext<TParams, TState, TNextState>) => Promise<unknown> | unknown

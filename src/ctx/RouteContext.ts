@@ -1,6 +1,6 @@
 import { none, type Option, some } from "@@/option.ts"
 import { Soon } from "@bronti/robust/Soon"
-import type { Params, State } from "@@/types.ts"
+import type { State } from "@@/types.ts"
 import WooterError, { catchStrayError, ControlFlowBreak } from "@/WooterError.ts"
 import { TypedMap } from "@bronti/robust/TypedMap"
 import type { TEmptyObject } from "@@/chemin.ts"
@@ -50,7 +50,7 @@ export const RouteContext__respond = Symbol("RouteContext__respond")
  * @typeParam TState Data shape accumulated from middleware.
  */
 export default class RouteContext<
-	TParams extends Params | undefined = undefined,
+	TParams extends Record<string, unknown> | undefined = undefined,
 	TState extends State | undefined = undefined,
 > {
 	/**
@@ -233,9 +233,9 @@ export default class RouteContext<
 	 *
 	 * @internal
 	 */
-	static useRouteHandler<TParams extends Params | undefined = Params, TState extends State | undefined = State>(
+	static useRouteHandler<TParams extends Record<string, unknown> | undefined = Record<string, unknown>, TState extends State | undefined = State>(
 		handler: RouteHandler<TParams, TState>,
-		params: Params,
+		params: Record<string, unknown>,
 	): InternalHandler {
 		return (data, req) => {
 			const ctx = new RouteContext<TParams, TState>(
@@ -271,6 +271,6 @@ export type InternalHandler = (
  * @returns Optional promise for async handlers.
  */
 export type RouteHandler<
-	TParams extends Params | undefined = Params,
+	TParams extends Record<string, unknown> | undefined = Record<string, unknown>,
 	TState extends State | undefined = State,
 > = (ctx: RouteContext<TParams, TState>) => Promise<unknown> | unknown
