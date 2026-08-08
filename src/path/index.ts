@@ -3,10 +3,10 @@ import { matcher, single, wrap } from "./matcher.ts"
 import type { Matcher, Param, Path } from "./types.ts"
 
 export const path = <const TPath extends Path>(...path: TPath): TPath => path
-export function p<Name extends string>(name: Name): Param<Name, string>
-export function p<Name extends string, T>(name: Name, matcher: Matcher<T, undefined>): Param<Name, T, undefined>
-export function p<Name extends string, T, Options>(name: Name, matcher: Matcher<T, Options>, options: Options): Param<Name, T, Options>
-export function p(name: string, matcher?: Matcher<any, any>, options?: any): any {
+export function param<Name extends string>(name: Name): Param<Name, string>
+export function param<Name extends string, T>(name: Name, matcher: Matcher<T, undefined>): Param<Name, T, undefined>
+export function param<Name extends string, T, Options>(name: Name, matcher: Matcher<T, Options>, options: Options): Param<Name, T, Options>
+export function param(name: string, matcher?: Matcher<any, any>, options?: any): any {
     return matcher ? { name, matcher, options } as const : { name } as const
 }
 

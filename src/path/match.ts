@@ -2,7 +2,7 @@ import type { ParamsOfPath, Path } from "@/path/types.ts"
 
 export function match<const TPath extends Path>(segments: string[], i: number, pattern: TPath, exact: true): { match: false } | { match: true, params: ParamsOfPath<TPath> }
 export function match<const TPath extends Path>(segments: string[], i: number, pattern: TPath, exact: false): { match: false } | { match: true, params: ParamsOfPath<TPath>, stopped_at: number }
-export function match(segments: string[], i: number, pattern: Path, exact = true): { match: false } | { match: true, params: ParamsOfPath<Path>, stopped_at?: number } {
+export function match(segments: string[], i: number, pattern: Path, exact: boolean): { match: false } | { match: true, params: ParamsOfPath<Path>, stopped_at?: number } {
     const params: Record<string, unknown> = {}
 
     for (const patternElement of pattern) {
