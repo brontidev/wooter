@@ -5,6 +5,9 @@ import type { Merge } from "@/types.ts"
  */
 export type Params = Record<string, unknown>
 
+/** Empty object shape used when no state or parameters are defined. */
+export type EmptyObject = Record<never, never>
+
 /**
  * Generic context state object shape.
  */
@@ -12,7 +15,7 @@ export type State = Record<string, unknown>
 
 export type { default as MiddlewareContext, MiddlewareHandler } from "@/ctx/MiddlewareContext.ts"
 export type { default as RouteContext, RouteHandler } from "@/ctx/RouteContext.ts"
-// export type { MethodDefinitionInput, MethodDefinitions } from "@/graph/RouterGraph.ts"
+export type { MethodDefinitionInput, MethodDefinitions } from "@/graph/Graph.ts"
 
 export type { TypedMap } from "@bronti/robust/TypedMap"
 

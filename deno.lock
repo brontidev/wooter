@@ -5,7 +5,6 @@
     "jsr:@bronti/wooter@1.3.6": "1.3.6",
     "jsr:@david/code-block-writer@^13.0.3": "13.0.3",
     "jsr:@deno/dnt@~0.42.3": "0.42.3",
-    "jsr:@dldc/chemin@13": "13.0.0",
     "jsr:@dldc/chemin@^12.0.1": "12.0.1",
     "jsr:@rubiks/rubiks@1.2.9": "1.2.9",
     "jsr:@std/assert@*": "1.0.11",
@@ -41,7 +40,7 @@
     "@bronti/wooter@1.3.6": {
       "integrity": "d9c3af9889d7b89d5765c61931ff041380ff941acd8e9570c6365beb31d71697",
       "dependencies": [
-        "jsr:@dldc/chemin@^12.0.1"
+        "jsr:@dldc/chemin"
       ]
     },
     "@david/code-block-writer@13.0.3": {
@@ -59,9 +58,6 @@
     },
     "@dldc/chemin@12.0.1": {
       "integrity": "f1f97bab51732c825d89f7788e07e2b9875c41f95393809309def9b157034115"
-    },
-    "@dldc/chemin@13.0.0": {
-      "integrity": "fc0f15be726afd6daeea1e0d4be60086cca693a15f95bc612bfbf3b9839b7d2f"
     },
     "@rubiks/rubiks@1.2.9": {
       "integrity": "da3d1a4d5108406c70bbaab010971a6715cbbd63866a5fb062d1ffb942e1117b"
@@ -200,7 +196,6 @@
     "dependencies": [
       "jsr:@bronti/robust@0.0.3-beta",
       "jsr:@deno/dnt@~0.42.3",
-      "jsr:@dldc/chemin@13",
       "jsr:@std/assert@^1.0.16",
       "jsr:@std/json@^1.0.2",
       "jsr:@std/jsonc@^1.0.2",

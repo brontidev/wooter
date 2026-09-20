@@ -3,7 +3,7 @@ import { Soon } from "@bronti/robust/Soon"
 import type { State } from "@@/types.ts"
 import WooterError, { catchStrayError, ControlFlowBreak } from "@/WooterError.ts"
 import { TypedMap } from "@bronti/robust/TypedMap"
-import type { TEmptyObject } from "@@/chemin.ts"
+import type { EmptyObject } from "@@/types.ts"
 
 /**
  * Error thrown when a handler exits without calling `resp()`.
@@ -56,19 +56,19 @@ export default class RouteContext<
 	/**
 	 * Backing store for context data.
 	 */
-	private readonly _state: TState extends undefined ? TEmptyObject : TState
+	private readonly _state: TState extends undefined ? EmptyObject : TState
 
 	/**
 	 * Backing store for route params.
 	 */
-	private readonly _params: TypedMap<TParams extends undefined ? TEmptyObject : TParams>
+	private readonly _params: TypedMap<TParams extends undefined ? EmptyObject : TParams>
 
 	/**
 	 * Middleware data available to the current handler.
 	 *
 	 * @returns The typed context data object.
 	 */
-	get state(): TState extends undefined ? TEmptyObject : TState {
+	get state(): TState extends undefined ? EmptyObject : TState {
 		return this._state
 	}
 
@@ -77,7 +77,7 @@ export default class RouteContext<
 	 *
 	 * @returns Typed map of route params.
 	 */
-	get params(): TypedMap<TParams extends undefined ? TEmptyObject : TParams> {
+	get params(): TypedMap<TParams extends undefined ? EmptyObject : TParams> {
 		return this._params
 	}
 
@@ -132,8 +132,8 @@ export default class RouteContext<
 	constructor(
 		/** Request object. */
 		readonly request: Request,
-		data: TState extends undefined ? TEmptyObject : TState,
-		params: TParams extends undefined ? TEmptyObject : TParams,
+		data: TState extends undefined ? EmptyObject : TState,
+		params: TParams extends undefined ? EmptyObject : TParams,
 	) {
 		this.url = new URL(request.url)
 		this._state = data
@@ -243,8 +243,8 @@ export default class RouteContext<
 		return (data, req) => {
 			const ctx = new RouteContext<TParams, TState>(
 				req,
-				data as TState extends undefined ? TEmptyObject : TState,
-				params as TParams extends undefined ? TEmptyObject : TParams,
+				data as TState extends undefined ? EmptyObject : TState,
+				params as TParams extends undefined ? EmptyObject : TParams,
 			)
 
 			Promise.try(handler, ctx)

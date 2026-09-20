@@ -7,12 +7,12 @@ A **fetch-native, type-safe HTTP router** for JavaScript/TypeScript with **expli
 dependencies**.
 
 ```ts
-import { c, Wooter } from "@bronti/wooter"
+import { p, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
 	.use(cors)
 	.use(auth)
-	.route(c.chemin("users", c.pNumber("id")), "GET", async ({ params, resp }) => {
+	.route(p.path("users", p.param("id", p.num)), "GET", async ({ params, resp }) => {
 		resp(Response.json({ userId: params.get("id") }))
 	})
 
@@ -53,22 +53,22 @@ npx jsr add @bronti/wooter
 ### Your First Router
 
 ```ts
-import { c, Wooter } from "@bronti/wooter"
+import { p, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
 
 // GET /hello
-app.route(c.chemin("hello"), "GET", ({ resp }) => {
+app.route(p.path("hello"), "GET", ({ resp }) => {
 	resp(new Response("Hello, Wooter!"))
 })
 
 // GET /users/{id}
-app.route(c.chemin("users", c.pNumber("id")), "GET", ({ params, resp }) => {
+app.route(p.path("users", p.param("id", p.num)), "GET", ({ params, resp }) => {
 	resp(Response.json({ id: params.get("id") }))
 })
 
 // POST /users
-app.route(c.chemin("users"), "POST", ({ request, resp }) => {
+app.route(p.path("users"), "POST", ({ request, resp }) => {
 	resp(new Response("Created", { status: 201 }))
 })
 
@@ -88,7 +88,7 @@ deno serve app.ts
 Every request must produce a response. This is Wooter's core guarantee.
 
 ```ts
-app.route(c.chemin("example"), "GET", ({ resp }) => {
+app.route(p.path("example"), "GET", ({ resp }) => {
 	// ✅ This works
 	resp(new Response("OK"))
 
@@ -112,7 +112,7 @@ const app = new Wooter()
 			permissions: getPermissions(user),
 		})
 	})
-	.route(c.chemin("admin"), "GET", async ({ state, resp }) => {
+	.route(p.path("admin"), "GET", async ({ state, resp }) => {
 		// Access all accumulated state
 		resp(Response.json({ user: state.user, perms: state.permissions }))
 	})
@@ -155,7 +155,7 @@ result.match(
 ### CRUD API
 
 ```ts
-import { p, middleware, Wooter } from "@bronti/wooter"
+import { middleware, p, Wooter } from "@bronti/wooter"
 
 const db = new Map()
 
@@ -276,4 +276,4 @@ MIT
 - **[PHILOSOPHY.MD](./PHILOSOPHY.MD)** — Design principles and rationale
 - **[Examples Directory](./examples/)** — Real-world code examples
 - **[JSR Package](https://jsr.io/@bronti/wooter)** — Package details and usage
-- **[Chemin Router](https://jsr.io/@dldc/chemin)** — Path matching library
+- **Path API** — Built-in typed path matching and parameter parsing

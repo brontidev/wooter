@@ -1,9 +1,8 @@
-import type { TEmptyObject } from "@@/chemin.ts"
-import type { MethodDefinitionInput, MethodDefinitions } from "@/graph/old/RouterGraph.ts"
+import type { EmptyObject } from "@@/types.ts"
+import type { MethodDefinitionInput, MethodDefinitions } from "@/graph/Graph.ts"
 import type { MiddlewareHandler, OptionalMerge, Params, RouteHandler, State } from "@@/types.ts"
 
 import type { Merge } from "@/types.ts"
-// import type c from "@@/chemin.ts"
 import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
 import { strayErrorStore } from "@/WooterError.ts"
 import { Graph } from "@/graph/Graph.ts"
@@ -23,14 +22,14 @@ export default class Wooter<
 	TParentParams extends Params | undefined = undefined,
 > {
 	private graph: Graph
-	#notFoundHandler?: RouteHandler<TEmptyObject>
+	#notFoundHandler?: RouteHandler<EmptyObject>
 
 	/**
 	 * Returns the registered 404 handler, or a default fallback when none is set.
 	 *
 	 * @internal
 	 */
-	private get notFoundHandler(): RouteHandler<TEmptyObject> {
+	private get notFoundHandler(): RouteHandler<EmptyObject> {
 		return this.#notFoundHandler ??
 			(({ resp, url, request }) => resp(new Response(`Not found ${request.method} ${url.pathname}`, { status: 404 })))
 	}
@@ -58,21 +57,21 @@ export default class Wooter<
 	 *
 	 * @example Register a GET route
 	 * ```ts
-	 * router.route(c.chemin("users"), "GET", ({ resp }) => {
+	 * router.route(p.path("users"), "GET", ({ resp }) => {
 	 *   resp(Response.json([]))
 	 * })
 	 * ```
 	 *
 	 * @example Register multiple methods
 	 * ```ts
-	 * router.route(c.chemin("users"), ["GET", "POST"], ({ request, resp }) => {
+	 * router.route(p.path("users"), ["GET", "POST"], ({ request, resp }) => {
 	 *   if (request.method === "GET") resp(Response.json([]))
 	 *   else resp(Response.json({}, { status: 201 }))
 	 * })
 	 * ```
 	 *
 	 * @typeParam TParams Parameter type inferred from the path.
-	 * @param path Typed route path built with Chemin.
+	 * @param path Typed route path built with the path API.
 	 * @param method HTTP method: string, array of methods, or `"*"` for all.
 	 * @param handler Route handler receiving the route context.
 	 * @returns The current router for method chaining.
@@ -90,7 +89,7 @@ export default class Wooter<
 	 *
 	 * @example Register per-method handlers
 	 * ```ts
-	 * router.route(c.chemin("users"), {
+	 * router.route(p.path("users"), {
 	 *   GET: ({ resp }) => resp(Response.json([])),
 	 *   POST: ({ request, resp }) => {
 	 *     const body = await request.json()
@@ -100,7 +99,7 @@ export default class Wooter<
 	 * ```
 	 *
 	 * @typeParam TParams Parameter type inferred from the path.
-	 * @param path Typed route path built with Chemin.
+	 * @param path Typed route path built with the path API.
 	 * @param handlers Map of HTTP methods to their handler functions.
 	 * @returns The current router for method chaining.
 	 */
@@ -189,7 +188,7 @@ export default class Wooter<
 	branch<TPath extends Path, TParams extends Record<string, unknown> = ParamsOfPath<TPath>>(
 		basePath: TPath,
 	): Wooter<TState, BasePath, Merge<TParams, TParentParams>> {
-		const router = new Wooter<TState, BasePath, Merge<TParams, TParentParams>>() // c.chemin(this.basePath, basePath) as unknown as TChemin<Merge<TParams, TParentParams>>,
+		const router = new Wooter<TState, BasePath, Merge<TParams, TParentParams>>()
 		this.graph.addNamespace(basePath, router.graph)
 		return router
 	}
@@ -200,7 +199,7 @@ export default class Wooter<
 	 * @param handler Route handler for unmatched requests.
 	 * @returns The current router instance for chaining.
 	 */
-	notFound(handler: RouteHandler<TEmptyObject>): this {
+	notFound(handler: RouteHandler<EmptyObject>): this {
 		this.#notFoundHandler = handler
 		return this
 	}

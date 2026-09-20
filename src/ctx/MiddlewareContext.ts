@@ -6,7 +6,7 @@ import RouteContext, {
 	RouteContext__respond,
 } from "@/ctx/RouteContext.ts"
 import WooterError from "@/WooterError.ts"
-import type { TEmptyObject } from "@@/chemin.ts"
+import type { EmptyObject } from "@@/types.ts"
 import { err, ok, type Result } from "@@/result.ts"
 
 /**
@@ -52,8 +52,8 @@ export default class MiddlewareContext<
 	 */
 	constructor(
 		override readonly request: Request,
-		state: TState extends undefined ? TEmptyObject : TState,
-		params: TParams extends undefined ? TEmptyObject : TParams,
+		state: TState extends undefined ? EmptyObject : TState,
+		params: TParams extends undefined ? EmptyObject : TParams,
 		private readonly nextHandler: InternalHandler,
 	) {
 		super(request, state, params)
@@ -67,7 +67,7 @@ export default class MiddlewareContext<
 	 * @returns The downstream response, or throws the downstream error.
 	 */
 	readonly next = async (
-		state: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? EmptyObject : TNextState,
 		request?: Request,
 	): Promise<Response> => {
 		const opt = await this.tryNext(state, request)
@@ -86,17 +86,28 @@ export default class MiddlewareContext<
 	 * @returns `ok(response)` on success or `err(error)` on failure.
 	 */
 	readonly tryNext = (
-		state: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? EmptyObject : TNextState,
 		request?: Request,
 	): Promise<Result<Response, unknown>> => {
 		const { promise, resolve } = Promise.withResolvers<Result<Response, unknown>>()
 		this.calledNext = true
 		const ctx = this.nextHandler(state, request || this.request)
+		this[RouteContext__respond].then((response) => {
+			if (!ctx[RouteContext__respond].resolved) {
+				ctx[RouteContext__respond].push(response)
+			}
+		})
 		ctx[RouteContext__respond].then((response) => {
 			resolve(ok(response))
 		})
 		ctx[RouteContext__execution].then((v) => {
 			v.inspect((e) => {
+				if (e instanceof HandlerDidntRespondError && this.respondSoon.resolved) {
+					this[RouteContext__respond].then((response) => {
+						resolve(ok(response))
+					})
+					return
+				}
 				resolve(err(e))
 			})
 		})
@@ -110,8 +121,8 @@ export default class MiddlewareContext<
 	 * @param request Optional request override.
 	 * @returns The response sent by `resp`.
 	 */
-	readonly forward = (state: TNextState extends undefined ? TEmptyObject : TNextState, request?: Request): Promise<Response> =>
-		this.next(state, request).then(this.resp)
+	readonly forward = (state: TNextState extends undefined ? EmptyObject : TNextState, request?: Request): Promise<Response> =>
+		this.next(state, request).then((response) => this.respondSoon.resolved ? response : this.resp(response))
 
 	/**
 	 * Invokes {@link tryNext} and maps successful responses through `resp`.
@@ -121,9 +132,10 @@ export default class MiddlewareContext<
 	 * @returns Result containing the response or captured error.
 	 */
 	readonly tryForward = (
-		state: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? EmptyObject : TNextState,
 		request?: Request,
-	): Promise<Result<Response, unknown>> => this.tryNext(state, request).then((o) => o.map(this.resp))
+	): Promise<Result<Response, unknown>> =>
+		this.tryNext(state, request).then((o) => o.map((response) => this.respondSoon.resolved ? response : this.resp(response)))
 
 	/**
 	 * Adapts a middleware handler into the router's internal handler signature.
@@ -147,8 +159,8 @@ export default class MiddlewareContext<
 		return (state, req) => {
 			const ctx = new MiddlewareContext<TParams, TState, TNextState>(
 				req,
-				state as TState extends undefined ? TEmptyObject : TState,
-				params as TParams extends undefined ? TEmptyObject : TParams,
+				state as TState extends undefined ? EmptyObject : TState,
+				params as TParams extends undefined ? EmptyObject : TParams,
 				next,
 			)
 

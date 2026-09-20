@@ -2,7 +2,7 @@
  * Wooter port of [@oak/acorn example server](https://github.com/oakserver/acorn/blob/main/_examples/server.ts)
  */
 
-import { p, makeError, makeRedirect, Option, Wooter } from "@@/index.ts"
+import { makeError, makeRedirect, Option, p, Wooter } from "@@/index.ts"
 
 import { z } from "npm:zod"
 import json from "./middleware/json.ts"
