@@ -1,6 +1,6 @@
 // This is another example of wooter, which shows off the middleware functionality and namespaces.
 
-import { makeError, makeRedirect, p, Wooter } from "@@/index.ts"
+import { makeError, makeRedirect, p, Wooter } from "@@/mod.ts"
 import cookies from "./middleware/cookies.ts"
 
 const wooter = new Wooter()

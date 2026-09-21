@@ -97,7 +97,11 @@ export class Graph {
 		})
 	}
 
-	protected internalGetHandler(path: string[], i: number, method: string) {
+	protected internalGetHandler(
+		path: string[],
+		i: number,
+		method: string,
+	): { handler: RouteHandler; params: Record<string, any>; middleware: MiddlewareHandler[] } | undefined {
 		for (const namespace of this.namespaces) {
 			const namespaceResult = match(path, i, namespace.path, false)
 			if (!namespaceResult.match) continue

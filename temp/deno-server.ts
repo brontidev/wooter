@@ -1,4 +1,4 @@
-import { c, Wooter } from "@@/index.ts"
+import { c, Wooter } from "@@/mod.ts"
 
 const wooter = new Wooter()
 wooter.route(c.chemin("min"), "GET", async (ctx) => {

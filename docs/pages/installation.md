@@ -44,7 +44,7 @@ For browser or direct URL imports, use a CDN that supports JSR:
 ### esm.sh
 
 ```ts
-import { c, Wooter } from "https://esm.sh/jsr/@bronti/wooter"
+import { p, Wooter } from "https://esm.sh/jsr/@bronti/wooter"
 ```
 
 ## Verify Installation
@@ -52,10 +52,10 @@ import { c, Wooter } from "https://esm.sh/jsr/@bronti/wooter"
 Create a test file to verify installation:
 
 ```ts
-import { c, Wooter } from "@bronti/wooter"
+import { p, Wooter } from "@bronti/wooter"
 
 const app = new Wooter()
-	.route(c.chemin(), "GET", ({ resp }) => {
+	.route(p.path(), "GET", ({ resp }) => {
 		resp(new Response("Hello, Wooter!"))
 	})
 
@@ -83,7 +83,7 @@ Wooter also provides focused exports for specific concerns:
 import { c, middleware, Wooter } from "@bronti/wooter"
 
 // Specific exports
-import * as c from "@bronti/wooter/chemin" // Chemin routing
+import * as p from "@bronti/wooter/path" // Chemin routing
 import { none, Option, some } from "@bronti/wooter/option" // Option type
 import { err, ok, Result } from "@bronti/wooter/result" // Result type
 import { WooterError } from "@bronti/wooter/error" // Errors

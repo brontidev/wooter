@@ -1,5 +1,5 @@
 import { delay } from "jsr:@std/async"
-import { p, Wooter } from "@@/index.ts"
+import { p, Wooter } from "@@/mod.ts"
 import cookies from "./middleware/cookies.ts"
 
 const wooter = new Wooter(undefined, (e) => {

@@ -1,4 +1,4 @@
-import { p, Wooter } from "@@/index.ts"
+import { p, Wooter } from "@@/mod.ts"
 import { z } from "npm:zod"
 
 const wooter = new Wooter()

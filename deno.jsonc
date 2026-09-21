@@ -4,7 +4,7 @@
 	"version": "5.0.0",
 	"license": "MIT",
 	"exports": {
-		".": "./src/export/index.ts",
+		".": "./src/export/mod.ts",
 		"./path": "./src/export/path.ts",
 		"./chemin": "./src/export/path.ts",
 		"./option": "./src/export/option.ts",
@@ -35,8 +35,7 @@
 		"dry_publish": "deno publish --dry-run --allow-dirty",
 		"fix:format": "deno fmt",
 		"fix:lint": "deno lint --fix",
-		"lint_jsdoc": "deno doc --lint $(cat ./deno.jsonc | deno ./unjsonc.ts | jq -r '[.exports[]] | join(\" \")')" //,
-		//		"bundle": "deno run --unstable-bundle -A ./bundle.ts"
+		"lint_jsdoc": "deno doc --lint $(cat ./deno.jsonc | deno ./scripts/unjsonc.ts | jq -r '[.exports[]] | join(\" \")')"
 	},
 	"imports": {
 		"@bronti/robust": "jsr:@bronti/robust@0.0.3-beta",

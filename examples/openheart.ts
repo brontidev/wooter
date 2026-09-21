@@ -23,7 +23,7 @@ Get all emoji counts for /example.com/uid:
 curl '${url}/example.com/uid'
 `
 
-import { makeError, p, Wooter } from "@@/index.ts"
+import { makeError, p, Wooter } from "@@/mod.ts"
 import { nerdIcons, rubiks, withDates } from "jsr:@rubiks/rubiks@1.2.9"
 const console = rubiks().use(withDates).use(nerdIcons())
 
