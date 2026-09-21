@@ -98,9 +98,22 @@ export class Graph {
 	}
 
 	protected internalGetHandler(path: string[], i: number, method: string) {
-		let handler: RouteHandler | null = null
-		let params: unknown = {}
+		for (const namespace of this.namespaces) {
+			const namespaceResult = match(path, i, namespace.path, false)
+			if (!namespaceResult.match) continue
+
+			const childResult = namespace.graph.internalGetHandler(path, namespaceResult.stopped_at, method)
+			if (!childResult) continue
+
+			return {
+				handler: childResult.handler,
+				params: { ...namespaceResult.params, ...childResult.params },
+				middleware: [...this.middleware, ...childResult.middleware],
+			}
+		}
+
 		for (const node of this.nodes) {
+			let handler: RouteHandler | undefined
 			if (node.t === NodeType.MethodsToHandlers) {
 				const _handler = node.handlers.get(method)
 				if (!_handler) continue
@@ -117,8 +130,8 @@ export class Graph {
 			const result = match(path, i, node.path, true)
 
 			if (!result.match) continue
-			params = result.params
-			return { handler, params }
+			if (!handler) continue
+			return { handler, params: result.params, middleware: [...this.middleware] }
 		}
 	}
 
@@ -138,45 +151,10 @@ export class Graph {
 			i = result.stopped_at
 		}
 
-		let handler: RouteHandler | undefined = undefined
-		for (const namespace of this.namespaces) {
-			const result = match(path, i, namespace.path, false)
-			if (!result.match) continue
-			Object.assign(params, result.params)
-			i = result.stopped_at
-
-			const handlerResult = namespace.graph.internalGetHandler(path, i, method)
-			if (!handlerResult) continue
-			handler = handlerResult.handler
-			Object.assign(params, handlerResult.params)
-		}
-
-		if (!handler) {
-			for (const node of this.nodes) {
-				let _handler: RouteHandler | undefined = undefined
-				if (node.t === NodeType.MethodsToHandlers) {
-					_handler = node.handlers.get(method)
-					if (!_handler) continue
-				} else if (node.t === NodeType.AnyMethod) {
-					_handler = node.handler
-				} else if (node.t === NodeType.HandlerWithMethods) {
-					if (!node.methods.has(method)) continue
-					_handler = node.handler
-				} else {
-					throw new TypeError("invalid configuration")
-				}
-
-				const result = match(path, i, node.path, true)
-
-				if (!result.match) continue
-				Object.assign(params, result.params)
-				handler = _handler
-				break
-			}
-		}
-
-		if (!handler) return
-		return Graph.compose(handler, params, this.middleware)
+		const result = this.internalGetHandler(path, i, method)
+		if (!result) return
+		Object.assign(params, result.params)
+		return Graph.compose(result.handler, params, result.middleware)
 	}
 
 	/**
@@ -190,7 +168,7 @@ export class Graph {
 	protected static compose(
 		handler: RouteHandler,
 		params: Record<string, unknown>,
-		middlewareSet: Set<MiddlewareHandler>,
+		middlewareSet: readonly MiddlewareHandler[],
 	): InternalHandler {
 		const middleware = middlewareSet.values()
 		return (state, req) => {

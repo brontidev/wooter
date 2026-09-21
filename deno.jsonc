@@ -6,6 +6,7 @@
 	"exports": {
 		".": "./src/export/index.ts",
 		"./path": "./src/export/path.ts",
+		"./chemin": "./src/export/path.ts",
 		"./option": "./src/export/option.ts",
 		"./result": "./src/export/result.ts",
 		"./types": "./src/export/types.ts",
