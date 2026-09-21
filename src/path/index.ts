@@ -35,16 +35,13 @@ export function multiple<T, Opt>(matcher: Matcher<T, Opt>, at_least_one = false)
 			let consume = 0
 			const value = []
 
-			while (true) {
-				const result = matcher(path, i, opt)
-				if (result.ok) {
-					value.push(result.value)
-					i += result.consume
-					consume += result.consume
-					continue
-				}
-				break
-			}
+		while (true) {
+			const result = matcher(path, i, opt)
+			if (!result.ok || result.consume <= 0) break
+			value.push(result.value)
+			i += result.consume
+			consume += result.consume
+		}
 
 			if (consume == 0 && at_least_one) return { ok: false }
 			return { ok: true, consume, value }
