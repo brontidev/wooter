@@ -8,6 +8,7 @@ export function single<T, Options = undefined>(
 	fn: (seg: string, options: Options) => { ok: false } | { ok: true; value: T },
 ): Matcher<T, Options> {
 	return wrap((path, i, opt) => {
+		if (i >= path.length) return { ok: false }
 		const result = fn(path[i], opt)
 		return result.ok ? { ok: true, value: result.value, consume: 1 } : result
 	}, fn.name)
