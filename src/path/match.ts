@@ -1,5 +1,10 @@
 import type { ParamsOfPath, Path } from "@/path/types.ts"
 
+/**
+ * Matches path segments against a typed pattern and extracts params.
+ *
+ * When `exact` is `true`, all remaining segments must be consumed.
+ */
 export function match<const TPath extends Path>(
 	segments: string[],
 	i: number,
@@ -48,6 +53,7 @@ export function match(
 	return { match: true, params, stopped_at: i }
 }
 
+/** Converts a typed path pattern into a readable route string. */
 export function stringify(path: Path): string {
 	const strs = []
 	for (const patternElement of path) {
