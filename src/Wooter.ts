@@ -19,7 +19,7 @@ type KeysSubset<U, T> = Exclude<keyof U, keyof T> extends never ? unknown : neve
 export default class Wooter<
 	TState extends State | undefined = undefined,
 	BasePath extends Path = Path,
-	TParentParams extends Params | undefined = undefined,
+	TParentParams extends Params | undefined = ParamsOfPath<BasePath>,
 > {
 	private graph: Graph
 	#notFoundHandler?: RouteHandler<EmptyObject>
