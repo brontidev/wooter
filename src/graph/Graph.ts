@@ -123,6 +123,7 @@ export class Graph {
 	}
 
 	getHandler(pathname: string, method: string): InternalHandler | undefined {
+		method = method.toUpperCase()
 		const path = pathname.split("/")
 		if (path[0] == "") path.shift()
 		if (path[path.length - 1] == "") path.pop()
