@@ -1,4 +1,4 @@
-import { makeError } from "@@/index.ts"
+import { makeError } from "@@/mod.ts"
 import { middleware } from "@@/use.ts"
 
 const json = middleware<{ json: () => Promise<any> }>(async ({ request, resp, forward, safeExit }) => {

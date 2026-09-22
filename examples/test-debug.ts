@@ -1,4 +1,4 @@
-import { c, Wooter } from "@@/index.ts"
+import { p, Wooter } from "@@/mod.ts"
 import { z } from "npm:zod"
 
 const wooter = new Wooter()
@@ -14,7 +14,7 @@ const wooter = new Wooter()
 		console.log("[parseJson middleware] After forward")
 	})
 
-wooter.route(c.chemin("test"), "POST", async ({ state: { parseJson }, resp }) => {
+wooter.route(p.path("test"), "POST", async ({ state: { parseJson }, resp }) => {
 	console.log("[route handler] Calling parseJson")
 	await parseJson()
 	throw new Error("something happened")

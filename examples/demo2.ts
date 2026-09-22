@@ -1,6 +1,6 @@
 // This is another example of wooter, which shows off the middleware functionality and namespaces.
 
-import { c, makeError, makeRedirect, Wooter } from "@@/index.ts"
+import { makeError, makeRedirect, p, Wooter } from "@@/mod.ts"
 import cookies from "./middleware/cookies.ts"
 
 const wooter = new Wooter()
@@ -27,9 +27,9 @@ const wooter = new Wooter()
 // })
 
 {
-	const authWooter = wooter.branch(c.chemin("auth"))
+	const authWooter = wooter.branch(p.path("auth"))
 
-	authWooter.route(c.chemin(), "POST", async ({ request, resp, state: { cookies, redirect } }) => {
+	authWooter.route(p.path(), "QUERY", async ({ request, resp, state: { cookies, redirect } }) => {
 		let json = await request.json()
 		if (!json.username || !json.password) {
 			return resp(

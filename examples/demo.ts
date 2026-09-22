@@ -2,7 +2,7 @@
  * Wooter port of [@oak/acorn example server](https://github.com/oakserver/acorn/blob/main/_examples/server.ts)
  */
 
-import { c, makeError, makeRedirect, Option, Wooter } from "@@/index.ts"
+import { makeError, makeRedirect, Option, p, Wooter } from "@@/mod.ts"
 
 import { z } from "npm:zod"
 import json from "./middleware/json.ts"
@@ -40,7 +40,7 @@ const wooter = new Wooter()
 			})
 		},
 	)
-wooter.route(c.chemin(), "GET", async ({ resp, state: { cookies } }) => {
+wooter.route(p.path(), "GET", async ({ resp, state: { cookies } }) => {
 	const count = Option.from(cookies.get("count")).map((x) => parseInt(x)).unwrapOr(0) + 1
 	cookies.set("count", count.toString())
 	resp(Response.json({
@@ -49,7 +49,7 @@ wooter.route(c.chemin(), "GET", async ({ resp, state: { cookies } }) => {
 	}))
 })
 
-wooter.route(c.chemin("redirect"), "GET", async ({ resp }) => {
+wooter.route(p.path("redirect"), "GET", async ({ resp }) => {
 	resp(makeRedirect(
 		"/book/1",
 		{
@@ -58,7 +58,7 @@ wooter.route(c.chemin("redirect"), "GET", async ({ resp }) => {
 	))
 })
 
-wooter.route(c.chemin("book"), {
+wooter.route(p.path("book"), {
 	async GET({ resp }) {
 		resp(Response.json((await Array.fromAsync(db.list<Book>({ prefix: ["books"] })))
 			.filter(({ key }) => key[1] !== "id")))
@@ -87,7 +87,7 @@ wooter.route(c.chemin("book"), {
 	},
 })
 
-wooter.route(c.chemin("book", c.pNumber("id")), {
+wooter.route(p.path("book", p.param("id", p.num)), {
 	async GET({ params, resp }) {
 		const maybeBook = await db.get<Book>(["books", params.get("id")])
 		resp(

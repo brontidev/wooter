@@ -1,4 +1,4 @@
-import type { Params, State as State } from "@@/types.ts"
+import type { State } from "@@/types.ts"
 import RouteContext, {
 	HandlerDidntRespondError,
 	type InternalHandler,
@@ -6,7 +6,7 @@ import RouteContext, {
 	RouteContext__respond,
 } from "@/ctx/RouteContext.ts"
 import WooterError from "@/WooterError.ts"
-import type { TEmptyObject } from "@@/chemin.ts"
+import type { EmptyObject } from "@@/types.ts"
 import { err, ok, type Result } from "@@/result.ts"
 
 /**
@@ -31,7 +31,7 @@ export class MiddlewareHandlerDidntCallUpError extends WooterError {
  * @typeParam TNextState State shape that this middleware can pass to the next handler.
  */
 export default class MiddlewareContext<
-	TParams extends Params | undefined = undefined,
+	TParams extends Record<string, unknown> | undefined = undefined,
 	TState extends State | undefined = undefined,
 	TNextState extends State | undefined = undefined,
 > extends RouteContext<TParams, TState> {
@@ -52,8 +52,8 @@ export default class MiddlewareContext<
 	 */
 	constructor(
 		override readonly request: Request,
-		state: TState extends undefined ? TEmptyObject : TState,
-		params: TParams extends undefined ? TEmptyObject : TParams,
+		state: TState extends undefined ? EmptyObject : TState,
+		params: TParams extends undefined ? EmptyObject : TParams,
 		private readonly nextHandler: InternalHandler,
 	) {
 		super(request, state, params)
@@ -67,7 +67,7 @@ export default class MiddlewareContext<
 	 * @returns The downstream response, or throws the downstream error.
 	 */
 	readonly next = async (
-		state: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? EmptyObject : TNextState,
 		request?: Request,
 	): Promise<Response> => {
 		const opt = await this.tryNext(state, request)
@@ -86,7 +86,7 @@ export default class MiddlewareContext<
 	 * @returns `ok(response)` on success or `err(error)` on failure.
 	 */
 	readonly tryNext = (
-		state: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? EmptyObject : TNextState,
 		request?: Request,
 	): Promise<Result<Response, unknown>> => {
 		const { promise, resolve } = Promise.withResolvers<Result<Response, unknown>>()
@@ -121,7 +121,7 @@ export default class MiddlewareContext<
 	 * @param request Optional request override.
 	 * @returns The response sent by `resp`.
 	 */
-	readonly forward = (state: TNextState extends undefined ? TEmptyObject : TNextState, request?: Request): Promise<Response> =>
+	readonly forward = (state: TNextState extends undefined ? EmptyObject : TNextState, request?: Request): Promise<Response> =>
 		this.next(state, request).then((response) => this.respondSoon.resolved ? response : this.resp(response))
 
 	/**
@@ -132,7 +132,7 @@ export default class MiddlewareContext<
 	 * @returns Result containing the response or captured error.
 	 */
 	readonly tryForward = (
-		state: TNextState extends undefined ? TEmptyObject : TNextState,
+		state: TNextState extends undefined ? EmptyObject : TNextState,
 		request?: Request,
 	): Promise<Result<Response, unknown>> =>
 		this.tryNext(state, request).then((o) => o.map((response) => this.respondSoon.resolved ? response : this.resp(response)))
@@ -148,19 +148,19 @@ export default class MiddlewareContext<
 	 * @internal
 	 */
 	static useMiddlewareHandler<
-		TParams extends Params = Params,
+		TParams extends Record<string, unknown> = Record<string, unknown>,
 		TState extends State | undefined = undefined,
 		TNextState extends State | undefined = undefined,
 	>(
 		handler: MiddlewareHandler<TParams, TState, TNextState>,
-		params: Params,
+		params: Record<string, unknown>,
 		next: InternalHandler,
 	): InternalHandler {
 		return (state, req) => {
 			const ctx = new MiddlewareContext<TParams, TState, TNextState>(
 				req,
-				state as TState extends undefined ? TEmptyObject : TState,
-				params as TParams extends undefined ? TEmptyObject : TParams,
+				state as TState extends undefined ? EmptyObject : TState,
+				params as TParams extends undefined ? EmptyObject : TParams,
 				next,
 			)
 
@@ -186,7 +186,7 @@ export default class MiddlewareContext<
  * @returns Optional promise for async middleware.
  */
 export type MiddlewareHandler<
-	TParams extends Params = Params,
+	TParams extends Record<string, unknown> = Record<string, unknown>,
 	TState extends State | undefined = undefined,
 	TNextState extends State | undefined = undefined,
 > = (ctx: MiddlewareContext<TParams, TState, TNextState>) => Promise<unknown> | unknown

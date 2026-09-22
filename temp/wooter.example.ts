@@ -1,4 +1,4 @@
-import { Wooter } from "@/export/index.ts"
+import { Wooter } from "@@/mod.ts"
 import c from "@/export/chemin.ts"
 
 const app = new Wooter().use<{ auth: { user: string } }>(async ({ unwrapAndRespond }) => {
