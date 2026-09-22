@@ -4,7 +4,6 @@ import type { MiddlewareHandler, OptionalMerge, Params, RouteHandler, State } fr
 
 import type { Merge } from "@/types.ts"
 import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
-import { strayErrorStore } from "@/WooterError.ts"
 import { Graph } from "@/graph/Graph.ts"
 import type { ParamsOfPath, Path } from "@/path/types.ts"
 
@@ -226,11 +225,12 @@ export default class Wooter<
 			handler = RouteContext.useRouteHandler(
 				this.notFoundHandler,
 				{},
+				this.catchStrayErrors,
 			)
 		}
 
 		const { promise, resolve, reject } = Promise.withResolvers<Response>()
-		const ctx = strayErrorStore.run(this.catchStrayErrors, () => handler({}, request))
+		const ctx = handler({}, request, this.catchStrayErrors);
 		const execution = ctx[RouteContext__execution]
 		const respond = ctx[RouteContext__respond]
 

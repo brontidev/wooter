@@ -1,7 +1,7 @@
 import { none, type Option, some } from "@@/option.ts"
 import { Soon } from "@bronti/robust/Soon"
 import type { State } from "@@/types.ts"
-import WooterError, { catchStrayError, ControlFlowBreak } from "@/WooterError.ts"
+import WooterError, { ControlFlowBreak } from "@/WooterError.ts"
 import { TypedMap } from "@bronti/robust/TypedMap"
 import type { EmptyObject } from "@@/types.ts"
 
@@ -134,6 +134,7 @@ export default class RouteContext<
 		readonly request: Request,
 		data: TState extends undefined ? EmptyObject : TState,
 		params: TParams extends undefined ? EmptyObject : TParams,
+		protected reporter: (e: unknown) => void,
 	) {
 		this.url = new URL(request.url)
 		this._state = data
@@ -217,7 +218,7 @@ export default class RouteContext<
 	 */
 	protected catchErr = (e: unknown): void => {
 		if (this.respondSoon.resolved) {
-			if (e != ControlFlowBreak) catchStrayError(e)
+			if (e != ControlFlowBreak) this.reporter(e)
 			return this.ok()
 		}
 
@@ -239,12 +240,14 @@ export default class RouteContext<
 	>(
 		handler: RouteHandler<TParams, TState>,
 		params: Record<string, unknown>,
+		reporter: (e: unknown) => void,
 	): InternalHandler {
 		return (data, req) => {
 			const ctx = new RouteContext<TParams, TState>(
 				req,
 				data as TState extends undefined ? EmptyObject : TState,
 				params as TParams extends undefined ? EmptyObject : TParams,
+				reporter
 			)
 
 			Promise.try(handler, ctx)
@@ -265,6 +268,7 @@ export default class RouteContext<
 export type InternalHandler = (
 	data: State,
 	request: Request,
+	reporter: (e: unknown) => void
 ) => RouteContext
 
 /**

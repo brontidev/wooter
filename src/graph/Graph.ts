@@ -175,8 +175,8 @@ export class Graph {
 		middlewareSet: readonly MiddlewareHandler[],
 	): InternalHandler {
 		const middleware = middlewareSet.values()
-		return (state, req) => {
-			const createNext = (): InternalHandler => (nextState, req) => {
+		return (state, req, reporter) => {
+			const createNext = (): InternalHandler => (nextState, req, reporter) => {
 				Object.assign(state, nextState)
 				const { done, value: currentMiddleware } = middleware.next()
 				let currentHandler: InternalHandler
@@ -184,18 +184,20 @@ export class Graph {
 					currentHandler = RouteContext.useRouteHandler(
 						handler,
 						params,
+						reporter
 					)
 				} else {
 					currentHandler = MiddlewareContext.useMiddlewareHandler(
 						currentMiddleware,
 						params,
 						createNext(),
+						reporter
 					)
 				}
 
-				return currentHandler(state, req)
+				return currentHandler(state, req, reporter)
 			}
-			return createNext()(state, req)
+			return createNext()(state, req, reporter)
 		}
 	}
 }

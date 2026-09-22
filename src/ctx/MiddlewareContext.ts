@@ -55,8 +55,9 @@ export default class MiddlewareContext<
 		state: TState extends undefined ? EmptyObject : TState,
 		params: TParams extends undefined ? EmptyObject : TParams,
 		private readonly nextHandler: InternalHandler,
+		reporter: (e: unknown) => void,
 	) {
-		super(request, state, params)
+		super(request, state, params, reporter)
 	}
 
 	/**
@@ -91,7 +92,7 @@ export default class MiddlewareContext<
 	): Promise<Result<Response, unknown>> => {
 		const { promise, resolve } = Promise.withResolvers<Result<Response, unknown>>()
 		this.calledNext = true
-		const ctx = this.nextHandler(state, request || this.request)
+		const ctx = this.nextHandler(state, request || this.request, this.reporter)
 		this[RouteContext__respond].then((response) => {
 			if (!ctx[RouteContext__respond].resolved) {
 				ctx[RouteContext__respond].push(response)
@@ -155,6 +156,7 @@ export default class MiddlewareContext<
 		handler: MiddlewareHandler<TParams, TState, TNextState>,
 		params: Record<string, unknown>,
 		next: InternalHandler,
+		reporter: (e: unknown) => void,
 	): InternalHandler {
 		return (state, req) => {
 			const ctx = new MiddlewareContext<TParams, TState, TNextState>(
@@ -162,6 +164,7 @@ export default class MiddlewareContext<
 				state as TState extends undefined ? EmptyObject : TState,
 				params as TParams extends undefined ? EmptyObject : TParams,
 				next,
+				reporter,
 			)
 
 			Promise.try(handler, ctx)
