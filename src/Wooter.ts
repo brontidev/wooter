@@ -230,7 +230,7 @@ export default class Wooter<
 		}
 
 		const { promise, resolve, reject } = Promise.withResolvers<Response>()
-		const ctx = handler({}, request, this.catchStrayErrors);
+		const ctx = handler({}, request, this.catchStrayErrors)
 		const execution = ctx[RouteContext__execution]
 		const respond = ctx[RouteContext__respond]
 

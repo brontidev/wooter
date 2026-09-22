@@ -43,6 +43,11 @@ export const RouteContext__execution = Symbol("RouteContext__execution")
  * Internal symbol for reading a context's response state.
  */
 export const RouteContext__respond = Symbol("RouteContext__respond")
+
+/**
+ * Internal symbol for reading a context's stray-error reporter.
+ */
+export const RouteContext__reporter = Symbol("RouteContext__reporter")
 /**
  * Context passed to route handlers.
  *
@@ -113,6 +118,15 @@ export default class RouteContext<
 	 */
 	get [RouteContext__respond](): RouteContext["respondSoon"] {
 		return this.respondSoon
+	}
+
+	/**
+	 * Exposes the stray-error reporter through a symbol-based internal API.
+	 *
+	 * @internal
+	 */
+	get [RouteContext__reporter](): (e: unknown) => void {
+		return this.reporter
 	}
 
 	/**
@@ -247,7 +261,7 @@ export default class RouteContext<
 				req,
 				data as TState extends undefined ? EmptyObject : TState,
 				params as TParams extends undefined ? EmptyObject : TParams,
-				reporter
+				reporter,
 			)
 
 			Promise.try(handler, ctx)
@@ -268,7 +282,7 @@ export default class RouteContext<
 export type InternalHandler = (
 	data: State,
 	request: Request,
-	reporter: (e: unknown) => void
+	reporter: (e: unknown) => void,
 ) => RouteContext
 
 /**

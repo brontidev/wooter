@@ -2,7 +2,7 @@
 
 import type { MiddlewareHandler, OptionalMerge, Params, RouteHandler, State } from "@@/types.ts"
 import MiddlewareContext from "@/ctx/MiddlewareContext.ts"
-import RouteContext, { RouteContext__execution, RouteContext__respond } from "@/ctx/RouteContext.ts"
+import RouteContext, { RouteContext__execution, RouteContext__reporter, RouteContext__respond } from "@/ctx/RouteContext.ts"
 
 /**
  * Applies middleware directly to a route handler and returns a wrapped handler.
@@ -20,15 +20,22 @@ export default function use<
 	middlewareHandler: MiddlewareHandler<TParams, BaseState, NextState>,
 	handler: RouteHandler<TParams, OptionalMerge<BaseState, NextState>>,
 ): RouteHandler<TParams, BaseState> {
-	return async ({ params: _params, request, state: _data, resp }) => {
+	return async (ctx) => {
+		const { params: _params, request, state: _data, resp } = ctx
+		const reporter = ctx[RouteContext__reporter]
 		let data = Object.fromEntries(Object.entries(_data))
 		const params = Object.fromEntries(_params.entries())
-		const internalHandler = MiddlewareContext.useMiddlewareHandler(middlewareHandler, params, (nextState, request) => {
-			data = Object.assign(data, nextState)
-			return RouteContext.useRouteHandler(handler, params)(data, request)
-		})
+		const internalHandler = MiddlewareContext.useMiddlewareHandler(
+			middlewareHandler,
+			params,
+			(nextState, request, nextReporter) => {
+				data = Object.assign(data, nextState)
+				return RouteContext.useRouteHandler(handler, params, nextReporter)(data, request, nextReporter)
+			},
+			reporter,
+		)
 
-		const new_ctx = internalHandler(data, request)
+		const new_ctx = internalHandler(data, request, reporter)
 
 		new_ctx[RouteContext__respond].promise.then((r) => resp(r))
 		return (await new_ctx[RouteContext__execution].promise).inspect((e) => {

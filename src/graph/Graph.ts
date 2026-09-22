@@ -184,14 +184,14 @@ export class Graph {
 					currentHandler = RouteContext.useRouteHandler(
 						handler,
 						params,
-						reporter
+						reporter,
 					)
 				} else {
 					currentHandler = MiddlewareContext.useMiddlewareHandler(
 						currentMiddleware,
 						params,
 						createNext(),
-						reporter
+						reporter,
 					)
 				}
 
